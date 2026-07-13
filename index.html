@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ASP Manager</title>
+<meta name="theme-color" content="#10263F">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+:root{--navy:#10263F;--gold:#C89B3C;--bg:#f4f6f8;--text:#1f2937;--muted:#6b7280;--red:#b42318;--amber:#b54708;--green:#067647}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--navy);color:#fff;padding:17px;position:sticky;top:0;z-index:20}.brand{font-weight:850;font-size:21px}.sub{font-size:12px;color:#d1d5db}
+.wrap{max-width:950px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi b{font-size:27px;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px}
+button,.btn{border:0;border-radius:11px;padding:12px 14px;font:inherit;font-weight:750;cursor:pointer}.gold{background:var(--gold);color:var(--navy)}.navy{background:var(--navy);color:#fff}.light{background:#fff;color:var(--navy);border:1px solid #d1d5db}.danger{background:#fee4e2;color:var(--red)}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px;font:inherit}textarea{min-height:85px}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin-bottom:5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.list{display:grid;gap:9px}.item{border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.item h3{margin:0 0 4px}.meta{font-size:13px;color:var(--muted)}
+.badge{display:inline-block;font-size:12px;font-weight:750;padding:5px 8px;border-radius:999px}.over{background:#fee4e2;color:var(--red)}.due{background:#fef0c7;color:var(--amber)}.future{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(720px,100%);max-height:92vh;overflow:auto;padding:17px;border-radius:20px 20px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start}.head h2{margin:0}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none!important}.login{max-width:430px;margin:60px auto}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.wrap{padding:11px}}
+</style>
+</head>
+<body>
+<header><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing</div></header>
+
+<div id="authView" class="wrap hidden">
+  <div class="card login">
+    <h2>Secure login</h2>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+    <div class="actions"><button class="navy" onclick="signIn()">Sign in</button><button class="light" onclick="signUp()">Create first login</button></div>
+    <p id="authMsg" class="meta"></p>
+  </div>
+</div>
+
+<div id="appView" class="wrap hidden">
+  <div class="grid card">
+    <div class="kpi"><b id="activeK">0</b><span>Active customers</span></div>
+    <div class="kpi"><b id="overdueK">0</b><span>Active overdue</span></div>
+    <div class="kpi"><b id="dueK">0</b><span>Due in 30 days</span></div>
+    <div class="kpi"><b id="valueK">£0</b><span>Annual active value</span></div>
+  </div>
+
+  <div class="card">
+    <div class="actions">
+      <button class="gold" onclick="openImport()">First import</button>
+      <button class="navy" onclick="showDue()">Due / overdue</button>
+      <button class="light" onclick="openNew()">New customer</button>
+      <button class="light" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="navy" onclick="setFilter('all')">All</button>
+      <button class="light" onclick="setFilter('active')">Active</button>
+      <button class="light" onclick="setFilter('dormant')">Dormant</button>
+      <button class="light" onclick="setFilter('archived')">Archived</button>
+      <button class="light" onclick="setFilter('booked')">Booked</button>
+    </div>
+    <div class="row"><input id="search" placeholder="Search name, address or postcode"><button class="navy" onclick="runSearch()">Search</button></div>
+    <div id="results" class="list" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card"><h2 style="margin-top:0">Priority now</h2><div id="priority" class="list"></div></div>
+</div>
+
+<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div>
+
+<script>
+const cfg=window.ASP_CONFIG;
+if(!cfg || cfg.supabaseUrl.includes('PASTE_')) alert('ASP Manager is not connected yet. Edit config.js first.');
+const sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+let user=null,customers=[],filter='all';
+const today=()=>new Date().toISOString().slice(0,10);
+const days=d=>d?Math.ceil((new Date(d)-new Date(today()))/86400000):99999;
+const esc=s=>(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function authMessage(t){authMsg.textContent=t}
+async function signUp(){const {error}=await sb.auth.signUp({email:loginEmail.value.trim(),password:loginPassword.value});authMessage(error?error.message:'Account created. Check your email if Supabase asks for confirmation, then sign in.')}
+async function signIn(){const {error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPassword.value});if(error)authMessage(error.message)}
+async function signOut(){await sb.auth.signOut()}
+sb.auth.onAuthStateChange(async(_,session)=>{user=session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})
+async function loadCustomers(){const {data,error}=await sb.from('customers').select('*').order('next_due',{ascending:true});if(error)return alert(error.message);customers=data||[];render();runSearch()}
+function statusLabel(s){return ({active:'Active',dormant:'Dormant',archived:'Archived',booked:'Booked',not_contacted:'Active'})[s]||s}
+function dueBadge(c){if(c.status==='archived')return '<span class="badge archived">Archived</span>';const d=days(c.next_due);return `<span class="badge ${d<0?'over':d<=30?'due':'future'}">${d<0?Math.abs(d)+' days overdue':d===0?'Due today':'Due in '+d+' days'}</span>`}
+function card(c){return `<div class="item"><div><h3>${esc(c.name)}</h3><div class="meta">${esc(c.address)} ${esc(c.postcode)}</div><div class="meta">${esc(c.phone||c.email||'No contact details')} · ${statusLabel(c.status)}</div></div><div>${dueBadge(c)} <button class="gold" onclick="openCustomer('${c.id}')">Open</button></div></div>`}
+function render(){const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));activeK.textContent=active.length;overdueK.textContent=active.filter(c=>days(c.next_due)<0).length;dueK.textContent=active.filter(c=>days(c.next_due)>=0&&days(c.next_due)<=30).length;valueK.textContent='£'+(active.length*120).toLocaleString();priority.innerHTML=active.filter(c=>days(c.next_due)<=30).slice(0,12).map(card).join('')||'<div class="meta">Nothing active due in 30 days.</div>'}
+function setFilter(f){filter=f;runSearch()}
+function runSearch(){const q=search.value.toLowerCase();let list=customers;if(filter!=='all')list=list.filter(c=>(filter==='active'?['active','not_contacted'].includes(c.status):c.status===filter));list=list.filter(c=>[c.name,c.address,c.postcode,c.phone,c.email].join(' ').toLowerCase().includes(q));results.innerHTML=list.slice(0,80).map(card).join('')||'<div class="meta">No match.</div>'}
+search.addEventListener('keydown',e=>{if(e.key==='Enter')runSearch()})
+function show(h){sheet.innerHTML=h;modal.classList.add('on')}function closeM(){modal.classList.remove('on')}modal.addEventListener('click',e=>{if(e.target===modal)closeM()})
+function showDue(){const list=customers.filter(c=>['active','not_contacted','booked'].includes(c.status)&&days(c.next_due)<=90);show(`<div class="head"><h2>Due / overdue</h2><button class="light" onclick="closeM()">Close</button></div><div class="list" style="margin-top:12px">${list.map(card).join('')||'<div class="meta">No active services due.</div>'}</div>`)}
+function openCustomer(id){const c=customers.find(x=>x.id===id);show(`<div class="head"><div><h2>${esc(c.name)}</h2><div class="meta">${esc(c.address)} ${esc(c.postcode)}</div></div><button class="light" onclick="closeM()">Close</button></div><div class="card" style="box-shadow:none;padding-left:0"><b>Status:</b> ${statusLabel(c.status)}<br><b>Last service:</b> ${c.last_service||'Not recorded'}<br><b>Next due:</b> ${c.next_due||'Not recorded'}<br><b>Contact:</b> ${esc(c.phone||'No phone')} · ${esc(c.email||'No email')}<br><b>Boiler:</b> ${esc(c.boiler_make_model||'Not recorded')}<br><b>Notes:</b> ${esc(c.notes||'')}</div><div class="actions"><button class="gold" onclick="completeService('${id}')">Complete service today</button><button class="navy" onclick="changeStatus('${id}','booked')">Booked</button><button class="light" onclick="changeStatus('${id}','active')">Active</button><button class="light" onclick="changeStatus('${id}','dormant')">Dormant</button><button class="light" onclick="changeStatus('${id}','archived')">Archive</button><button class="danger" onclick="deleteCustomer('${id}')">Delete duplicate</button></div>`)}
+async function changeStatus(id,status){const {error}=await sb.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadCustomers();openCustomer(id)}
+async function deleteCustomer(id){if(!confirm('Permanently delete this customer? Only use for duplicates or mistakes.'))return;const {error}=await sb.from('customers').delete().eq('id',id);if(error)return alert(error.message);await loadCustomers();closeM()}
+function completeService(id){const c=customers.find(x=>x.id===id);show(`<div class="head"><h2>Complete service</h2><button class="light" onclick="openCustomer('${id}')">Back</button></div><div class="field"><label>Date</label><input id="svcDate" type="date" value="${today()}"></div><div class="field"><label>Service type</label><select id="svcType"><option>Boiler service</option><option>Boiler service + gas safety</option><option>Unvented cylinder service</option></select></div><div class="field"><label>Boiler make/model</label><input id="svcBoiler" value="${esc(c.boiler_make_model||'')}"></div><div class="field"><label>Invoice number</label><input id="svcInvoice"></div><div class="field"><label>Notes</label><textarea id="svcNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveService('${id}')">Save service</button>`)}
+async function saveService(id){const c=customers.find(x=>x.id===id),d=svcDate.value,nd=new Date(new Date(d).getTime()+365*86400000).toISOString().slice(0,10);const {error:hErr}=await sb.from('service_history').insert({owner_id:user.id,customer_id:id,service_date:d,service_type:svcType.value,boiler_make_model:svcBoiler.value.trim(),invoice_number:svcInvoice.value.trim(),notes:svcNotes.value.trim()});if(hErr)return alert(hErr.message);const {error}=await sb.from('customers').update({last_service:d,next_due:nd,boiler_make_model:svcBoiler.value.trim(),last_invoice:svcInvoice.value.trim(),status:'active',service_count:(c.service_count||0)+1,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadCustomers();show(`<h2>Saved</h2><p>${esc(c.name)} is due again on <b>${nd}</b>.</p><button class="gold" onclick="closeM()">Done</button>`)}
+function openNew(){show(`<div class="head"><h2>New customer</h2><button class="light" onclick="closeM()">Close</button></div><div class="field"><label>Name</label><input id="nName"></div><div class="field"><label>Address</label><input id="nAddress"></div><div class="row"><div class="field"><label>Postcode</label><input id="nPostcode"></div><div class="field"><label>Phone</label><input id="nPhone"></div></div><div class="field"><label>Email</label><input id="nEmail"></div><div class="field"><label>Service date</label><input id="nDate" type="date" value="${today()}"></div><button class="gold" style="width:100%" onclick="saveNew()">Save customer</button>`)}
+async function saveNew(){const d=nDate.value,nd=new Date(new Date(d).getTime()+365*86400000).toISOString().slice(0,10);const {error}=await sb.from('customers').insert({owner_id:user.id,name:nName.value.trim(),address:nAddress.value.trim(),postcode:nPostcode.value.trim(),phone:nPhone.value.trim(),email:nEmail.value.trim(),last_service:d,next_due:nd,status:'active',service_count:1});if(error)return alert(error.message);await loadCustomers();closeM()}
+function openImport(){show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeM()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)}
+function parseCSV(text){const rows=[];let row=[],field='',q=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(q&&text[i+1]==='"'){field+='"';i++}else q=!q}else if(ch===','&&!q){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
+async function importCSV(){const f=csvFile.files[0];if(!f)return;const table=parseCSV(await f.text()),headers=table[0];const objs=table.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||'']))).map(o=>({...o,owner_id:user.id,service_count:Number(o.service_count||0)}));importMsg.textContent='Importing '+objs.length+' customers...';for(let i=0;i<objs.length;i+=40){const {error}=await sb.from('customers').insert(objs.slice(i,i+40));if(error){importMsg.textContent=error.message;return}}importMsg.textContent='Import complete.';await loadCustomers()}
+(async()=>{const {data}=await sb.auth.getSession();user=data.session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})()
+</script>
+</body>
+</html>
