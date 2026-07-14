@@ -1,27 +1,25 @@
-# ASP Manager v0.2 — Customers + Jobs
+# ASP Manager v0.3 — Quotes & Invoices
 
-Private customer, service and job manager for Adam Stapley Plumbing.
+This release builds on the working v0.2 Customers + Jobs app.
 
-## What is new
-- New Dashboard with active customer, upcoming job, quote and service KPIs.
-- New Jobs section linked to customer records.
-- Add, edit, book, quote, complete and delete mistaken/duplicate jobs.
-- Job dates, times, addresses, notes, quoted price and invoice number.
-- Recent job history displayed inside each customer record.
-- Improved customer creation and editing.
-- Existing Supabase login, service history and CSV import retained.
+## New in v0.3
+- Quotes and invoices linked to customers and jobs.
+- Multiple line items with quantity and ex-VAT unit price.
+- Automatic subtotal, VAT and total calculation.
+- Draft, sent, accepted, paid, overdue and void workflows.
+- One-click conversion from an accepted quote to an invoice.
+- Printable customer copy that can be saved as PDF from the browser.
+- Quote and invoice history inside customer and job records.
+- Dashboard counts for waiting quotes and unpaid invoices.
 
-## Deploy
-1. Keep the supplied `config.js` with the working Supabase URL and publishable key.
-2. In Supabase, open **SQL Editor**.
-3. Create a new query and paste all of `supabase_setup_v0.2.sql`.
-4. Press **Run** once.
-5. Replace the existing GitHub files with:
-   - `index.html`
-   - `config.js`
-   - `README.md`
-   - `supabase_setup_v0.2.sql`
-6. Let Vercel redeploy.
-7. Open the app in an incognito/private window and sign in.
+## Upgrade from v0.2
+1. In the existing Supabase project, open **SQL Editor**.
+2. Select **New snippet**.
+3. Paste all of `supabase_setup_v0.3.sql` and press **Run** once.
+4. Replace the existing GitHub files with the files in this ZIP.
+5. Let Vercel redeploy, then refresh the app.
 
-If the SQL has not been run yet, the app will show a yellow setup notice. Customer and service features will continue to work, but Jobs will remain disabled until the table is created.
+Do not create a new Supabase project. Existing customers and jobs are preserved.
+
+## Fresh installation
+Run `supabase_setup_v0.2.sql` first, then `supabase_setup_v0.3.sql`.

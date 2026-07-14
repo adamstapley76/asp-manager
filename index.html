@@ -25,23 +25,23 @@ header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-sh
 .wrap{max-width:1080px;margin:auto;padding:14px 14px 40px}
 .card{background:#fff;border:1px solid #edf0f2;border-radius:17px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #1018280d}
 .section-title{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2,.section-title h3{margin:0;color:var(--navy)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi b{display:block;font-size:28px;line-height:1.1;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi b{display:block;font-size:28px;line-height:1.1;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
 button,.btn{border:0;border-radius:11px;padding:11px 14px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
 button:disabled{opacity:.55;cursor:not-allowed}.gold{background:var(--gold);color:var(--navy)}.gold:hover{background:var(--gold2)}.navy{background:var(--navy);color:#fff}.navy:hover{background:var(--navy2)}.light{background:#fff;color:var(--navy);border:1px solid #d0d5dd}.danger{background:#fee4e2;color:var(--red)}.ghost{background:transparent;color:inherit;border:1px solid #ffffff42;padding:8px 11px;min-height:auto}
 input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;padding:11px;background:#fff;color:var(--text)}input:focus,select:focus,textarea:focus{outline:2px solid #c89b3c55;border-color:var(--gold)}textarea{min-height:95px;resize:vertical}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin-bottom:5px}.hint{font-size:11px;color:var(--muted);margin-top:4px}
 .actions{display:flex;gap:8px;flex-wrap:wrap}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .app-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}.app-nav button{white-space:nowrap}.app-nav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
-.badge{display:inline-block;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}
+.badge{display:inline-block;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
 .modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;overflow-x:auto;margin:10px 0 12px}.filter-row button{white-space:nowrap;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
-.loading{opacity:.58;pointer-events:none}
+.loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{overflow-x:auto}.doc-table{width:100%;border-collapse:collapse;min-width:560px}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right;white-space:nowrap}.print-only{display:none}
 @media(max-width:760px){
-  .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}
+  .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid,.line-row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}
 }
 </style>
 </head>
@@ -65,16 +65,14 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 </div>
 
 <div id="appView" class="wrap hidden">
-  <div id="setupNotice" class="notice hidden">
-    <strong>One small database update is needed for Jobs.</strong>
-    Run <b>supabase_setup_v0.2.sql</b> in the Supabase SQL Editor. Customer and service features still work normally.
-  </div>
+  <div id="setupNotice" class="notice hidden"></div>
 
   <div class="card">
     <div class="app-nav">
       <button id="navDashboard" class="light active" onclick="showPage('dashboard')">Dashboard</button>
       <button id="navCustomers" class="light" onclick="showPage('customers')">Customers</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
+      <button id="navDocuments" class="light" onclick="showPage('documents')">Quotes & invoices</button>
       <button class="gold" onclick="openNewJob()">+ New job</button>
     </div>
   </div>
@@ -84,6 +82,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="kpi"><b id="activeK">0</b><span>Active customers</span></div>
       <div class="kpi"><b id="weekJobsK">0</b><span>Jobs next 7 days</span></div>
       <div class="kpi"><b id="quotedK">0</b><span>Quotes waiting</span></div>
+      <div class="kpi"><b id="unpaidK">0</b><span>Unpaid invoices</span></div>
       <div class="kpi"><b id="dueK">0</b><span>Services due / overdue</span></div>
     </div>
 
@@ -92,6 +91,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="actions">
         <button class="gold" onclick="openNewJob()">Add job</button>
         <button class="navy" onclick="openNewCustomer()">Add customer</button>
+        <button class="light" onclick="openNewDocument('quote')">New quote</button>
+        <button class="light" onclick="openNewDocument('invoice')">New invoice</button>
         <button class="light" onclick="showDue()">Service due list</button>
         <button class="light" onclick="openImport()">First customer import</button>
       </div>
@@ -106,6 +107,10 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <div class="section-title"><h2>Service priority</h2><button class="light" onclick="showDue()">View due</button></div>
         <div id="servicePriority" class="list"></div>
       </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Recent quotes & invoices</h2><button class="light" onclick="showPage('documents')">View all</button></div>
+      <div id="recentDocuments" class="list"></div>
     </div>
   </section>
 
@@ -138,6 +143,21 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div id="jobResults" class="list"></div>
     </div>
   </section>
+
+  <section id="pageDocuments" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2>Quotes & invoices</h2><div class="actions"><button class="light" onclick="openNewDocument('invoice')">+ Invoice</button><button class="gold" onclick="openNewDocument('quote')">+ Quote</button></div></div>
+      <div class="toolbar"><input id="documentSearch" placeholder="Search customer, number, title or job"><button class="navy" onclick="renderDocuments()">Search</button></div>
+      <div id="documentFilters" class="filter-row">
+        <button class="light active" data-filter="open" onclick="setDocumentFilter('open')">Open</button>
+        <button class="light" data-filter="quotes" onclick="setDocumentFilter('quotes')">Quotes</button>
+        <button class="light" data-filter="invoices" onclick="setDocumentFilter('invoices')">Invoices</button>
+        <button class="light" data-filter="paid" onclick="setDocumentFilter('paid')">Paid</button>
+        <button class="light" data-filter="all" onclick="setDocumentFilter('all')">All</button>
+      </div>
+      <div id="documentResults" class="list"></div>
+    </div>
+  </section>
 </div>
 
 <div id="modal" class="modal"><div id="sheet" class="sheet"></div></div>
@@ -147,7 +167,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],jobsReady=true,customerFilter='all',jobFilter='open',currentPage='dashboard';
+let sb=null,user=null,customers=[],jobs=[],documents=[],jobsReady=true,documentsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0;
 
 function localDate(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
@@ -208,23 +228,21 @@ async function loadAll(){
   if(customerResult.error){appView.classList.remove('loading');return alert(customerResult.error.message)}
   customers=customerResult.data||[];
   const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
-  if(jobResult.error){
-    jobs=[];
-    jobsReady=false;
-    $('setupNotice').classList.remove('hidden');
-  }else{
-    jobs=jobResult.data||[];
-    jobsReady=true;
-    $('setupNotice').classList.add('hidden');
-  }
+  if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
+  const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
+  if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
+  const missing=[];
+  if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
+  if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
+  if(missing.length){$('setupNotice').innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;$('setupNotice').classList.remove('hidden')}else $('setupNotice').classList.add('hidden');
   renderAll();
   appView.classList.remove('loading');
 }
-function renderAll(){renderDashboard();renderCustomers();renderJobs()}
+function renderAll(){renderDashboard();renderCustomers();renderJobs();renderDocuments()}
 
 function showPage(page){
   currentPage=page;
-  ['dashboard','customers','jobs'].forEach(p=>{
+  ['dashboard','customers','jobs','documents'].forEach(p=>{
     $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
     $(`nav${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('active',p===page);
   });
@@ -234,6 +252,13 @@ function showPage(page){
 function customerStatusLabel(status){return ({active:'Active',not_contacted:'Active',booked:'Booked',dormant:'Dormant',archived:'Archived'})[status]||status||'Active'}
 function customerStatusClass(status){if(status==='archived')return 'archived';if(status==='dormant')return 'dormant';if(status==='booked')return 'booked';return 'active-badge'}
 function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
+function documentStatusLabel(status){return ({draft:'Draft',sent:'Sent',accepted:'Accepted',declined:'Declined',paid:'Paid',overdue:'Overdue',void:'Void'})[status]||status||'Draft'}
+function documentTypeLabel(type){return type==='invoice'?'Invoice':'Quote'}
+function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
+function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
+function documentNumber(document){return document.document_number||`${document.type==='invoice'?'Invoice':'Quote'} (no number)`}
+function nextDocumentNumber(type){const prefix=type==='invoice'?'INV':'Q',year=new Date().getFullYear();let n=documents.filter(d=>d.type===type&&String(d.document_number||'').includes(String(year))).length+1,candidate='';do{candidate=`${prefix}-${year}-${String(n++).padStart(3,'0')}`}while(documents.some(d=>d.document_number===candidate));return candidate}
+function calculateFigures(lines,vatRate){const subtotal=lines.reduce((sum,line)=>sum+(Number(line.quantity)||0)*(Number(line.unit_price)||0),0),vat=subtotal*(Number(vatRate)||0)/100;return {subtotal,vat,total:subtotal+vat}}
 function dueBadge(customer){
   if(customer.status==='archived')return '<span class="badge archived">Archived</span>';
   if(!customer.next_due)return '<span class="badge archived">No service date</span>';
@@ -250,18 +275,24 @@ function jobCard(job){
   const price=money(job.quoted_amount);
   return `<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc([job.address,job.postcode].filter(Boolean).join(', ')||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span><button class="gold" onclick="openJob('${job.id}')">Open</button></div></div>`;
 }
+function documentCard(document){
+  const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
+  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span></div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button></div></div>`;
+}
 
 function renderDashboard(){
   const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));
   const openJobs=jobs.filter(j=>!['completed','cancelled'].includes(j.status));
   $('activeK').textContent=active.length;
   $('weekJobsK').textContent=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0&&daysUntil(j.scheduled_date)<=7).length;
-  $('quotedK').textContent=jobs.filter(j=>j.status==='quoted').length;
+  $('quotedK').textContent=documentsReady?documents.filter(d=>d.type==='quote'&&['draft','sent'].includes(d.status)).length:jobs.filter(j=>j.status==='quoted').length;
+  $('unpaidK').textContent=documentsReady?documents.filter(d=>d.type==='invoice'&&['draft','sent','overdue'].includes(d.status)).length:0;
   $('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
   const upcoming=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0).sort((a,b)=>(a.scheduled_date||'').localeCompare(b.scheduled_date||'')).slice(0,8);
   $('upcomingJobs').innerHTML=jobsReady?(upcoming.map(jobCard).join('')||'<div class="empty">No upcoming jobs booked.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   const priority=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).sort((a,b)=>(a.next_due||'').localeCompare(b.next_due||'')).slice(0,8);
   $('servicePriority').innerHTML=priority.map(customerCard).join('')||'<div class="empty">Nothing due in the next 30 days.</div>';
+  $('recentDocuments').innerHTML=documentsReady?(documents.slice(0,6).map(documentCard).join('')||'<div class="empty">No quotes or invoices yet.</div>'):'<div class="empty">Run the v0.3 SQL setup to enable quotes and invoices.</div>';
 }
 function setCustomerFilter(value){customerFilter=value;document.querySelectorAll('#customerFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderCustomers()}
 function renderCustomers(){
@@ -286,7 +317,19 @@ function renderJobs(){
   });
   $('jobResults').innerHTML=list.map(jobCard).join('')||'<div class="empty">No jobs match this filter.</div>';
 }
-$('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);
+function setDocumentFilter(value){documentFilter=value;document.querySelectorAll('#documentFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderDocuments()}
+function renderDocuments(){
+  if(!documentsReady){$('documentResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.3.sql</b> in Supabase to enable Quotes & invoices.</div>';return}
+  const q=($('documentSearch')?.value||'').trim().toLowerCase();let list=[...documents];
+  if(documentFilter==='open')list=list.filter(d=>!['accepted','declined','paid','void'].includes(d.status));
+  else if(documentFilter==='quotes')list=list.filter(d=>d.type==='quote');
+  else if(documentFilter==='invoices')list=list.filter(d=>d.type==='invoice');
+  else if(documentFilter==='paid')list=list.filter(d=>d.status==='paid');
+  if(q)list=list.filter(d=>[d.document_number,d.title,d.notes,documentCustomer(d)?.name,documentJob(d)?.title].join(' ').toLowerCase().includes(q));
+  list.sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||'')||(b.created_at||'').localeCompare(a.created_at||''));
+  $('documentResults').innerHTML=list.map(documentCard).join('')||'<div class="empty">No documents match this filter.</div>';
+}
+$('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);$('documentSearch').addEventListener('input',renderDocuments);
 
 function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on')}
 function closeModal(){$('modal').classList.remove('on')}
@@ -299,6 +342,7 @@ function showDue(){
 function openCustomer(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
   const history=jobs.filter(j=>j.customer_id===id).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')).slice(0,8);
+  const documentHistory=documents.filter(d=>d.customer_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||'')).slice(0,6);
   show(`<div class="head"><div><h2>${esc(c.name||'Unnamed customer')}</h2><div class="meta">${esc(customerAddress(c)||'No address')}</div></div><button class="light" onclick="closeModal()">Close</button></div>
   <div class="detail-grid">
     <div class="detail"><b>Status</b><span>${esc(customerStatusLabel(c.status))}</span></div>
@@ -310,11 +354,13 @@ function openCustomer(id){
   </div>
   <div class="actions">
     <button class="gold" onclick="openNewJob('${id}')">Add job</button>
+    ${documentsReady?`<button class="light" onclick="openNewDocument('quote','','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','','${id}')">New invoice</button>`:''}
     <button class="navy" onclick="completeService('${id}')">Complete service</button>
     <button class="light" onclick="editCustomer('${id}')">Edit customer</button>
     <button class="light" onclick="changeCustomerStatus('${id}','${c.status==='archived'?'active':'archived'}')">${c.status==='archived'?'Restore':'Archive'}</button>
   </div>
-  <div class="muted-box" style="margin-top:14px"><h3>Recent jobs</h3><div class="list">${jobsReady?(history.map(jobCard).join('')||'<div class="meta">No jobs recorded yet.</div>'):'<div class="meta">Jobs need the v0.2 database update.</div>'}</div></div>`);
+  <div class="muted-box" style="margin-top:14px"><h3>Recent jobs</h3><div class="list">${jobsReady?(history.map(jobCard).join('')||'<div class="meta">No jobs recorded yet.</div>'):'<div class="meta">Jobs need the v0.2 database update.</div>'}</div></div>
+  <div class="muted-box" style="margin-top:14px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(documentHistory.map(documentCard).join('')||'<div class="meta">No documents recorded yet.</div>'):'<div class="meta">Documents need the v0.3 database update.</div>'}</div></div>`);
 }
 async function changeCustomerStatus(id,status){
   const {error}=await sb.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll();openCustomer(id)
@@ -397,7 +443,7 @@ async function saveNewJob(){
 }
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  const customer=customers.find(c=>c.id===j.customer_id),price=money(j.quoted_amount);
+  const customer=customers.find(c=>c.id===j.customer_id),price=money(j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
   show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="closeModal()">Close</button></div>
   <div class="detail-grid">
     <div class="detail"><b>Status</b><span>${esc(jobStatusLabel(j.status))}</span></div>
@@ -408,7 +454,9 @@ function openJob(id){
     <div class="detail"><b>Invoice</b><span>${esc(j.invoice_number||'Not recorded')}</span></div>
   </div>
   <div class="muted-box"><h3>Job notes</h3><div class="meta">${esc(j.description||'No notes')}</div></div>
+  <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Run the v0.3 database update.</div>'}</div></div>
   <div class="actions" style="margin-top:14px">
+    ${documentsReady?`<button class="gold" onclick="openNewDocument('quote','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','${id}')">New invoice</button>`:''}
     <button class="gold" onclick="editJob('${id}')">Edit job</button>
     ${j.status!=='booked'?`<button class="navy" onclick="setJobStatus('${id}','booked')">Mark booked</button>`:''}
     ${j.status!=='quoted'?`<button class="light" onclick="setJobStatus('${id}','quoted')">Mark quoted</button>`:''}
@@ -454,6 +502,77 @@ async function saveJobEdit(id){
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);await loadAll();openJob(id)
 }
 async function deleteJob(id){if(!confirm('Permanently delete this job? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('jobs').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
+
+function documentStatusOptions(type,selected='draft'){
+  const options=type==='invoice'?[['draft','Draft'],['sent','Sent / unpaid'],['paid','Paid'],['overdue','Overdue'],['void','Void']]:[['draft','Draft'],['sent','Sent'],['accepted','Accepted'],['declined','Declined'],['void','Void']];
+  return options.map(([value,label])=>`<option value="${value}" ${value===selected?'selected':''}>${label}</option>`).join('')
+}
+function jobOptions(selected='',customerId=''){
+  const eligible=customerId?jobs.filter(j=>j.customer_id===customerId):jobs;
+  return `<option value="">No job linked</option>`+eligible.map(j=>`<option value="${j.id}" ${j.id===selected?'selected':''}>${esc(j.title)} — ${esc(customerName(j.customer_id))}</option>`).join('')
+}
+function openNewDocument(type='quote',jobId='',customerId=''){
+  if(!documentsReady)return show(`<div class="head"><h2>Quotes & invoices setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.3.sql first.</strong>Open Supabase → SQL Editor → New snippet, paste the file contents and press Run.</div>`);
+  const job=jobs.find(j=>j.id===jobId),resolvedCustomer=customerId||job?.customer_id||'',defaultAmount=job?.quoted_amount??'',defaultTitle=job?.title||'',due=type==='invoice'?addDays(today(),14):addDays(today(),30);
+  lineCounter=0;
+  show(`<div class="head"><div><h2>New ${documentTypeLabel(type).toLowerCase()}</h2><div class="meta">Linked to a customer and optionally a job.</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="row"><div class="field"><label>Customer</label><select id="dCustomer" onchange="refreshDocumentJobs()">${customerOptions(resolvedCustomer)}</select></div><div class="field"><label>Linked job</label><select id="dJob" onchange="fillDocumentFromJob()">${jobOptions(jobId,resolvedCustomer)}</select></div></div>
+  <div class="row"><div class="field"><label>${documentTypeLabel(type)} number</label><input id="dNumber" value="${esc(nextDocumentNumber(type))}"></div><div class="field"><label>Status</label><select id="dStatus">${documentStatusOptions(type,'draft')}</select></div></div>
+  <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(defaultTitle)}" placeholder="e.g. Replace boiler"></div>
+  <div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${today()}"></div><div class="field"><label>${type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${due}"></div></div>
+  <div class="section-title"><h3>Line items</h3><button class="light" onclick="addDocumentLine()">+ Add line</button></div><div id="dLines"></div>
+  <div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" inputmode="decimal" value="20" oninput="updateDocumentTotals()"></div><div></div></div>
+  <div id="dTotals" class="totals"></div>
+  <div class="field"><label>Customer-facing notes</label><textarea id="dNotes" placeholder="Optional terms, exclusions or payment note"></textarea></div>
+  <button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${type}')">Save ${documentTypeLabel(type).toLowerCase()}</button>`);
+  addDocumentLine(defaultTitle,1,defaultAmount);updateDocumentTotals()
+}
+function refreshDocumentJobs(){const customerId=$('dCustomer').value;$('dJob').innerHTML=jobOptions('',customerId)}
+function fillDocumentFromJob(){const job=jobs.find(j=>j.id===$('dJob').value);if(!job)return;if(job.customer_id){$('dCustomer').value=job.customer_id}if(!$('dTitle').value)$('dTitle').value=job.title||'';const first=document.querySelector('#dLines .line-row');if(first&&!first.querySelector('.line-desc').value)first.querySelector('.line-desc').value=job.title||'';if(first&&!first.querySelector('.line-price').value&&job.quoted_amount!=null)first.querySelector('.line-price').value=job.quoted_amount;updateDocumentTotals()}
+function addDocumentLine(description='',quantity=1,unitPrice=''){
+  const holder=$('dLines');if(!holder)return;const id=++lineCounter;
+  holder.insertAdjacentHTML('beforeend',`<div class="line-row" data-line="${id}"><div class="field"><label>Description</label><input class="line-desc" value="${esc(description)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Qty</label><input class="line-qty" inputmode="decimal" value="${esc(quantity)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Unit £ ex VAT</label><input class="line-price" inputmode="decimal" value="${esc(unitPrice)}" oninput="updateDocumentTotals()"></div><button class="danger" title="Remove line" onclick="this.closest('.line-row').remove();updateDocumentTotals()">×</button></div>`)
+}
+function collectDocumentLines(){return [...document.querySelectorAll('#dLines .line-row')].map(row=>({description:row.querySelector('.line-desc').value.trim(),quantity:Number(row.querySelector('.line-qty').value||0),unit_price:Number(row.querySelector('.line-price').value||0)})).filter(line=>line.description||line.unit_price)}
+function updateDocumentTotals(){const lines=collectDocumentLines(),vatRate=Number($('dVat')?.value||0),fig=calculateFigures(lines,vatRate);if($('dTotals'))$('dTotals').innerHTML=`<div class="total-line"><span>Subtotal</span><b>${money(fig.subtotal)}</b></div><div class="total-line"><span>VAT (${vatRate||0}%)</span><b>${money(fig.vat)}</b></div><div class="total-line grand"><span>Total</span><span>${money(fig.total)}</span></div>`}
+async function saveDocument(type,id=''){
+  const lines=collectDocumentLines();if(!lines.length)return alert('Add at least one line item.');const number=$('dNumber').value.trim(),title=$('dTitle').value.trim();if(!number||!title)return alert('Enter the document number and title.');
+  const vatRate=Number($('dVat').value||0),fig=calculateFigures(lines,vatRate),payload={owner_id:user.id,customer_id:$('dCustomer').value||null,job_id:$('dJob').value||null,type,document_number:number,status:$('dStatus').value,title,issue_date:$('dIssue').value||today(),due_date:$('dDue').value||null,line_items:lines,subtotal:fig.subtotal,vat_rate:vatRate,vat_amount:fig.vat,total:fig.total,notes:$('dNotes').value.trim(),updated_at:new Date().toISOString()};
+  const button=$('saveDocumentBtn');button.disabled=true;button.textContent='Saving…';let result;
+  if(id)result=await sb.from('documents').update(payload).eq('id',id).select().single();else result=await sb.from('documents').insert(payload).select().single();
+  button.disabled=false;button.textContent=`Save ${documentTypeLabel(type).toLowerCase()}`;if(result.error)return alert(result.error.message);
+  if(payload.job_id&&type==='quote')await sb.from('jobs').update({quoted_amount:fig.subtotal,status:payload.status==='accepted'?'booked':'quoted',updated_at:new Date().toISOString()}).eq('id',payload.job_id);
+  if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
+  await loadAll();openDocument(result.data.id)
+}
+function openDocument(id){
+  const d=documents.find(x=>x.id===id);if(!d)return;const customer=documentCustomer(d),job=documentJob(d),lines=Array.isArray(d.line_items)?d.line_items:[];
+  const rows=lines.map(line=>`<tr><td>${esc(line.description)}</td><td class="num">${esc(line.quantity)}</td><td class="num">${esc(money(line.unit_price))}</td><td class="num">${esc(money((Number(line.quantity)||0)*(Number(line.unit_price)||0)))}</td></tr>`).join('');
+  show(`<div class="head"><div><h2>${esc(documentNumber(d))}</h2><div class="meta">${esc(documentTypeLabel(d.type))} · ${esc(d.title)}</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="detail-grid"><div class="detail"><b>Customer</b><span>${esc(customer?.name||'Not linked')}</span></div><div class="detail"><b>Status</b><span>${esc(documentStatusLabel(d.status))}</span></div><div class="detail"><b>Issue date</b><span>${esc(displayDate(d.issue_date))}</span></div><div class="detail"><b>${d.type==='invoice'?'Due date':'Valid until'}</b><span>${esc(d.due_date?displayDate(d.due_date):'Not set')}</span></div><div class="detail"><b>Linked job</b><span>${esc(job?.title||'Not linked')}</span></div><div class="detail"><b>Total</b><span>${esc(money(d.total))}</span></div></div>
+  <div class="doc-lines"><table class="doc-table"><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="totals" style="margin-top:12px"><div class="total-line"><span>Subtotal</span><b>${money(d.subtotal)}</b></div><div class="total-line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${money(d.vat_amount)}</b></div><div class="total-line grand"><span>Total</span><span>${money(d.total)}</span></div></div>
+  ${d.notes?`<div class="muted-box" style="margin-top:12px"><h3>Notes</h3><div class="meta">${esc(d.notes)}</div></div>`:''}
+  <div class="actions" style="margin-top:14px"><button class="gold" onclick="editDocument('${id}')">Edit</button><button class="navy" onclick="printDocument('${id}')">Print / PDF</button>${d.status!=='sent'?`<button class="light" onclick="setDocumentStatus('${id}','sent')">Mark sent</button>`:''}${d.type==='quote'&&d.status!=='accepted'?`<button class="light" onclick="setDocumentStatus('${id}','accepted')">Accepted</button>`:''}${d.type==='invoice'&&d.status!=='paid'?`<button class="light" onclick="setDocumentStatus('${id}','paid')">Paid</button>`:''}${d.type==='quote'?`<button class="light" onclick="convertQuoteToInvoice('${id}')">Convert to invoice</button>`:''}${d.customer_id?`<button class="light" onclick="openCustomer('${d.customer_id}')">Customer</button>`:''}${d.job_id?`<button class="light" onclick="openJob('${d.job_id}')">Job</button>`:''}<button class="danger" onclick="deleteDocument('${id}')">Delete mistake</button></div>`)
+}
+function editDocument(id){
+  const d=documents.find(x=>x.id===id);if(!d)return;lineCounter=0;
+  show(`<div class="head"><div><h2>Edit ${documentTypeLabel(d.type).toLowerCase()}</h2><div class="meta">${esc(documentNumber(d))}</div></div><button class="light" onclick="openDocument('${id}')">Back</button></div>
+  <div class="row"><div class="field"><label>Customer</label><select id="dCustomer" onchange="refreshDocumentJobs()">${customerOptions(d.customer_id)}</select></div><div class="field"><label>Linked job</label><select id="dJob">${jobOptions(d.job_id,d.customer_id)}</select></div></div>
+  <div class="row"><div class="field"><label>${documentTypeLabel(d.type)} number</label><input id="dNumber" value="${esc(d.document_number)}"></div><div class="field"><label>Status</label><select id="dStatus">${documentStatusOptions(d.type,d.status)}</select></div></div>
+  <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(d.title)}"></div><div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${esc(d.issue_date)}"></div><div class="field"><label>${d.type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${esc(d.due_date)}"></div></div>
+  <div class="section-title"><h3>Line items</h3><button class="light" onclick="addDocumentLine()">+ Add line</button></div><div id="dLines"></div><div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" inputmode="decimal" value="${Number(d.vat_rate)||0}" oninput="updateDocumentTotals()"></div><div></div></div><div id="dTotals" class="totals"></div>
+  <div class="field"><label>Customer-facing notes</label><textarea id="dNotes">${esc(d.notes)}</textarea></div><button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${d.type}','${id}')">Save ${documentTypeLabel(d.type).toLowerCase()}</button>`);
+  const lines=Array.isArray(d.line_items)&&d.line_items.length?d.line_items:[{description:'',quantity:1,unit_price:''}];lines.forEach(line=>addDocumentLine(line.description,line.quantity,line.unit_price));updateDocumentTotals()
+}
+async function setDocumentStatus(id,status){const d=documents.find(x=>x.id===id);const {error}=await sb.from('documents').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);if(d?.job_id&&d.type==='quote'&&status==='accepted')await sb.from('jobs').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',d.job_id);await loadAll();openDocument(id)}
+async function convertQuoteToInvoice(id){const q=documents.find(x=>x.id===id);if(!q||q.type!=='quote')return;if(!confirm('Create an invoice from this quote?'))return;const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title:q.title,issue_date:today(),due_date:addDays(today(),14),line_items:q.line_items,subtotal:q.subtotal,vat_rate:q.vat_rate,vat_amount:q.vat_amount,total:q.total,notes:q.notes};const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(q.job_id)await sb.from('jobs').update({invoice_number:payload.document_number,status:'booked',updated_at:new Date().toISOString()}).eq('id',q.job_id);await loadAll();openDocument(data.id)}
+async function deleteDocument(id){if(!confirm('Permanently delete this document? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('documents').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
+function printDocument(id){
+  const d=documents.find(x=>x.id===id);if(!d)return;const c=documentCustomer(d),j=documentJob(d),lines=Array.isArray(d.line_items)?d.line_items:[],w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print this document.');
+  const rows=lines.map(line=>`<tr><td>${esc(line.description)}</td><td class="n">${esc(line.quantity)}</td><td class="n">${esc(money(line.unit_price))}</td><td class="n">${esc(money((Number(line.quantity)||0)*(Number(line.unit_price)||0)))}</td></tr>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(documentNumber(d))}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;margin:38px;line-height:1.4}.top{display:flex;justify-content:space-between;gap:30px;border-bottom:4px solid #10263F;padding-bottom:18px}.brand{font-size:25px;font-weight:800;color:#10263F}.gold{color:#9a6a00}.meta{font-size:13px;color:#667085}.box{margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:25px}.label{font-size:11px;text-transform:uppercase;color:#667085;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:25px}th,td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left}th{font-size:11px;text-transform:uppercase;color:#667085}.n{text-align:right}.tot{width:330px;margin:18px 0 0 auto}.line{display:flex;justify-content:space-between;padding:6px 0}.grand{font-size:19px;font-weight:bold;border-top:2px solid #10263F;margin-top:5px;padding-top:10px}.notes{margin-top:28px;padding:15px;background:#f7f7f7}.footer{margin-top:45px;border-top:1px solid #ddd;padding-top:12px;font-size:11px;color:#667085}@media print{body{margin:18mm}.no-print{display:none}}</style></head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
+}
 
 function openImport(){
   show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeModal()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)
