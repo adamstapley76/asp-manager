@@ -77,8 +77,21 @@ const today=()=>new Date().toISOString().slice(0,10);
 const days=d=>d?Math.ceil((new Date(d)-new Date(today()))/86400000):99999;
 const esc=s=>(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function authMessage(t){authMsg.textContent=t}
-async function signUp(){const {error}=await sb.auth.signUp({email:loginEmail.value.trim(),password:loginPassword.value});authMessage(error?error.message:'Account created. Check your email if Supabase asks for confirmation, then sign in.')}
-async function signIn(){const {error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPassword.value});if(error)authMessage(error.message)}
+async function signUp(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  if(!email){authMessage('Enter your email address first.');return;}
+  if(password.length<8){authMessage('Use a password of at least 8 characters.');return;}
+  const {data,error}=await sb.auth.signUp({email,password});
+  authMessage(error?error.message:(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'));
+}
+async function signIn(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  if(!email||!password){authMessage('Enter your email and password.');return;}
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error)authMessage(error.message);
+}
 async function signOut(){await sb.auth.signOut()}
 sb.auth.onAuthStateChange(async(_,session)=>{user=session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})
 async function loadCustomers(){const {data,error}=await sb.from('customers').select('*').order('next_due',{ascending:true});if(error)return alert(error.message);customers=data||[];render();runSearch()}
