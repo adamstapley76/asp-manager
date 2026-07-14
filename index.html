@@ -96,7 +96,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openNewDocument('quote')">New quote</button>
         <button class="light" onclick="openNewDocument('invoice')">New invoice</button>
         <button class="light" onclick="showDue()">Service due list</button>
-        <button class="light" onclick="openImport()">First customer import</button>
+        <button class="light" onclick="openImport()">Import customers</button>
       </div>
     </div>
 
@@ -118,7 +118,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageCustomers" class="hidden">
     <div class="card">
-      <div class="section-title"><h2>Customers</h2><button class="gold" onclick="openNewCustomer()">+ New customer</button></div>
+      <div class="section-title"><h2>Customers</h2><div class="actions"><button class="light" onclick="openImport()">Import CSV</button><button class="gold" onclick="openNewCustomer()">+ New customer</button></div></div>
       <div class="toolbar"><input id="customerSearch" placeholder="Search name, address, postcode, phone or email"><button class="navy" onclick="renderCustomers()">Search</button></div>
       <div id="customerFilters" class="filter-row">
         <button class="light active" data-filter="all" onclick="setCustomerFilter('all')">All</button>
@@ -169,7 +169,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],jobsReady=true,documentsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0;
+let sb=null,user=null,customers=[],jobs=[],documents=[],jobsReady=true,documentsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function localDate(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
@@ -577,15 +577,56 @@ function printDocument(id){
 }
 
 function openImport(){
-  show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeModal()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)
+  pendingImportRows=[];
+  show(`<div class="head"><div><h2>Import customers</h2><div class="meta">Choose the cleaned ASP Manager CSV. Nothing is saved until you confirm the preview.</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="muted-box"><b>Safe import</b><div class="meta">ASP Manager checks the file, previews the first records and skips customers already found by email, phone, or matching name and postcode.</div></div>
+  <div class="field" style="margin-top:12px"><label>Customer CSV file</label><input id="csvFile" type="file" accept=".csv,text/csv" onchange="previewCustomerCSV()"></div>
+  <div id="importPreview" class="hidden"></div>
+  <p id="importMsg" class="meta"></p>`)
 }
-function parseCSV(text){const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++}else quoted=!quoted}else if(ch===','&&!quoted){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
+function parseCSV(text){const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++}else quoted=!quoted}else if(ch===','&&!quoted){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>String(x).trim()!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
+function importKey(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function customerDuplicateKey(customer){
+  const email=importKey(customer.email),phone=importKey(customer.phone),namePostcode=`${importKey(customer.name)}|${importKey(customer.postcode)}`;
+  return {email,phone,namePostcode};
+}
+function isExistingCustomer(candidate,seen=[]){
+  const key=customerDuplicateKey(candidate);
+  return [...customers,...seen].some(existing=>{const other=customerDuplicateKey(existing);return (key.email&&key.email===other.email)||(key.phone&&key.phone===other.phone)||(importKey(candidate.name)&&importKey(candidate.postcode)&&key.namePostcode===other.namePostcode)});
+}
+function cleanImportObject(raw){
+  const status=['active','not_contacted','booked','dormant','archived'].includes(String(raw.status||'').trim())?String(raw.status).trim():'dormant';
+  const result={owner_id:user.id,name:String(raw.name||'').trim(),address:String(raw.address||'').trim(),postcode:String(raw.postcode||'').trim().toUpperCase(),phone:String(raw.phone||'').trim(),email:String(raw.email||'').trim().toLowerCase(),boiler_make_model:String(raw.boiler_make_model||'').trim(),notes:String(raw.notes||'').trim(),status,service_count:Number(raw.service_count||0)||0};
+  if(raw.last_service)result.last_service=String(raw.last_service).trim();
+  if(raw.next_due)result.next_due=String(raw.next_due).trim();
+  if(raw.last_invoice)result.last_invoice=String(raw.last_invoice).trim();
+  return result;
+}
+async function previewCustomerCSV(){
+  const file=$('csvFile')?.files?.[0],msg=$('importMsg'),preview=$('importPreview');pendingImportRows=[];
+  if(!file)return;
+  msg.textContent='Checking the file…';preview.classList.add('hidden');
+  try{
+    const table=parseCSV((await file.text()).replace(/^\uFEFF/,''));
+    if(table.length<2)throw new Error('The CSV is empty.');
+    const headers=table[0].map(h=>String(h||'').trim());
+    if(!headers.includes('name'))throw new Error('This is not the ASP Manager customer CSV: the name column is missing.');
+    const rawRows=table.slice(1).map(row=>Object.fromEntries(headers.map((header,index)=>[header,row[index]||'']))).filter(row=>String(row.name||'').trim());
+    const skipped=[];const accepted=[];
+    for(const raw of rawRows){const candidate=cleanImportObject(raw);if(isExistingCustomer(candidate,accepted))skipped.push(candidate);else accepted.push(candidate)}
+    pendingImportRows=accepted;
+    const sample=accepted.slice(0,5).map(c=>`<div class="item"><div><h3>${esc(c.name)}</h3><div class="meta">${esc([c.address,c.postcode].filter(Boolean).join(', ')||'No address')}<br>${esc(c.phone||c.email||'No contact details')}</div></div><span class="badge dormant">Ready</span></div>`).join('');
+    preview.innerHTML=`<div class="notice success"><strong>${accepted.length} ready to import</strong>${skipped.length?`${skipped.length} possible duplicate${skipped.length===1?'':'s'} will be skipped.`:'No duplicates found against the customers already saved.'}</div>${sample?`<div class="list">${sample}</div>`:''}${accepted.length>5?`<p class="meta">Plus ${accepted.length-5} more customer${accepted.length-5===1?'':'s'}.</p>`:''}<button id="confirmImportBtn" class="gold" style="width:100%;margin-top:12px" onclick="importCSV()" ${accepted.length?'':'disabled'}>Import ${accepted.length} customer${accepted.length===1?'':'s'}</button>`;
+    preview.classList.remove('hidden');msg.textContent='';
+  }catch(error){msg.textContent=friendlyError(error)}
+}
 async function importCSV(){
-  const file=$('csvFile').files[0];if(!file)return alert('Choose the CSV file first.');
-  const table=parseCSV(await file.text()),headers=table[0];const objects=table.slice(1).map(row=>Object.fromEntries(headers.map((header,index)=>[header,row[index]||'']))).map(object=>({...object,owner_id:user.id,service_count:Number(object.service_count||0)}));
-  $('importMsg').textContent=`Importing ${objects.length} customers…`;
-  for(let i=0;i<objects.length;i+=40){const {error}=await sb.from('customers').insert(objects.slice(i,i+40));if(error){$('importMsg').textContent=error.message;return}}
-  $('importMsg').textContent='Import complete.';await loadAll()
+  if(!pendingImportRows.length)return alert('Choose and preview the customer CSV first.');
+  const button=$('confirmImportBtn'),msg=$('importMsg');button.disabled=true;button.textContent='Importing…';msg.textContent=`Saving ${pendingImportRows.length} customers…`;
+  let imported=0;
+  for(let i=0;i<pendingImportRows.length;i+=40){const batch=pendingImportRows.slice(i,i+40);const {error}=await sb.from('customers').insert(batch);if(error){button.disabled=false;button.textContent='Try import again';msg.textContent=error.message;return}imported+=batch.length;msg.textContent=`Saved ${imported} of ${pendingImportRows.length}…`}
+  pendingImportRows=[];await loadAll();showPage('customers');
+  show(`<div class="head"><h2>Import complete</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice success"><strong>${imported} customers added</strong>The imported customers are now searchable in the Customers section.</div><button class="gold" style="width:100%" onclick="closeModal();showPage('customers')">View customers</button>`)
 }
 
 (async()=>{
