@@ -55,12 +55,14 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
 <div id="authView" class="wrap hidden">
   <div class="card login">
-    <h2>Secure login</h2>
-    <p class="meta">Your private customer and job manager.</p>
-    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="email" inputmode="email"></div>
-    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
-    <div class="actions"><button id="signInBtn" class="navy" onclick="signIn()">Sign in</button><button id="signUpBtn" class="light" onclick="signUp()">Create first login</button></div>
-    <p id="authMsg" class="meta"></p>
+    <form id="loginForm" autocomplete="on" onsubmit="event.preventDefault();signIn()">
+      <h2>Secure login</h2>
+      <p class="meta">Your private customer and job manager.</p>
+      <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" name="username" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false"></div>
+      <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password"></div>
+      <div class="actions"><button id="signInBtn" type="submit" class="navy">Sign in</button><button id="signUpBtn" type="button" class="light" onclick="signUp()">Create first login</button></div>
+      <p id="authMsg" class="meta"></p>
+    </form>
   </div>
 </div>
 
@@ -196,7 +198,7 @@ function configProblem(){
   return '';
 }
 const configError=configProblem();
-if(configError){authView.classList.remove('hidden');authMessage(configError)}else sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+if(configError){authView.classList.remove('hidden');authMessage(configError)}else sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'asp-manager-auth'}});
 
 async function signUp(){
   if(!sb)return authMessage(configError);
@@ -204,14 +206,14 @@ async function signUp(){
   if(!email)return authMessage('Enter your email address first.');
   if(password.length<8)return authMessage('Use a password of at least 8 characters.');
   setAuthBusy(true);authMessage('Creating account…');
-  try{const {data,error}=await sb.auth.signUp({email,password});authMessage(error?friendlyError(error):(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'))}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
+  try{const {data,error}=await sb.auth.signUp({email,password});if(!error)localStorage.setItem('asp-manager-login-email',email);authMessage(error?friendlyError(error):(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'))}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
 }
 async function signIn(){
   if(!sb)return authMessage(configError);
   const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
   if(!email||!password)return authMessage('Enter your email and password.');
   setAuthBusy(true);authMessage('Signing in…');
-  try{const {error}=await sb.auth.signInWithPassword({email,password});if(error)authMessage(friendlyError(error))}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
+  try{const {error}=await sb.auth.signInWithPassword({email,password});if(error)authMessage(friendlyError(error));else{localStorage.setItem('asp-manager-login-email',email);authMessage('')}}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
 }
 async function signOut(){if(sb)await sb.auth.signOut()}
 
@@ -587,6 +589,7 @@ async function importCSV(){
 }
 
 (async()=>{
+  const savedEmail=localStorage.getItem('asp-manager-login-email');if(savedEmail&&!$('loginEmail').value)$('loginEmail').value=savedEmail;
   if(!sb)return;
   try{const {data,error}=await sb.auth.getSession();if(error)throw error;setLoggedIn(data.session?.user);if(user)await loadAll()}catch(error){setLoggedIn(null);authView.classList.remove('hidden');authMessage(friendlyError(error))}
 })();
