@@ -1,24 +1,27 @@
-# ASP Manager v0.1.1
+# ASP Manager v0.2 — Customers + Jobs
 
-Private service-customer manager for Adam Stapley Plumbing.
+Private customer, service and job manager for Adam Stapley Plumbing.
 
-## Setup
-1. Edit `config.js`.
-2. Replace `PASTE_PROJECT_URL_HERE` with the Supabase project URL.
-3. Replace `PASTE_PUBLISHABLE_KEY_HERE` with the Supabase publishable key.
-4. Commit the files to GitHub.
-5. Deploy through Vercel.
-6. Create the first login.
-7. Import the separate customer CSV once.
+## What is new
+- New Dashboard with active customer, upcoming job, quote and service KPIs.
+- New Jobs section linked to customer records.
+- Add, edit, book, quote, complete and delete mistaken/duplicate jobs.
+- Job dates, times, addresses, notes, quoted price and invoice number.
+- Recent job history displayed inside each customer record.
+- Improved customer creation and editing.
+- Existing Supabase login, service history and CSV import retained.
 
+## Deploy
+1. Keep the supplied `config.js` with the working Supabase URL and publishable key.
+2. In Supabase, open **SQL Editor**.
+3. Create a new query and paste all of `supabase_setup_v0.2.sql`.
+4. Press **Run** once.
+5. Replace the existing GitHub files with:
+   - `index.html`
+   - `config.js`
+   - `README.md`
+   - `supabase_setup_v0.2.sql`
+6. Let Vercel redeploy.
+7. Open the app in an incognito/private window and sign in.
 
-## v0.1.1 connection fix
-- Corrected the Supabase project URL typo that caused `Failed to fetch`.
-- Added clearer connection and login error messages.
-- Added loading protection so repeated clicks do not send duplicate login requests.
-
-## Test
-1. Deploy these three files together (`index.html`, `config.js`, `README.md`).
-2. Open the deployed site in a private/incognito window.
-3. Enter the email and password used for the Supabase account.
-4. If the account has not yet been created, use **Create first login** once.
+If the SQL has not been run yet, the app will show a yellow setup notice. Customer and service features will continue to work, but Jobs will remain disabled until the table is created.

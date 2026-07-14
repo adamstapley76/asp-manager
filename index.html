@@ -8,25 +8,55 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <style>
-:root{--navy:#10263F;--gold:#C89B3C;--bg:#f4f6f8;--text:#1f2937;--muted:#6b7280;--red:#b42318;--amber:#b54708;--green:#067647}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:var(--navy);color:#fff;padding:17px;position:sticky;top:0;z-index:20}.brand{font-weight:850;font-size:21px}.sub{font-size:12px;color:#d1d5db}
-.wrap{max-width:950px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #0000000d}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi b{font-size:27px;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px}
-button,.btn{border:0;border-radius:11px;padding:12px 14px;font:inherit;font-weight:750;cursor:pointer}.gold{background:var(--gold);color:var(--navy)}.navy{background:var(--navy);color:#fff}.light{background:#fff;color:var(--navy);border:1px solid #d1d5db}.danger{background:#fee4e2;color:var(--red)}
-input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px;font:inherit}textarea{min-height:85px}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin-bottom:5px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.list{display:grid;gap:9px}.item{border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.item h3{margin:0 0 4px}.meta{font-size:13px;color:var(--muted)}
-.badge{display:inline-block;font-size:12px;font-weight:750;padding:5px 8px;border-radius:999px}.over{background:#fee4e2;color:var(--red)}.due{background:#fef0c7;color:var(--amber)}.future{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(720px,100%);max-height:92vh;overflow:auto;padding:17px;border-radius:20px 20px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start}.head h2{margin:0}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none!important}.login{max-width:430px;margin:60px auto}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap}
-@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.wrap{padding:11px}}
+:root{
+  --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
+  --text:#1f2937;--muted:#667085;--line:#e4e7ec;--red:#b42318;--amber:#b54708;
+  --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px #0003}
+.header-inner{max-width:1080px;margin:auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:850;font-size:21px;letter-spacing:-.2px}.sub{font-size:12px;color:#d0d5dd;margin-top:1px}
+.user-area{display:flex;gap:8px;align-items:center}.user-email{font-size:12px;color:#d0d5dd;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrap{max-width:1080px;margin:auto;padding:14px 14px 40px}
+.card{background:#fff;border:1px solid #edf0f2;border-radius:17px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #1018280d}
+.section-title{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2,.section-title h3{margin:0;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi b{display:block;font-size:28px;line-height:1.1;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+button,.btn{border:0;border-radius:11px;padding:11px 14px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
+button:disabled{opacity:.55;cursor:not-allowed}.gold{background:var(--gold);color:var(--navy)}.gold:hover{background:var(--gold2)}.navy{background:var(--navy);color:#fff}.navy:hover{background:var(--navy2)}.light{background:#fff;color:var(--navy);border:1px solid #d0d5dd}.danger{background:#fee4e2;color:var(--red)}.ghost{background:transparent;color:inherit;border:1px solid #ffffff42;padding:8px 11px;min-height:auto}
+input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;padding:11px;background:#fff;color:var(--text)}input:focus,select:focus,textarea:focus{outline:2px solid #c89b3c55;border-color:var(--gold)}textarea{min-height:95px;resize:vertical}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin-bottom:5px}.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.app-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}.app-nav button{white-space:nowrap}.app-nav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}
+.empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
+.hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
+.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;overflow-x:auto;margin:10px 0 12px}.filter-row button{white-space:nowrap;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
+.loading{opacity:.58;pointer-events:none}
+@media(max-width:760px){
+  .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}
+}
 </style>
 </head>
 <body>
-<header><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing</div></header>
+<header>
+  <div class="header-inner">
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing</div></div>
+    <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
+  </div>
+</header>
 
 <div id="authView" class="wrap hidden">
   <div class="card login">
     <h2>Secure login</h2>
+    <p class="meta">Your private customer and job manager.</p>
     <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="email" inputmode="email"></div>
     <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
     <div class="actions"><button id="signInBtn" class="navy" onclick="signIn()">Sign in</button><button id="signUpBtn" class="light" onclick="signUp()">Create first login</button></div>
@@ -35,116 +65,412 @@ input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;pad
 </div>
 
 <div id="appView" class="wrap hidden">
-  <div class="grid card">
-    <div class="kpi"><b id="activeK">0</b><span>Active customers</span></div>
-    <div class="kpi"><b id="overdueK">0</b><span>Active overdue</span></div>
-    <div class="kpi"><b id="dueK">0</b><span>Due in 30 days</span></div>
-    <div class="kpi"><b id="valueK">£0</b><span>Annual active value</span></div>
+  <div id="setupNotice" class="notice hidden">
+    <strong>One small database update is needed for Jobs.</strong>
+    Run <b>supabase_setup_v0.2.sql</b> in the Supabase SQL Editor. Customer and service features still work normally.
   </div>
 
   <div class="card">
-    <div class="actions">
-      <button class="gold" onclick="openImport()">First import</button>
-      <button class="navy" onclick="showDue()">Due / overdue</button>
-      <button class="light" onclick="openNew()">New customer</button>
-      <button class="light" onclick="signOut()">Sign out</button>
+    <div class="app-nav">
+      <button id="navDashboard" class="light active" onclick="showPage('dashboard')">Dashboard</button>
+      <button id="navCustomers" class="light" onclick="showPage('customers')">Customers</button>
+      <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
+      <button class="gold" onclick="openNewJob()">+ New job</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="tabs">
-      <button class="navy" onclick="setFilter('all')">All</button>
-      <button class="light" onclick="setFilter('active')">Active</button>
-      <button class="light" onclick="setFilter('dormant')">Dormant</button>
-      <button class="light" onclick="setFilter('archived')">Archived</button>
-      <button class="light" onclick="setFilter('booked')">Booked</button>
+  <section id="pageDashboard">
+    <div class="grid" style="margin-bottom:13px">
+      <div class="kpi"><b id="activeK">0</b><span>Active customers</span></div>
+      <div class="kpi"><b id="weekJobsK">0</b><span>Jobs next 7 days</span></div>
+      <div class="kpi"><b id="quotedK">0</b><span>Quotes waiting</span></div>
+      <div class="kpi"><b id="dueK">0</b><span>Services due / overdue</span></div>
     </div>
-    <div class="row"><input id="search" placeholder="Search name, address or postcode"><button class="navy" onclick="runSearch()">Search</button></div>
-    <div id="results" class="list" style="margin-top:12px"></div>
-  </div>
 
-  <div class="card"><h2 style="margin-top:0">Priority now</h2><div id="priority" class="list"></div></div>
+    <div class="card">
+      <div class="section-title"><h2>Quick actions</h2></div>
+      <div class="actions">
+        <button class="gold" onclick="openNewJob()">Add job</button>
+        <button class="navy" onclick="openNewCustomer()">Add customer</button>
+        <button class="light" onclick="showDue()">Service due list</button>
+        <button class="light" onclick="openImport()">First customer import</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <div class="section-title"><h2>Upcoming jobs</h2><button class="light" onclick="showPage('jobs')">View all</button></div>
+        <div id="upcomingJobs" class="list"></div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Service priority</h2><button class="light" onclick="showDue()">View due</button></div>
+        <div id="servicePriority" class="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageCustomers" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2>Customers</h2><button class="gold" onclick="openNewCustomer()">+ New customer</button></div>
+      <div class="toolbar"><input id="customerSearch" placeholder="Search name, address, postcode, phone or email"><button class="navy" onclick="renderCustomers()">Search</button></div>
+      <div id="customerFilters" class="filter-row">
+        <button class="light active" data-filter="all" onclick="setCustomerFilter('all')">All</button>
+        <button class="light" data-filter="active" onclick="setCustomerFilter('active')">Active</button>
+        <button class="light" data-filter="booked" onclick="setCustomerFilter('booked')">Booked</button>
+        <button class="light" data-filter="dormant" onclick="setCustomerFilter('dormant')">Dormant</button>
+        <button class="light" data-filter="archived" onclick="setCustomerFilter('archived')">Archived</button>
+      </div>
+      <div id="customerResults" class="list"></div>
+    </div>
+  </section>
+
+  <section id="pageJobs" class="hidden">
+    <div class="card">
+      <div class="section-title"><h2>Jobs</h2><button class="gold" onclick="openNewJob()">+ New job</button></div>
+      <div class="toolbar"><input id="jobSearch" placeholder="Search customer, job, address or postcode"><button class="navy" onclick="renderJobs()">Search</button></div>
+      <div id="jobFilters" class="filter-row">
+        <button class="light active" data-filter="open" onclick="setJobFilter('open')">Open</button>
+        <button class="light" data-filter="booked" onclick="setJobFilter('booked')">Booked</button>
+        <button class="light" data-filter="quoted" onclick="setJobFilter('quoted')">Quoted</button>
+        <button class="light" data-filter="completed" onclick="setJobFilter('completed')">Completed</button>
+        <button class="light" data-filter="all" onclick="setJobFilter('all')">All</button>
+      </div>
+      <div id="jobResults" class="list"></div>
+    </div>
+  </section>
 </div>
 
 <div id="modal" class="modal"><div id="sheet" class="sheet"></div></div>
 
 <script>
 const cfg=window.ASP_CONFIG;
-const authView=document.getElementById('authView');
-const appView=document.getElementById('appView');
-const authMsg=document.getElementById('authMsg');
-const signInBtn=document.getElementById('signInBtn');
-const signUpBtn=document.getElementById('signUpBtn');
-let sb=null,user=null,customers=[],filter='all';
-const today=()=>new Date().toISOString().slice(0,10);
-const days=d=>d?Math.ceil((new Date(d)-new Date(today()))/86400000):99999;
-const esc=s=>(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function authMessage(t){authMsg.textContent=t}
+const $=id=>document.getElementById(id);
+const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
+const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
+let sb=null,user=null,customers=[],jobs=[],jobsReady=true,customerFilter='all',jobFilter='open',currentPage='dashboard';
+
+function localDate(date=new Date()){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+const today=()=>localDate();
+function addDays(dateString,n){const d=new Date(`${dateString}T12:00:00`);d.setDate(d.getDate()+n);return localDate(d)}
+function addYear(dateString){const d=new Date(`${dateString}T12:00:00`);d.setFullYear(d.getFullYear()+1);return localDate(d)}
+function daysUntil(dateString){if(!dateString)return 99999;const a=new Date(`${today()}T12:00:00`),b=new Date(`${dateString}T12:00:00`);return Math.round((b-a)/86400000)}
+function esc(value){return String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function money(value){if(value===null||value===undefined||value==='')return '';const n=Number(value);return Number.isFinite(n)?new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(n):''}
+function displayDate(value){if(!value)return 'Not set';return new Date(`${value}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+function displayTime(value){return value?String(value).slice(0,5):''}
+function authMessage(text){authMsg.textContent=text}
 function setAuthBusy(busy){signInBtn.disabled=busy;signUpBtn.disabled=busy;signInBtn.textContent=busy?'Connecting…':'Sign in'}
 function friendlyError(error){
   const message=error?.message||String(error||'Unknown error');
-  if(/failed to fetch|networkerror|load failed/i.test(message)) return 'Cannot reach Supabase. Check the project URL in config.js and your internet connection.';
-  if(/invalid login credentials/i.test(message)) return 'Email or password not recognised.';
+  if(/failed to fetch|networkerror|load failed/i.test(message))return 'Cannot reach Supabase. Check the project URL in config.js and your internet connection.';
+  if(/invalid login credentials/i.test(message))return 'Email or password not recognised.';
   return message;
 }
 function configProblem(){
-  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey) return 'ASP Manager is not connected. Complete config.js first.';
-  if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_')) return 'ASP Manager is not connected. Complete config.js first.';
-  try{const u=new URL(cfg.supabaseUrl);if(u.protocol!=='https:'||!u.hostname.endsWith('.supabase.co'))throw new Error();}
-  catch{return 'The Supabase project URL in config.js is not valid.';}
+  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey)return 'ASP Manager is not connected. Complete config.js first.';
+  if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_'))return 'ASP Manager is not connected. Complete config.js first.';
+  try{const u=new URL(cfg.supabaseUrl);if(u.protocol!=='https:'||!u.hostname.endsWith('.supabase.co'))throw new Error()}catch{return 'The Supabase project URL in config.js is not valid.'}
   return '';
 }
 const configError=configProblem();
-if(configError){authView.classList.remove('hidden');authMessage(configError)}
-else sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+if(configError){authView.classList.remove('hidden');authMessage(configError)}else sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+
 async function signUp(){
   if(!sb)return authMessage(configError);
-  const email=document.getElementById('loginEmail').value.trim();
-  const password=document.getElementById('loginPassword').value;
-  if(!email){authMessage('Enter your email address first.');return;}
-  if(password.length<8){authMessage('Use a password of at least 8 characters.');return;}
+  const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+  if(!email)return authMessage('Enter your email address first.');
+  if(password.length<8)return authMessage('Use a password of at least 8 characters.');
   setAuthBusy(true);authMessage('Creating account…');
-  try{
-    const {data,error}=await sb.auth.signUp({email,password});
-    authMessage(error?friendlyError(error):(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'));
-  }catch(error){authMessage(friendlyError(error))}
-  finally{setAuthBusy(false)}
+  try{const {data,error}=await sb.auth.signUp({email,password});authMessage(error?friendlyError(error):(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'))}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
 }
 async function signIn(){
   if(!sb)return authMessage(configError);
-  const email=document.getElementById('loginEmail').value.trim();
-  const password=document.getElementById('loginPassword').value;
-  if(!email||!password){authMessage('Enter your email and password.');return;}
+  const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+  if(!email||!password)return authMessage('Enter your email and password.');
   setAuthBusy(true);authMessage('Signing in…');
-  try{
-    const {error}=await sb.auth.signInWithPassword({email,password});
-    if(error)authMessage(friendlyError(error));
-  }catch(error){authMessage(friendlyError(error))}
-  finally{setAuthBusy(false)}
+  try{const {error}=await sb.auth.signInWithPassword({email,password});if(error)authMessage(friendlyError(error))}catch(error){authMessage(friendlyError(error))}finally{setAuthBusy(false)}
 }
 async function signOut(){if(sb)await sb.auth.signOut()}
-if(sb)sb.auth.onAuthStateChange(async(_,session)=>{user=session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})
-async function loadCustomers(){const {data,error}=await sb.from('customers').select('*').order('next_due',{ascending:true});if(error)return alert(error.message);customers=data||[];render();runSearch()}
-function statusLabel(s){return ({active:'Active',dormant:'Dormant',archived:'Archived',booked:'Booked',not_contacted:'Active'})[s]||s}
-function dueBadge(c){if(c.status==='archived')return '<span class="badge archived">Archived</span>';const d=days(c.next_due);return `<span class="badge ${d<0?'over':d<=30?'due':'future'}">${d<0?Math.abs(d)+' days overdue':d===0?'Due today':'Due in '+d+' days'}</span>`}
-function card(c){return `<div class="item"><div><h3>${esc(c.name)}</h3><div class="meta">${esc(c.address)} ${esc(c.postcode)}</div><div class="meta">${esc(c.phone||c.email||'No contact details')} · ${statusLabel(c.status)}</div></div><div>${dueBadge(c)} <button class="gold" onclick="openCustomer('${c.id}')">Open</button></div></div>`}
-function render(){const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));activeK.textContent=active.length;overdueK.textContent=active.filter(c=>days(c.next_due)<0).length;dueK.textContent=active.filter(c=>days(c.next_due)>=0&&days(c.next_due)<=30).length;valueK.textContent='£'+(active.length*120).toLocaleString();priority.innerHTML=active.filter(c=>days(c.next_due)<=30).slice(0,12).map(card).join('')||'<div class="meta">Nothing active due in 30 days.</div>'}
-function setFilter(f){filter=f;runSearch()}
-function runSearch(){const q=search.value.toLowerCase();let list=customers;if(filter!=='all')list=list.filter(c=>(filter==='active'?['active','not_contacted'].includes(c.status):c.status===filter));list=list.filter(c=>[c.name,c.address,c.postcode,c.phone,c.email].join(' ').toLowerCase().includes(q));results.innerHTML=list.slice(0,80).map(card).join('')||'<div class="meta">No match.</div>'}
-search.addEventListener('keydown',e=>{if(e.key==='Enter')runSearch()})
-function show(h){sheet.innerHTML=h;modal.classList.add('on')}function closeM(){modal.classList.remove('on')}modal.addEventListener('click',e=>{if(e.target===modal)closeM()})
-function showDue(){const list=customers.filter(c=>['active','not_contacted','booked'].includes(c.status)&&days(c.next_due)<=90);show(`<div class="head"><h2>Due / overdue</h2><button class="light" onclick="closeM()">Close</button></div><div class="list" style="margin-top:12px">${list.map(card).join('')||'<div class="meta">No active services due.</div>'}</div>`)}
-function openCustomer(id){const c=customers.find(x=>x.id===id);show(`<div class="head"><div><h2>${esc(c.name)}</h2><div class="meta">${esc(c.address)} ${esc(c.postcode)}</div></div><button class="light" onclick="closeM()">Close</button></div><div class="card" style="box-shadow:none;padding-left:0"><b>Status:</b> ${statusLabel(c.status)}<br><b>Last service:</b> ${c.last_service||'Not recorded'}<br><b>Next due:</b> ${c.next_due||'Not recorded'}<br><b>Contact:</b> ${esc(c.phone||'No phone')} · ${esc(c.email||'No email')}<br><b>Boiler:</b> ${esc(c.boiler_make_model||'Not recorded')}<br><b>Notes:</b> ${esc(c.notes||'')}</div><div class="actions"><button class="gold" onclick="completeService('${id}')">Complete service today</button><button class="navy" onclick="changeStatus('${id}','booked')">Booked</button><button class="light" onclick="changeStatus('${id}','active')">Active</button><button class="light" onclick="changeStatus('${id}','dormant')">Dormant</button><button class="light" onclick="changeStatus('${id}','archived')">Archive</button><button class="danger" onclick="deleteCustomer('${id}')">Delete duplicate</button></div>`)}
-async function changeStatus(id,status){const {error}=await sb.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadCustomers();openCustomer(id)}
-async function deleteCustomer(id){if(!confirm('Permanently delete this customer? Only use for duplicates or mistakes.'))return;const {error}=await sb.from('customers').delete().eq('id',id);if(error)return alert(error.message);await loadCustomers();closeM()}
-function completeService(id){const c=customers.find(x=>x.id===id);show(`<div class="head"><h2>Complete service</h2><button class="light" onclick="openCustomer('${id}')">Back</button></div><div class="field"><label>Date</label><input id="svcDate" type="date" value="${today()}"></div><div class="field"><label>Service type</label><select id="svcType"><option>Boiler service</option><option>Boiler service + gas safety</option><option>Unvented cylinder service</option></select></div><div class="field"><label>Boiler make/model</label><input id="svcBoiler" value="${esc(c.boiler_make_model||'')}"></div><div class="field"><label>Invoice number</label><input id="svcInvoice"></div><div class="field"><label>Notes</label><textarea id="svcNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveService('${id}')">Save service</button>`)}
-async function saveService(id){const c=customers.find(x=>x.id===id),d=svcDate.value,nd=new Date(new Date(d).getTime()+365*86400000).toISOString().slice(0,10);const {error:hErr}=await sb.from('service_history').insert({owner_id:user.id,customer_id:id,service_date:d,service_type:svcType.value,boiler_make_model:svcBoiler.value.trim(),invoice_number:svcInvoice.value.trim(),notes:svcNotes.value.trim()});if(hErr)return alert(hErr.message);const {error}=await sb.from('customers').update({last_service:d,next_due:nd,boiler_make_model:svcBoiler.value.trim(),last_invoice:svcInvoice.value.trim(),status:'active',service_count:(c.service_count||0)+1,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadCustomers();show(`<h2>Saved</h2><p>${esc(c.name)} is due again on <b>${nd}</b>.</p><button class="gold" onclick="closeM()">Done</button>`)}
-function openNew(){show(`<div class="head"><h2>New customer</h2><button class="light" onclick="closeM()">Close</button></div><div class="field"><label>Name</label><input id="nName"></div><div class="field"><label>Address</label><input id="nAddress"></div><div class="row"><div class="field"><label>Postcode</label><input id="nPostcode"></div><div class="field"><label>Phone</label><input id="nPhone"></div></div><div class="field"><label>Email</label><input id="nEmail"></div><div class="field"><label>Service date</label><input id="nDate" type="date" value="${today()}"></div><button class="gold" style="width:100%" onclick="saveNew()">Save customer</button>`)}
-async function saveNew(){const d=nDate.value,nd=new Date(new Date(d).getTime()+365*86400000).toISOString().slice(0,10);const {error}=await sb.from('customers').insert({owner_id:user.id,name:nName.value.trim(),address:nAddress.value.trim(),postcode:nPostcode.value.trim(),phone:nPhone.value.trim(),email:nEmail.value.trim(),last_service:d,next_due:nd,status:'active',service_count:1});if(error)return alert(error.message);await loadCustomers();closeM()}
-function openImport(){show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeM()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)}
-function parseCSV(text){const rows=[];let row=[],field='',q=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(q&&text[i+1]==='"'){field+='"';i++}else q=!q}else if(ch===','&&!q){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
-async function importCSV(){const f=csvFile.files[0];if(!f)return;const table=parseCSV(await f.text()),headers=table[0];const objs=table.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||'']))).map(o=>({...o,owner_id:user.id,service_count:Number(o.service_count||0)}));importMsg.textContent='Importing '+objs.length+' customers...';for(let i=0;i<objs.length;i+=40){const {error}=await sb.from('customers').insert(objs.slice(i,i+40));if(error){importMsg.textContent=error.message;return}}importMsg.textContent='Import complete.';await loadCustomers()}
-(async()=>{if(!sb)return;try{const {data,error}=await sb.auth.getSession();if(error)throw error;user=data.session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()}catch(error){authView.classList.remove('hidden');appView.classList.add('hidden');authMessage(friendlyError(error))}})()
+
+function setLoggedIn(sessionUser){
+  user=sessionUser||null;
+  authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);$('userArea').classList.toggle('hidden',!user);
+  $('userEmail').textContent=user?.email||'';
+}
+if(sb)sb.auth.onAuthStateChange(async(_,session)=>{setLoggedIn(session?.user);if(user)await loadAll()});
+
+async function loadAll(){
+  appView.classList.add('loading');
+  const customerResult=await sb.from('customers').select('*').order('name',{ascending:true});
+  if(customerResult.error){appView.classList.remove('loading');return alert(customerResult.error.message)}
+  customers=customerResult.data||[];
+  const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+  if(jobResult.error){
+    jobs=[];
+    jobsReady=false;
+    $('setupNotice').classList.remove('hidden');
+  }else{
+    jobs=jobResult.data||[];
+    jobsReady=true;
+    $('setupNotice').classList.add('hidden');
+  }
+  renderAll();
+  appView.classList.remove('loading');
+}
+function renderAll(){renderDashboard();renderCustomers();renderJobs()}
+
+function showPage(page){
+  currentPage=page;
+  ['dashboard','customers','jobs'].forEach(p=>{
+    $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
+    $(`nav${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('active',p===page);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function customerStatusLabel(status){return ({active:'Active',not_contacted:'Active',booked:'Booked',dormant:'Dormant',archived:'Archived'})[status]||status||'Active'}
+function customerStatusClass(status){if(status==='archived')return 'archived';if(status==='dormant')return 'dormant';if(status==='booked')return 'booked';return 'active-badge'}
+function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
+function dueBadge(customer){
+  if(customer.status==='archived')return '<span class="badge archived">Archived</span>';
+  if(!customer.next_due)return '<span class="badge archived">No service date</span>';
+  const d=daysUntil(customer.next_due);
+  return `<span class="badge ${d<0?'over':d<=30?'due':'future'}">${d<0?`${Math.abs(d)} days overdue`:d===0?'Due today':`Due in ${d} days`}</span>`;
+}
+function customerName(id){return customers.find(c=>c.id===id)?.name||'No customer linked'}
+function customerAddress(customer){return [customer?.address,customer?.postcode].filter(Boolean).join(', ')}
+function customerCard(customer){
+  return `<div class="item"><div><h3>${esc(customer.name||'Unnamed customer')}</h3><div class="meta">${esc(customerAddress(customer)||'No address')}</div><div class="meta">${esc(customer.phone||customer.email||'No contact details')} · ${esc(customerStatusLabel(customer.status))}</div></div><div class="item-actions">${dueBadge(customer)}<button class="gold" onclick="openCustomer('${customer.id}')">Open</button></div></div>`;
+}
+function jobCard(job){
+  const when=job.scheduled_date?`${displayDate(job.scheduled_date)}${job.scheduled_time?` at ${displayTime(job.scheduled_time)}`:''}`:'Not booked yet';
+  const price=money(job.quoted_amount);
+  return `<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc([job.address,job.postcode].filter(Boolean).join(', ')||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span><button class="gold" onclick="openJob('${job.id}')">Open</button></div></div>`;
+}
+
+function renderDashboard(){
+  const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));
+  const openJobs=jobs.filter(j=>!['completed','cancelled'].includes(j.status));
+  $('activeK').textContent=active.length;
+  $('weekJobsK').textContent=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0&&daysUntil(j.scheduled_date)<=7).length;
+  $('quotedK').textContent=jobs.filter(j=>j.status==='quoted').length;
+  $('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
+  const upcoming=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0).sort((a,b)=>(a.scheduled_date||'').localeCompare(b.scheduled_date||'')).slice(0,8);
+  $('upcomingJobs').innerHTML=jobsReady?(upcoming.map(jobCard).join('')||'<div class="empty">No upcoming jobs booked.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
+  const priority=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).sort((a,b)=>(a.next_due||'').localeCompare(b.next_due||'')).slice(0,8);
+  $('servicePriority').innerHTML=priority.map(customerCard).join('')||'<div class="empty">Nothing due in the next 30 days.</div>';
+}
+function setCustomerFilter(value){customerFilter=value;document.querySelectorAll('#customerFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderCustomers()}
+function renderCustomers(){
+  const q=($('customerSearch')?.value||'').trim().toLowerCase();
+  let list=[...customers];
+  if(customerFilter!=='all')list=list.filter(c=>customerFilter==='active'?['active','not_contacted'].includes(c.status):c.status===customerFilter);
+  if(q)list=list.filter(c=>[c.name,c.address,c.postcode,c.phone,c.email,c.boiler_make_model].join(' ').toLowerCase().includes(q));
+  $('customerResults').innerHTML=list.map(customerCard).join('')||'<div class="empty">No customers match this search.</div>';
+}
+function setJobFilter(value){jobFilter=value;document.querySelectorAll('#jobFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderJobs()}
+function renderJobs(){
+  if(!jobsReady){$('jobResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.2.sql</b> in Supabase to enable Jobs.</div>';return}
+  const q=($('jobSearch')?.value||'').trim().toLowerCase();
+  let list=[...jobs];
+  if(jobFilter==='open')list=list.filter(j=>!['completed','cancelled'].includes(j.status));
+  else if(jobFilter!=='all')list=list.filter(j=>j.status===jobFilter);
+  if(q)list=list.filter(j=>[j.title,j.job_type,j.description,j.address,j.postcode,customerName(j.customer_id)].join(' ').toLowerCase().includes(q));
+  list.sort((a,b)=>{
+    const aOpen=!['completed','cancelled'].includes(a.status),bOpen=!['completed','cancelled'].includes(b.status);
+    if(aOpen!==bOpen)return aOpen?-1:1;
+    return (a.scheduled_date||'9999').localeCompare(b.scheduled_date||'9999')||(b.created_at||'').localeCompare(a.created_at||'');
+  });
+  $('jobResults').innerHTML=list.map(jobCard).join('')||'<div class="empty">No jobs match this filter.</div>';
+}
+$('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);
+
+function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on')}
+function closeModal(){$('modal').classList.remove('on')}
+$('modal').addEventListener('click',event=>{if(event.target===$('modal'))closeModal()});
+
+function showDue(){
+  const list=customers.filter(c=>['active','not_contacted','booked'].includes(c.status)&&c.next_due&&daysUntil(c.next_due)<=90).sort((a,b)=>a.next_due.localeCompare(b.next_due));
+  show(`<div class="head"><h2>Service due / overdue</h2><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list.map(customerCard).join('')||'<div class="empty">No active services due in 90 days.</div>'}</div>`);
+}
+function openCustomer(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  const history=jobs.filter(j=>j.customer_id===id).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')).slice(0,8);
+  show(`<div class="head"><div><h2>${esc(c.name||'Unnamed customer')}</h2><div class="meta">${esc(customerAddress(c)||'No address')}</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="detail-grid">
+    <div class="detail"><b>Status</b><span>${esc(customerStatusLabel(c.status))}</span></div>
+    <div class="detail"><b>Contact</b><span>${esc([c.phone,c.email].filter(Boolean).join('\n')||'Not recorded')}</span></div>
+    <div class="detail"><b>Boiler</b><span>${esc(c.boiler_make_model||'Not recorded')}</span></div>
+    <div class="detail"><b>Next service</b><span>${esc(c.next_due?displayDate(c.next_due):'Not recorded')}</span></div>
+    <div class="detail"><b>Last service</b><span>${esc(c.last_service?displayDate(c.last_service):'Not recorded')}</span></div>
+    <div class="detail"><b>Notes</b><span>${esc(c.notes||'No notes')}</span></div>
+  </div>
+  <div class="actions">
+    <button class="gold" onclick="openNewJob('${id}')">Add job</button>
+    <button class="navy" onclick="completeService('${id}')">Complete service</button>
+    <button class="light" onclick="editCustomer('${id}')">Edit customer</button>
+    <button class="light" onclick="changeCustomerStatus('${id}','${c.status==='archived'?'active':'archived'}')">${c.status==='archived'?'Restore':'Archive'}</button>
+  </div>
+  <div class="muted-box" style="margin-top:14px"><h3>Recent jobs</h3><div class="list">${jobsReady?(history.map(jobCard).join('')||'<div class="meta">No jobs recorded yet.</div>'):'<div class="meta">Jobs need the v0.2 database update.</div>'}</div></div>`);
+}
+async function changeCustomerStatus(id,status){
+  const {error}=await sb.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll();openCustomer(id)
+}
+function openNewCustomer(){
+  show(`<div class="head"><h2>New customer</h2><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="field"><label>Name</label><input id="cName"></div>
+  <div class="field"><label>Address</label><input id="cAddress"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="cPostcode"></div><div class="field"><label>Phone</label><input id="cPhone" inputmode="tel"></div></div>
+  <div class="field"><label>Email</label><input id="cEmail" type="email"></div>
+  <div class="field"><label>Last service date (optional)</label><input id="cServiceDate" type="date"></div>
+  <div class="field"><label>Boiler make/model (optional)</label><input id="cBoiler"></div>
+  <div class="field"><label>Notes</label><textarea id="cNotes"></textarea></div>
+  <button class="gold" style="width:100%" onclick="saveNewCustomer()">Save customer</button>`);
+}
+async function saveNewCustomer(){
+  const name=$('cName').value.trim();if(!name)return alert('Enter the customer name.');
+  const serviceDate=$('cServiceDate').value;
+  const payload={owner_id:user.id,name,address:$('cAddress').value.trim(),postcode:$('cPostcode').value.trim().toUpperCase(),phone:$('cPhone').value.trim(),email:$('cEmail').value.trim(),boiler_make_model:$('cBoiler').value.trim(),notes:$('cNotes').value.trim(),status:'active',service_count:serviceDate?1:0,last_service:serviceDate||null,next_due:serviceDate?addYear(serviceDate):null};
+  const {data,error}=await sb.from('customers').insert(payload).select().single();if(error)return alert(error.message);await loadAll();closeModal();if(data)openCustomer(data.id)
+}
+function editCustomer(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  show(`<div class="head"><h2>Edit customer</h2><button class="light" onclick="openCustomer('${id}')">Back</button></div>
+  <div class="field"><label>Name</label><input id="eName" value="${esc(c.name)}"></div>
+  <div class="field"><label>Address</label><input id="eAddress" value="${esc(c.address)}"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="ePostcode" value="${esc(c.postcode)}"></div><div class="field"><label>Phone</label><input id="ePhone" value="${esc(c.phone)}"></div></div>
+  <div class="field"><label>Email</label><input id="eEmail" type="email" value="${esc(c.email)}"></div>
+  <div class="field"><label>Boiler make/model</label><input id="eBoiler" value="${esc(c.boiler_make_model)}"></div>
+  <div class="field"><label>Notes</label><textarea id="eNotes">${esc(c.notes)}</textarea></div>
+  <div class="field"><label>Status</label><select id="eStatus"><option value="active">Active</option><option value="booked">Booked</option><option value="dormant">Dormant</option><option value="archived">Archived</option></select></div>
+  <button class="gold" style="width:100%" onclick="saveCustomerEdit('${id}')">Save changes</button>`);
+  $('eStatus').value=c.status==='not_contacted'?'active':c.status;
+}
+async function saveCustomerEdit(id){
+  const payload={name:$('eName').value.trim(),address:$('eAddress').value.trim(),postcode:$('ePostcode').value.trim().toUpperCase(),phone:$('ePhone').value.trim(),email:$('eEmail').value.trim(),boiler_make_model:$('eBoiler').value.trim(),notes:$('eNotes').value.trim(),status:$('eStatus').value,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('customers').update(payload).eq('id',id);if(error)return alert(error.message);await loadAll();openCustomer(id)
+}
+function completeService(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  show(`<div class="head"><h2>Complete service</h2><button class="light" onclick="openCustomer('${id}')">Back</button></div>
+  <div class="field"><label>Date</label><input id="serviceDate" type="date" value="${today()}"></div>
+  <div class="field"><label>Service type</label><select id="serviceType"><option>Boiler service</option><option>Boiler service + gas safety</option><option>Unvented cylinder service</option></select></div>
+  <div class="field"><label>Boiler make/model</label><input id="serviceBoiler" value="${esc(c.boiler_make_model)}"></div>
+  <div class="field"><label>Invoice number</label><input id="serviceInvoice"></div>
+  <div class="field"><label>Notes</label><textarea id="serviceNotes"></textarea></div>
+  <button class="gold" style="width:100%" onclick="saveService('${id}')">Save service</button>`);
+}
+async function saveService(id){
+  const c=customers.find(x=>x.id===id),date=$('serviceDate').value;if(!date)return alert('Choose the service date.');
+  const nextDue=addYear(date);
+  const {error:historyError}=await sb.from('service_history').insert({owner_id:user.id,customer_id:id,service_date:date,service_type:$('serviceType').value,boiler_make_model:$('serviceBoiler').value.trim(),invoice_number:$('serviceInvoice').value.trim(),notes:$('serviceNotes').value.trim()});if(historyError)return alert(historyError.message);
+  const {error}=await sb.from('customers').update({last_service:date,next_due:nextDue,boiler_make_model:$('serviceBoiler').value.trim(),last_invoice:$('serviceInvoice').value.trim(),status:'active',service_count:(c.service_count||0)+1,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);
+  await loadAll();show(`<h2>Service saved</h2><p>${esc(c.name)} is due again on <b>${esc(displayDate(nextDue))}</b>.</p><button class="gold" onclick="closeModal()">Done</button>`)
+}
+
+function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
+function openNewJob(customerId=''){
+  if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong>Open Supabase → SQL Editor → New query, paste the file contents and press Run.</div>`);
+  const customer=customers.find(c=>c.id===customerId);
+  show(`<div class="head"><h2>New job</h2><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="field"><label>Customer</label><select id="jCustomer" onchange="fillJobAddress()">${customerOptions(customerId)}</select></div>
+  <div class="field"><label>Job title</label><input id="jTitle" placeholder="e.g. Boiler service, WC repair, boiler quote"></div>
+  <div class="row"><div class="field"><label>Status</label><select id="jStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked">Booked</option><option value="in_progress">In progress</option></select></div><div class="field"><label>Job type</label><select id="jType"><option value="">Choose type</option><option>Boiler installation</option><option>Boiler repair</option><option>Boiler service</option><option>Gas safety certificate</option><option>Heating repair</option><option>Plumbing repair</option><option>Bathroom work</option><option>Quote visit</option><option>Other</option></select></div></div>
+  <div class="row"><div class="field"><label>Booked date</label><input id="jDate" type="date"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
+  <div class="field"><label>Address</label><input id="jAddress" value="${esc(customer?.address||'')}"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Quoted price ex VAT</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div>
+  <div class="field"><label>Job details / notes</label><textarea id="jDescription"></textarea></div>
+  <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Save job</button>`);
+}
+function fillJobAddress(){const c=customers.find(x=>x.id===$('jCustomer').value);if(!c)return;$('jAddress').value=c.address||'';$('jPostcode').value=c.postcode||''}
+async function saveNewJob(){
+  const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
+  const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';
+  const price=$('jPrice').value.trim();
+  const payload={owner_id:user.id,customer_id:$('jCustomer').value||null,title,job_type:$('jType').value||null,status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
+  const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Save job';if(error)return alert(error.message);
+  if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
+  await loadAll();if(data)openJob(data.id)
+}
+function openJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  const customer=customers.find(c=>c.id===j.customer_id),price=money(j.quoted_amount);
+  show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="detail-grid">
+    <div class="detail"><b>Status</b><span>${esc(jobStatusLabel(j.status))}</span></div>
+    <div class="detail"><b>Booked for</b><span>${esc(j.scheduled_date?`${displayDate(j.scheduled_date)}${j.scheduled_time?` at ${displayTime(j.scheduled_time)}`:''}`:'Not booked')}</span></div>
+    <div class="detail"><b>Address</b><span>${esc([j.address,j.postcode].filter(Boolean).join(', ')||'Not recorded')}</span></div>
+    <div class="detail"><b>Quoted price</b><span>${esc(price?`${price} + VAT`:'Not recorded')}</span></div>
+    <div class="detail"><b>Type</b><span>${esc(j.job_type||'Not recorded')}</span></div>
+    <div class="detail"><b>Invoice</b><span>${esc(j.invoice_number||'Not recorded')}</span></div>
+  </div>
+  <div class="muted-box"><h3>Job notes</h3><div class="meta">${esc(j.description||'No notes')}</div></div>
+  <div class="actions" style="margin-top:14px">
+    <button class="gold" onclick="editJob('${id}')">Edit job</button>
+    ${j.status!=='booked'?`<button class="navy" onclick="setJobStatus('${id}','booked')">Mark booked</button>`:''}
+    ${j.status!=='quoted'?`<button class="light" onclick="setJobStatus('${id}','quoted')">Mark quoted</button>`:''}
+    ${j.status!=='completed'?`<button class="light" onclick="completeJob('${id}')">Complete</button>`:''}
+    ${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}
+    <button class="danger" onclick="deleteJob('${id}')">Delete mistake</button>
+  </div>`);
+}
+async function setJobStatus(id,status){
+  const job=jobs.find(j=>j.id===id);const payload={status,updated_at:new Date().toISOString()};if(status==='completed')payload.completed_at=new Date().toISOString();
+  const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);
+  if(job?.customer_id&&status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',job.customer_id);
+  await loadAll();openJob(id)
+}
+function completeJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  show(`<div class="head"><h2>Complete job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
+  <div class="field"><label>Invoice number (optional)</label><input id="completeInvoice" value="${esc(j.invoice_number)}"></div>
+  <div class="field"><label>Final notes (optional)</label><textarea id="completeNotes">${esc(j.description)}</textarea></div>
+  <button class="gold" style="width:100%" onclick="saveCompletedJob('${id}')">Mark completed</button>`)
+}
+async function saveCompletedJob(id){
+  const {error}=await sb.from('jobs').update({status:'completed',invoice_number:$('completeInvoice').value.trim(),description:$('completeNotes').value.trim(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll();openJob(id)
+}
+function editJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  show(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
+  <div class="field"><label>Customer</label><select id="ejCustomer">${customerOptions(j.customer_id)}</select></div>
+  <div class="field"><label>Job title</label><input id="ejTitle" value="${esc(j.title)}"></div>
+  <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
+  <div class="row"><div class="field"><label>Booked date</label><input id="ejDate" type="date" value="${esc(j.scheduled_date)}"></div><div class="field"><label>Time</label><input id="ejTime" type="time" value="${esc(displayTime(j.scheduled_time))}"></div></div>
+  <div class="field"><label>Address</label><input id="ejAddress" value="${esc(j.address)}"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="ejPostcode" value="${esc(j.postcode)}"></div><div class="field"><label>Quoted price ex VAT</label><input id="ejPrice" inputmode="decimal" value="${j.quoted_amount??''}"></div></div>
+  <div class="field"><label>Invoice number</label><input id="ejInvoice" value="${esc(j.invoice_number)}"></div>
+  <div class="field"><label>Job details / notes</label><textarea id="ejDescription">${esc(j.description)}</textarea></div>
+  <button class="gold" style="width:100%" onclick="saveJobEdit('${id}')">Save changes</button>`);
+  $('ejStatus').value=j.status;
+}
+async function saveJobEdit(id){
+  const price=$('ejPrice').value.trim();
+  const payload={customer_id:$('ejCustomer').value||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),updated_at:new Date().toISOString()};
+  if(payload.status==='completed')payload.completed_at=new Date().toISOString();
+  const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);await loadAll();openJob(id)
+}
+async function deleteJob(id){if(!confirm('Permanently delete this job? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('jobs').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
+
+function openImport(){
+  show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeModal()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)
+}
+function parseCSV(text){const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++}else quoted=!quoted}else if(ch===','&&!quoted){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
+async function importCSV(){
+  const file=$('csvFile').files[0];if(!file)return alert('Choose the CSV file first.');
+  const table=parseCSV(await file.text()),headers=table[0];const objects=table.slice(1).map(row=>Object.fromEntries(headers.map((header,index)=>[header,row[index]||'']))).map(object=>({...object,owner_id:user.id,service_count:Number(object.service_count||0)}));
+  $('importMsg').textContent=`Importing ${objects.length} customers…`;
+  for(let i=0;i<objects.length;i+=40){const {error}=await sb.from('customers').insert(objects.slice(i,i+40));if(error){$('importMsg').textContent=error.message;return}}
+  $('importMsg').textContent='Import complete.';await loadAll()
+}
+
+(async()=>{
+  if(!sb)return;
+  try{const {data,error}=await sb.auth.getSession();if(error)throw error;setLoggedIn(data.session?.user);if(user)await loadAll()}catch(error){setLoggedIn(null);authView.classList.remove('hidden');authMessage(friendlyError(error))}
+})();
 </script>
 </body>
 </html>
