@@ -27,9 +27,9 @@ input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;pad
 <div id="authView" class="wrap hidden">
   <div class="card login">
     <h2>Secure login</h2>
-    <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
-    <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
-    <div class="actions"><button class="navy" onclick="signIn()">Sign in</button><button class="light" onclick="signUp()">Create first login</button></div>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="email" inputmode="email"></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
+    <div class="actions"><button id="signInBtn" class="navy" onclick="signIn()">Sign in</button><button id="signUpBtn" class="light" onclick="signUp()">Create first login</button></div>
     <p id="authMsg" class="meta"></p>
   </div>
 </div>
@@ -70,30 +70,60 @@ input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;pad
 
 <script>
 const cfg=window.ASP_CONFIG;
-if(!cfg || cfg.supabaseUrl.includes('PASTE_')) alert('ASP Manager is not connected yet. Edit config.js first.');
-const sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
-let user=null,customers=[],filter='all';
+const authView=document.getElementById('authView');
+const appView=document.getElementById('appView');
+const authMsg=document.getElementById('authMsg');
+const signInBtn=document.getElementById('signInBtn');
+const signUpBtn=document.getElementById('signUpBtn');
+let sb=null,user=null,customers=[],filter='all';
 const today=()=>new Date().toISOString().slice(0,10);
 const days=d=>d?Math.ceil((new Date(d)-new Date(today()))/86400000):99999;
 const esc=s=>(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function authMessage(t){authMsg.textContent=t}
+function setAuthBusy(busy){signInBtn.disabled=busy;signUpBtn.disabled=busy;signInBtn.textContent=busy?'Connecting…':'Sign in'}
+function friendlyError(error){
+  const message=error?.message||String(error||'Unknown error');
+  if(/failed to fetch|networkerror|load failed/i.test(message)) return 'Cannot reach Supabase. Check the project URL in config.js and your internet connection.';
+  if(/invalid login credentials/i.test(message)) return 'Email or password not recognised.';
+  return message;
+}
+function configProblem(){
+  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey) return 'ASP Manager is not connected. Complete config.js first.';
+  if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_')) return 'ASP Manager is not connected. Complete config.js first.';
+  try{const u=new URL(cfg.supabaseUrl);if(u.protocol!=='https:'||!u.hostname.endsWith('.supabase.co'))throw new Error();}
+  catch{return 'The Supabase project URL in config.js is not valid.';}
+  return '';
+}
+const configError=configProblem();
+if(configError){authView.classList.remove('hidden');authMessage(configError)}
+else sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
 async function signUp(){
+  if(!sb)return authMessage(configError);
   const email=document.getElementById('loginEmail').value.trim();
   const password=document.getElementById('loginPassword').value;
   if(!email){authMessage('Enter your email address first.');return;}
   if(password.length<8){authMessage('Use a password of at least 8 characters.');return;}
-  const {data,error}=await sb.auth.signUp({email,password});
-  authMessage(error?error.message:(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'));
+  setAuthBusy(true);authMessage('Creating account…');
+  try{
+    const {data,error}=await sb.auth.signUp({email,password});
+    authMessage(error?friendlyError(error):(data.session?'Account created and signed in.':'Account created. Check your email for the confirmation link, then sign in.'));
+  }catch(error){authMessage(friendlyError(error))}
+  finally{setAuthBusy(false)}
 }
 async function signIn(){
+  if(!sb)return authMessage(configError);
   const email=document.getElementById('loginEmail').value.trim();
   const password=document.getElementById('loginPassword').value;
   if(!email||!password){authMessage('Enter your email and password.');return;}
-  const {error}=await sb.auth.signInWithPassword({email,password});
-  if(error)authMessage(error.message);
+  setAuthBusy(true);authMessage('Signing in…');
+  try{
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error)authMessage(friendlyError(error));
+  }catch(error){authMessage(friendlyError(error))}
+  finally{setAuthBusy(false)}
 }
-async function signOut(){await sb.auth.signOut()}
-sb.auth.onAuthStateChange(async(_,session)=>{user=session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})
+async function signOut(){if(sb)await sb.auth.signOut()}
+if(sb)sb.auth.onAuthStateChange(async(_,session)=>{user=session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})
 async function loadCustomers(){const {data,error}=await sb.from('customers').select('*').order('next_due',{ascending:true});if(error)return alert(error.message);customers=data||[];render();runSearch()}
 function statusLabel(s){return ({active:'Active',dormant:'Dormant',archived:'Archived',booked:'Booked',not_contacted:'Active'})[s]||s}
 function dueBadge(c){if(c.status==='archived')return '<span class="badge archived">Archived</span>';const d=days(c.next_due);return `<span class="badge ${d<0?'over':d<=30?'due':'future'}">${d<0?Math.abs(d)+' days overdue':d===0?'Due today':'Due in '+d+' days'}</span>`}
@@ -114,7 +144,7 @@ async function saveNew(){const d=nDate.value,nd=new Date(new Date(d).getTime()+3
 function openImport(){show(`<div class="head"><h2>First customer import</h2><button class="light" onclick="closeM()">Close</button></div><p class="meta">Choose ASP_Manager_Service_Customers_Import.csv. Only do this once.</p><input id="csvFile" type="file" accept=".csv"><button class="gold" style="width:100%;margin-top:12px" onclick="importCSV()">Import</button><p id="importMsg" class="meta"></p>`)}
 function parseCSV(text){const rows=[];let row=[],field='',q=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(q&&text[i+1]==='"'){field+='"';i++}else q=!q}else if(ch===','&&!q){row.push(field);field=''}else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field=''}else field+=ch}if(field||row.length){row.push(field);rows.push(row)}return rows}
 async function importCSV(){const f=csvFile.files[0];if(!f)return;const table=parseCSV(await f.text()),headers=table[0];const objs=table.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||'']))).map(o=>({...o,owner_id:user.id,service_count:Number(o.service_count||0)}));importMsg.textContent='Importing '+objs.length+' customers...';for(let i=0;i<objs.length;i+=40){const {error}=await sb.from('customers').insert(objs.slice(i,i+40));if(error){importMsg.textContent=error.message;return}}importMsg.textContent='Import complete.';await loadCustomers()}
-(async()=>{const {data}=await sb.auth.getSession();user=data.session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()})()
+(async()=>{if(!sb)return;try{const {data,error}=await sb.auth.getSession();if(error)throw error;user=data.session?.user||null;authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);if(user)await loadCustomers()}catch(error){authView.classList.remove('hidden');appView.classList.add('hidden');authMessage(friendlyError(error))}})()
 </script>
 </body>
 </html>
