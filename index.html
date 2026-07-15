@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ASP Manager · Today</title>
+<title>ASP Manager · Reliable Jobs</title>
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -32,7 +32,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .actions{display:flex;gap:8px;flex-wrap:wrap}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .app-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}.app-nav button{white-space:nowrap}.app-nav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
-.badge{display:inline-block;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
+.badge{display:inline-block;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
 .modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
@@ -55,7 +55,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4.2</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4.3</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -97,6 +97,15 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div class="card today-card today-primary">
       <div class="section-title"><h2>Today's jobs</h2><div class="actions"><button class="gold" onclick="openNewJob()">Book work</button><button class="light" onclick="openQuickDiaryEntry()">Quick entry</button></div></div>
       <div id="todayJobs" class="list"></div>
+    </div>
+
+    <div class="card pipeline-card">
+      <div class="section-title"><h2>Work not in the diary</h2><button class="light" onclick="openNewJob()">+ Add work</button></div>
+      <div class="attention-grid">
+        <button class="attention" onclick="showPage('jobs');setJobFilter('to_book')"><b id="toBookK">0</b><span>To book</span></button>
+        <button class="attention" onclick="showPage('jobs');setJobFilter('waiting')"><b id="waitingK">0</b><span>Waiting</span></button>
+      </div>
+      <div id="pipelinePreview" class="list" style="margin-top:12px"></div>
     </div>
 
     <div class="card today-list-card">
@@ -170,6 +179,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div id="jobFilters" class="filter-row">
         <button class="light active" data-filter="open" onclick="setJobFilter('open')">Open</button>
         <button class="light" data-filter="booked" onclick="setJobFilter('booked')">Booked</button>
+        <button class="light" data-filter="to_book" onclick="setJobFilter('to_book')">To book</button>
+        <button class="light" data-filter="waiting" onclick="setJobFilter('waiting')">Waiting</button>
         <button class="light" data-filter="quoted" onclick="setJobFilter('quoted')">Quoted</button>
         <button class="light" data-filter="completed" onclick="setJobFilter('completed')">Completed</button>
         <button class="light" data-filter="all" onclick="setJobFilter('all')">All</button>
@@ -194,14 +205,14 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   </section>
 </div>
 
-<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div>
+<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="offlineBanner" class="offline-banner">Offline: you can view the last loaded data, but saving is disabled until signal returns.</div>
 
 <script>
 const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],tasks=[],stockItems=[],jobsReady=true,documentsReady=true,extrasReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],documents=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],jobsReady=true,documentsReady=true,extrasReady=true,workLogsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function localDate(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
@@ -223,6 +234,14 @@ function friendlyError(error){
   if(/invalid login credentials/i.test(message))return 'Email or password not recognised.';
   return message;
 }
+
+function isOnline(){return navigator.onLine}
+function updateOfflineState(){const banner=$('offlineBanner');if(banner)banner.classList.toggle('on',!isOnline())}
+window.addEventListener('online',async()=>{updateOfflineState();if(user)await loadAll()});
+window.addEventListener('offline',updateOfflineState);
+function requireOnline(){if(isOnline())return true;alert('No mobile signal. Your last loaded jobs remain visible, but saving is paused until you are online again.');return false}
+function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,documents,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
+function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];documents=cached.documents||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
 function configProblem(){
   if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey)return 'ASP Manager is not connected. Complete config.js first.';
   if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_'))return 'ASP Manager is not connected. Complete config.js first.';
@@ -257,9 +276,11 @@ function setLoggedIn(sessionUser){
 if(sb)sb.auth.onAuthStateChange(async(_,session)=>{setLoggedIn(session?.user);if(user)await loadAll()});
 
 async function loadAll(){
+  updateOfflineState();
+  if(!isOnline()){loadCachedSnapshot();return}
   appView.classList.add('loading');
   const customerResult=await sb.from('customers').select('*').order('name',{ascending:true});
-  if(customerResult.error){appView.classList.remove('loading');return alert(customerResult.error.message)}
+  if(customerResult.error){appView.classList.remove('loading');if(loadCachedSnapshot())return;return alert(customerResult.error.message)}
   customers=customerResult.data||[];
   const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
   if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
@@ -268,13 +289,16 @@ async function loadAll(){
   const taskResult=await sb.from('tasks').select('*').order('due_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
   const stockResult=await sb.from('stock_items').select('*').order('needed',{ascending:false}).order('name',{ascending:true});
   if(taskResult.error||stockResult.error){tasks=[];stockItems=[];extrasReady=false}else{tasks=taskResult.data||[];stockItems=stockResult.data||[];extrasReady=true}
+  const visitResult=await sb.from('job_visits').select('*').order('visit_date',{ascending:false}).order('created_at',{ascending:false});
+  const costResult=await sb.from('job_costs').select('*').order('cost_date',{ascending:false}).order('created_at',{ascending:false});
+  if(visitResult.error||costResult.error){jobVisits=[];jobCosts=[];workLogsReady=false}else{jobVisits=visitResult.data||[];jobCosts=costResult.data||[];workLogsReady=true}
   const missing=[];
   if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
   if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
   if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
+  if(!workLogsReady)missing.push('<b>supabase_setup_v0.4.3.sql</b> for visits, materials and profit');
   if(missing.length){$('setupNotice').innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;$('setupNotice').classList.remove('hidden')}else $('setupNotice').classList.add('hidden');
-  renderAll();
-  appView.classList.remove('loading');
+  renderAll();cacheSnapshot();appView.classList.remove('loading');
 }
 function renderAll(){renderDashboard();renderDiary();renderCustomers();renderJobs();renderDocuments();renderTasks();renderStock()}
 
@@ -289,7 +313,7 @@ function showPage(page){
 
 function customerStatusLabel(status){return ({active:'Active',not_contacted:'Active',booked:'Booked',dormant:'Dormant',archived:'Archived'})[status]||status||'Active'}
 function customerStatusClass(status){if(status==='archived')return 'archived';if(status==='dormant')return 'dormant';if(status==='booked')return 'booked';return 'active-badge'}
-function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
+function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',to_book:'To book',waiting:'Waiting',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
 function documentStatusLabel(status){return ({draft:'Draft',sent:'Sent',accepted:'Accepted',declined:'Declined',paid:'Paid',overdue:'Overdue',void:'Void'})[status]||status||'Draft'}
 function documentTypeLabel(type){return type==='invoice'?'Invoice':'Quote'}
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
@@ -332,7 +356,11 @@ function renderDashboard(){
   if($('quotedK'))$('quotedK').textContent=documentsReady?documents.filter(d=>d.type==='quote'&&['draft','sent'].includes(d.status)).length:jobs.filter(j=>j.status==='quoted').length;
   if($('unpaidK'))$('unpaidK').textContent=documentsReady?documents.filter(d=>d.type==='invoice'&&['draft','sent','overdue'].includes(d.status)).length:0;
   if($('dueK'))$('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
-  const todayList=openJobs.filter(j=>j.scheduled_date===today()).sort((a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort((a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  const toBook=openJobs.filter(j=>j.status==='to_book').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  const waiting=openJobs.filter(j=>j.status==='waiting').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  if($('toBookK'))$('toBookK').textContent=toBook.length;if($('waitingK'))$('waitingK').textContent=waiting.length;
+  if($('pipelinePreview'))$('pipelinePreview').innerHTML=[...toBook.slice(0,2),...waiting.slice(0,2)].map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today. Tap <b>Book work</b> to add one.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
 
@@ -361,7 +389,7 @@ async function changeStock(id,delta){const item=stockItems.find(x=>x.id===id);co
 async function toggleNeeded(id,needed){const {error}=await sb.from('stock_items').update({needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
 async function deleteStock(id){if(!confirm('Delete this stock item?'))return;const {error}=await sb.from('stock_items').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
 async function quickCompleteJob(id){if(!confirm('Mark this job completed?'))return;const {error}=await sb.from('jobs').update({status:'completed',completed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
-function downloadBackup(){const data={format:'ASP Manager Backup',version:'0.4',created_at:new Date().toISOString(),user_email:user?.email||'',customers,jobs,documents,tasks,stock_items:stockItems};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`ASP_Manager_Backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function downloadBackup(){const data={format:'ASP Manager Backup',version:'0.4.4',created_at:new Date().toISOString(),user_email:user?.email||'',customers,jobs,documents,tasks,stock_items:stockItems,job_visits:jobVisits,job_costs:jobCosts};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`ASP_Manager_Backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
 
 function setCustomerFilter(value){customerFilter=value;document.querySelectorAll('#customerFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderCustomers()}
 function renderCustomers(){
@@ -491,6 +519,7 @@ function completeService(id){
   <button class="gold" style="width:100%" onclick="saveService('${id}')">Save service</button>`);
 }
 async function saveService(id){
+  if(!requireOnline())return;
   const c=customers.find(x=>x.id===id),date=$('serviceDate').value;if(!date)return alert('Choose the service date.');
   const nextDue=addYear(date);
   const {error:historyError}=await sb.from('service_history').insert({owner_id:user.id,customer_id:id,service_date:date,service_type:$('serviceType').value,boiler_make_model:$('serviceBoiler').value.trim(),invoice_number:$('serviceInvoice').value.trim(),notes:$('serviceNotes').value.trim()});if(historyError)return alert(historyError.message);
@@ -521,13 +550,16 @@ function openNewJob(customerId=''){
   <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="inlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Work needed</label><input id="jTitle" placeholder="e.g. Boiler service, pump replacement, WC repair" oninput="updateJobTypeHint()"><div id="jobTypeHint" class="meta">Type: Other</div></div>
   <div class="choice-grid"><button type="button" class="choice" onclick="applyJobTemplate('Boiler service')">Boiler service</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler repair')">Boiler repair</button><button type="button" class="choice" onclick="applyJobTemplate('Quote visit')">Quote visit</button><button type="button" class="choice" onclick="applyJobTemplate('Gas safety certificate')">Gas safety</button></div>
-  <div class="row"><div class="field"><label>Date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
+  <div class="field"><label>Where should this work go?</label><select id="jStage" onchange="toggleJobStageFields()"><option value="booked">Book into diary now</option><option value="to_book">To book — work agreed but no date yet</option><option value="waiting">Waiting — cannot arrange the next visit yet</option></select></div>
+  <div id="jobDateFields" class="row"><div class="field"><label>Date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
+  <div id="waitingReasonField" class="field hidden"><label>Waiting for</label><select id="jWaitingReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div>
   <div class="field"><label>Address</label><input id="jAddress" list="knownAddresses" value="${esc(customer?.address||'')}" placeholder="Start typing a saved customer address"><datalist id="knownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc([c.address,c.postcode].filter(Boolean).join(', '))}">`).join('')}</datalist></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Price ex VAT (optional)</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Agreed price ex VAT (optional)</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div><div class="field"><label>How will this job be charged?</label><select id="jBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
   <div class="field"><label>Notes (optional)</label><textarea id="jDescription"></textarea></div>
   <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Book work</button>`);
   if(customer)selectJobCustomer(customer.id,false); else setTimeout(()=>$('jCustomerSearch')?.focus(),50);
 }
+function toggleJobStageFields(){const stage=$('jStage')?.value||'booked';$('jobDateFields')?.classList.toggle('hidden',stage!=='booked');$('waitingReasonField')?.classList.toggle('hidden',stage!=='waiting');}
 function renderJobCustomerSearch(){
   const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase(),creator=$('inlineCustomerCreate');
   if(!box)return;if(q.length<1){box.innerHTML='';creator?.classList.add('hidden');return}
@@ -536,6 +568,7 @@ function renderJobCustomerSearch(){
   if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=`<strong>No customer found</strong><div class="meta">Create them here without leaving Book Work.</div><div class="field"><label>Name</label><input id="inlineName" value="${esc(($('jCustomerSearch')?.value||'').trim())}"></div><div class="row"><div class="field"><label>Phone</label><input id="inlinePhone" inputmode="tel"></div><div class="field"><label>Postcode</label><input id="inlinePostcode"></div></div><div class="field"><label>Address</label><input id="inlineAddress"></div><button type="button" class="navy" style="width:100%" onclick="createCustomerInsideJob()">Create and select customer</button>`}else creator?.classList.add('hidden');
 }
 async function createCustomerInsideJob(){
+  if(!requireOnline())return;
   const name=$('inlineName')?.value.trim();if(!name)return alert('Enter the customer name.');
   const payload={owner_id:user.id,name,address:$('inlineAddress')?.value.trim()||'',postcode:$('inlinePostcode')?.value.trim().toUpperCase()||'',phone:$('inlinePhone')?.value.trim()||'',email:'',boiler_make_model:'',notes:'Created while booking work.',status:'active',service_count:0};
   const {data,error}=await sb.from('customers').insert(payload).select().single();if(error)return alert(error.message);customers.push(data);selectedJobCustomerId=data.id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(data.id,false);$('inlineCustomerCreate')?.classList.add('hidden');
@@ -549,13 +582,14 @@ function selectJobCustomer(id,updateSearch=true){
 }
 function fillJobAddress(){const c=customers.find(x=>x.id===selectedJobCustomerId);if(!c)return;$('jAddress').value=c.address||'';$('jPostcode').value=c.postcode||''}
 async function saveNewJob(){
+  if(!requireOnline())return;
   const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';
-  const price=$('jPrice').value.trim();
-  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
-  const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Book work';if(error)return alert(error.message);
+  const price=$('jPrice').value.trim(),stage=$('jStage')?.value||'booked';
+  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?($('jTime').value||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null};
+  try{const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Book work';if(error)return alert(friendlyError(error));
   if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
-  await loadAll();if(data)openJob(data.id)
+  await loadAll();if(data)openJob(data.id)}catch(error){button.disabled=false;button.textContent='Book work';alert(friendlyError(error))}
 }
 
 function openQuickDiaryEntry(){
@@ -563,34 +597,51 @@ function openQuickDiaryEntry(){
   show(`<div class="head"><h2>Quick diary entry</h2><button class="light" onclick="closeModal()">Close</button></div><div class="meta" style="margin-bottom:12px">For friends, informal visits or anything you just need in the working day.</div><div class="field"><label>What is it?</label><input id="quickTitle" placeholder="e.g. Les - pump"></div><div class="row"><div class="field"><label>Date</label><input id="quickDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="quickTime" type="time"></div></div><div class="field"><label>Area / address (optional)</label><input id="quickAddress" list="quickKnownAddresses"><datalist id="quickKnownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc([c.address,c.postcode].filter(Boolean).join(', '))}">`).join('')}</datalist></div><div class="field"><label>Notes / parts to remember (optional)</label><textarea id="quickNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveQuickDiaryEntry()">Add to diary</button>`);setTimeout(()=>$('quickTitle')?.focus(),50)
 }
 async function saveQuickDiaryEntry(){
+  if(!requireOnline())return;
   const title=$('quickTitle').value.trim();if(!title)return alert('Enter a short title.');
   const rawAddress=$('quickAddress').value.trim();const pc=(rawAddress.match(/([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i)||[])[1]||'';const address=pc?rawAddress.slice(0,rawAddress.length-pc.length).replace(/,\s*$/,''):rawAddress;
   const {data,error}=await sb.from('jobs').insert({owner_id:user.id,customer_id:null,title,job_type:inferJobType(title),status:'booked',scheduled_date:$('quickDate').value||today(),scheduled_time:$('quickTime').value||null,address,postcode:pc.toUpperCase(),description:$('quickNotes').value.trim(),quoted_amount:null}).select().single();if(error)return alert(error.message);await loadAll();closeModal();showPage('dashboard')
 }
+
+function visitsForJob(id){return jobVisits.filter(v=>v.job_id===id).sort((a,b)=>(b.visit_date||'').localeCompare(a.visit_date||'')||(b.created_at||'').localeCompare(a.created_at||''))}
+function costsForJob(id){return jobCosts.filter(c=>c.job_id===id).sort((a,b)=>(b.cost_date||'').localeCompare(a.cost_date||'')||(b.created_at||'').localeCompare(a.created_at||''))}
+function jobFigures(job){
+  const visits=visitsForJob(job.id),costs=costsForJob(job.id);
+  const hours=visits.reduce((s,v)=>s+Number(v.hours||0),0);
+  const directCosts=costs.reduce((s,c)=>s+(Number(c.quantity||1)*Number(c.unit_cost||0)),0);
+  const extras=costs.filter(c=>c.charge_to_customer).reduce((s,c)=>s+(Number(c.sell_price||0)*Number(c.quantity||1)),0);
+  const sale=Number(job.agreed_price??job.quoted_amount??0)+extras;
+  return {visits,costs,hours,directCosts,extras,sale,gross:sale-directCosts,perDay:hours?((sale-directCosts)/(hours/8)):0}
+}
+function waitingReasonLabel(value){return ({customer:'customer',parts:'parts',materials:'materials',another_trade:'another trade',approval:'approval',payment:'payment',other:'other'})[value]||value||''}
+function billingLabel(value){return ({time_materials:'Time and materials',quoted:'Quoted / fixed price',day_rate:'Day rate',fixed_plus_extras:'Fixed price plus extras'})[value]||'Time and materials'}
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  const customer=customers.find(c=>c.id===j.customer_id),price=money(j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
+  const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
+  const fig=jobFigures(j);
+  const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:''}${v.return_required?' · Return required':''}</div></div><div class="item-actions"><span class="badge ${v.return_required?'due':'completed'}">${v.return_required?'Return':'Visit saved'}</span></div></div>`).join('');
+  const costRows=fig.costs.map(c=>`<tr><td>${esc(displayDate(c.cost_date))}</td><td>${esc(c.description)}</td><td>${esc(c.category||'material')}</td><td class="num">${esc(c.quantity||1)}</td><td class="num">${esc(money(Number(c.quantity||1)*Number(c.unit_cost||0)))}</td><td class="num">${c.charge_to_customer?esc(money(Number(c.quantity||1)*Number(c.sell_price||0))):'—'}</td></tr>`).join('');
   show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="closeModal()">Close</button></div>
   <div class="detail-grid">
-    <div class="detail"><b>Status</b><span>${esc(jobStatusLabel(j.status))}</span></div>
-    <div class="detail"><b>Booked for</b><span>${esc(j.scheduled_date?`${displayDate(j.scheduled_date)}${j.scheduled_time?` at ${displayTime(j.scheduled_time)}`:''}`:'Not booked')}</span></div>
-    <div class="detail"><b>Address</b><span>${esc([j.address,j.postcode].filter(Boolean).join(', ')||'Not recorded')}</span></div>
-    <div class="detail"><b>Quoted price</b><span>${esc(price?`${price} + VAT`:'Not recorded')}</span></div>
-    <div class="detail"><b>Type</b><span>${esc(j.job_type||'Not recorded')}</span></div>
-    <div class="detail"><b>Invoice</b><span>${esc(j.invoice_number||'Not recorded')}</span></div>
+    <div class="detail"><b>Status</b><span>${esc(jobStatusLabel(j.status))}${j.waiting_reason?` · ${esc(waitingReasonLabel(j.waiting_reason))}`:''}</span></div><div class="detail"><b>Booked for</b><span>${esc(j.scheduled_date?`${displayDate(j.scheduled_date)}${j.scheduled_time?` at ${displayTime(j.scheduled_time)}`:''}`:'Not booked')}</span></div>
+    <div class="detail"><b>Address</b><span>${esc([j.address,j.postcode].filter(Boolean).join(', ')||'Not recorded')}</span></div><div class="detail"><b>Billing</b><span>${esc(billingLabel(j.billing_method))}</span></div>
+    <div class="detail"><b>Agreed price</b><span>${esc(price?`${price} + VAT`:'Not recorded')}</span></div><div class="detail"><b>Invoice</b><span>${esc(j.invoice_number||'Not recorded')}</span></div>
   </div>
-  <div class="muted-box"><h3>Job notes</h3><div class="meta">${esc(j.description||'No notes')}</div></div>
+  ${workLogsReady?`<div class="profit-grid"><div class="profit-box"><b>${fig.visits.length}</b><span>Visits</span></div><div class="profit-box"><b>${fig.hours.toFixed(1)}</b><span>Hours recorded</span></div><div class="profit-box"><b>${money(fig.directCosts)}</b><span>Costs recorded</span></div><div class="profit-box"><b>${money(fig.gross)}</b><span>Gross profit before your labour</span></div></div>`:''}
+  <div class="muted-box" style="margin-top:12px"><h3>Job notes</h3><div class="meta">${esc(j.description||'No notes')}</div></div>
+  ${workLogsReady?`<div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Visits & returns</h3><div class="actions"><button class="gold" onclick="openAddVisit('${id}')">Add visit</button><button class="light" onclick="openScheduleReturn('${id}')">Book return</button></div></div><div class="list">${visitRows||'<div class="meta">No visits recorded yet.</div>'}</div></div>
+  <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Materials & job costs</h3><button class="gold" onclick="openAddCost('${id}')">Add cost</button></div>${costRows?`<div style="overflow:auto"><table class="log-table"><thead><tr><th>Date</th><th>Item</th><th>Type</th><th class="num">Qty</th><th class="num">Your cost</th><th class="num">Charge</th></tr></thead><tbody>${costRows}</tbody></table></div>`:'<div class="meta">No costs recorded yet.</div>'}</div>`:''}
   <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Run the v0.3 database update.</div>'}</div></div>
   <div class="actions" style="margin-top:14px">
-    ${documentsReady?`<button class="gold" onclick="openNewDocument('quote','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','${id}')">New invoice</button>`:''}
-    ${mapAddress(j)?`<a class="btn navy" href="${appleMapsUrl(mapAddress(j))}" target="_blank" rel="noopener">Navigate</a>`:''}<button class="gold" onclick="editJob('${id}')">Edit job</button>
-    ${j.status!=='booked'?`<button class="navy" onclick="setJobStatus('${id}','booked')">Mark booked</button>`:''}
-    ${j.status!=='quoted'?`<button class="light" onclick="setJobStatus('${id}','quoted')">Mark quoted</button>`:''}
-    ${j.status!=='completed'?`<button class="light" onclick="completeJob('${id}')">Complete</button>`:''}
-    ${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}
-    <button class="danger" onclick="deleteJob('${id}')">Delete mistake</button>
+    ${workLogsReady?`<button class="gold" onclick="openAddVisit('${id}')">Record today's visit</button>`:''}${documentsReady?`<button class="light" onclick="openNewDocument('quote','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','${id}')">New invoice</button>`:''}
+    ${j.status!=='waiting'?`<button class="light" onclick="openPutOnWaiting('${id}')">Put on waiting</button>`:''}${j.status!=='to_book'?`<button class="light" onclick="moveJobToBook('${id}')">Move to To book</button>`:''}<button class="light" onclick="openScheduleReturn('${id}')">Book into diary</button>
+    ${mapAddress(j)?`<a class="btn navy" href="${appleMapsUrl(mapAddress(j))}" target="_blank" rel="noopener">Navigate</a>`:''}<button class="light" onclick="editJob('${id}')">Edit job</button>
+    ${j.status!=='completed'?`<button class="navy" onclick="completeJob('${id}')">Complete job</button>`:''}${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}<button class="danger" onclick="deleteJob('${id}')">Delete mistake</button>
   </div>`);
 }
+function openPutOnWaiting(jobId){show(`<div class="head"><h2>Put job on waiting</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="field"><label>Waiting for</label><select id="waitReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div><div class="field"><label>Note</label><textarea id="waitNote" placeholder="e.g. Waiting for customer to choose tiles"></textarea></div><div class="field"><label>Optional follow-up date</label><input id="waitFollow" type="date"></div><button class="gold" style="width:100%" onclick="saveWaitingJob('${jobId}')">Save as waiting</button>`)}
+async function saveWaitingJob(jobId){if(!requireOnline())return;const job=jobs.find(j=>j.id===jobId),note=$('waitNote').value.trim();const description=[job?.description,note].filter(Boolean).join('\n');const {error}=await sb.from('jobs').update({status:'waiting',scheduled_date:null,scheduled_time:null,waiting_reason:$('waitReason').value,follow_up_date:$('waitFollow').value||null,description,updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
+async function moveJobToBook(jobId){if(!requireOnline())return;const {error}=await sb.from('jobs').update({status:'to_book',scheduled_date:null,scheduled_time:null,waiting_reason:null,updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
 async function setJobStatus(id,status){
   const job=jobs.find(j=>j.id===id);const payload={status,updated_at:new Date().toISOString()};if(status==='completed')payload.completed_at=new Date().toISOString();
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);
@@ -605,6 +656,7 @@ function completeJob(id){
   <button class="gold" style="width:100%" onclick="saveCompletedJob('${id}')">Mark completed</button>`)
 }
 async function saveCompletedJob(id){
+  if(!requireOnline())return;
   const {error}=await sb.from('jobs').update({status:'completed',invoice_number:$('completeInvoice').value.trim(),description:$('completeNotes').value.trim(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll();openJob(id)
 }
 function editJob(id){
@@ -612,23 +664,59 @@ function editJob(id){
   show(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
   <div class="field"><label>Customer</label><select id="ejCustomer">${customerOptions(j.customer_id)}</select></div>
   <div class="field"><label>Job title</label><input id="ejTitle" value="${esc(j.title)}"></div>
-  <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
+  <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="to_book">To book</option><option value="waiting">Waiting</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
   <div class="row"><div class="field"><label>Booked date</label><input id="ejDate" type="date" value="${esc(j.scheduled_date)}"></div><div class="field"><label>Time</label><input id="ejTime" type="time" value="${esc(displayTime(j.scheduled_time))}"></div></div>
   <div class="field"><label>Address</label><input id="ejAddress" value="${esc(j.address)}"></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="ejPostcode" value="${esc(j.postcode)}"></div><div class="field"><label>Quoted price ex VAT</label><input id="ejPrice" inputmode="decimal" value="${j.quoted_amount??''}"></div></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="ejPostcode" value="${esc(j.postcode)}"></div><div class="field"><label>Agreed price ex VAT</label><input id="ejPrice" inputmode="decimal" value="${j.agreed_price??j.quoted_amount??''}"></div></div><div class="field"><label>Billing method</label><select id="ejBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
   <div class="field"><label>Invoice number</label><input id="ejInvoice" value="${esc(j.invoice_number)}"></div>
   <div class="field"><label>Job details / notes</label><textarea id="ejDescription">${esc(j.description)}</textarea></div>
   <button class="gold" style="width:100%" onclick="saveJobEdit('${id}')">Save changes</button>`);
-  $('ejStatus').value=j.status;
+  $('ejStatus').value=j.status;if($('ejBilling'))$('ejBilling').value=j.billing_method||'time_materials';
 }
 async function saveJobEdit(id){
+  if(!requireOnline())return;
   const price=$('ejPrice').value.trim();
-  const payload={customer_id:$('ejCustomer').value||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),updated_at:new Date().toISOString()};
+  const payload={customer_id:$('ejCustomer').value||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),agreed_price:price===''?null:Number(price),billing_method:$('ejBilling')?.value||'time_materials',invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),updated_at:new Date().toISOString()};
   if(payload.status==='completed')payload.completed_at=new Date().toISOString();
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);await loadAll();openJob(id)
 }
 async function deleteJob(id){if(!confirm('Permanently delete this job? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('jobs').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
 
+
+function openAddVisit(jobId){
+  if(!workLogsReady)return alert('Run the v0.4.3 database update first.');
+  show(`<div class="head"><h2>Record job visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div>
+  <div class="row"><div class="field"><label>Date</label><input id="vDate" type="date" value="${today()}"></div><div class="field"><label>Total hours</label><input id="vHours" inputmode="decimal" placeholder="e.g. 3.5"></div></div>
+  <div class="row"><div class="field"><label>Start time (optional)</label><input id="vStart" type="time"></div><div class="field"><label>Finish time (optional)</label><input id="vEnd" type="time"></div></div>
+  <div class="field"><label>What was done?</label><textarea id="vNotes" placeholder="Work completed, diagnosis, progress and anything needed next time"></textarea></div>
+  <div class="checkline"><input id="vReturn" type="checkbox" onchange="void(0)"><label for="vReturn">More work / another visit required</label></div>
+  <div class="row" style="margin-top:10px"><div class="field"><label>Return date (optional)</label><input id="vReturnDate" type="date"></div><div class="field"><label>Return time</label><input id="vReturnTime" type="time"></div></div>
+  <button id="saveVisitBtn" class="gold" style="width:100%" onclick="saveVisit('${jobId}')">Save visit</button>`)
+}
+async function saveVisit(jobId){
+  if(!requireOnline())return;const date=$('vDate').value;if(!date)return alert('Choose the visit date.');
+  let hours=Number($('vHours').value||0);const start=$('vStart').value,end=$('vEnd').value;if(!hours&&start&&end){const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);hours=Math.max(0,((eh*60+em)-(sh*60+sm))/60)}
+  const returnRequired=$('vReturn').checked,returnDate=$('vReturnDate').value||null,returnTime=$('vReturnTime').value||null;
+  const btn=$('saveVisitBtn');btn.disabled=true;btn.textContent='Saving…';
+  const {error}=await sb.from('job_visits').insert({owner_id:user.id,job_id:jobId,visit_date:date,start_time:start||null,end_time:end||null,hours,notes:$('vNotes').value.trim(),return_required:returnRequired,next_visit_date:returnDate});
+  if(error){btn.disabled=false;btn.textContent='Save visit';return alert(error.message)}
+  const update={status:returnRequired?'in_progress':'in_progress',updated_at:new Date().toISOString()};if(returnDate){update.scheduled_date=returnDate;update.scheduled_time=returnTime}
+  await sb.from('jobs').update(update).eq('id',jobId);await loadAll();openJob(jobId)
+}
+function openScheduleReturn(jobId){
+  const job=jobs.find(j=>j.id===jobId);show(`<div class="head"><h2>Book return visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="row"><div class="field"><label>Return date</label><input id="returnDate" type="date" value="${addDays(today(),1)}"></div><div class="field"><label>Time</label><input id="returnTime" type="time"></div></div><div class="field"><label>What needs doing?</label><textarea id="returnNotes">${esc(job?.description||'')}</textarea></div><button class="gold" style="width:100%" onclick="saveReturnVisit('${jobId}')">Add return to diary</button>`)
+}
+async function saveReturnVisit(jobId){if(!requireOnline())return;const date=$('returnDate').value;if(!date)return alert('Choose a return date.');const job=jobs.find(j=>j.id===jobId);const notes=$('returnNotes').value.trim();const {error}=await sb.from('jobs').update({scheduled_date:date,scheduled_time:$('returnTime').value||null,status:'booked',waiting_reason:null,follow_up_date:null,description:notes||job?.description||'',updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
+function openAddCost(jobId){
+  if(!workLogsReady)return alert('Run the v0.4.3 database update first.');
+  show(`<div class="head"><h2>Add material or cost</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div>
+  <div class="row"><div class="field"><label>Date</label><input id="costDate" type="date" value="${today()}"></div><div class="field"><label>Type</label><select id="costCategory"><option value="materials">Materials</option><option value="subcontractor">Subcontractor</option><option value="parking">Parking</option><option value="waste">Waste disposal</option><option value="delivery">Delivery</option><option value="other">Other</option></select></div></div>
+  <div class="field"><label>Description</label><input id="costDescription" placeholder="e.g. Grundfos pump"></div>
+  <div class="row-3"><div class="field"><label>Quantity</label><input id="costQty" inputmode="decimal" value="1"></div><div class="field"><label>Your unit cost £</label><input id="costUnit" inputmode="decimal"></div><div class="field"><label>Charge per unit £</label><input id="costSell" inputmode="decimal"></div></div>
+  <div class="checkline"><input id="costCharge" type="checkbox"><label for="costCharge">Charge this item to the customer / treat as an extra</label></div>
+  <div class="field" style="margin-top:10px"><label>Private note</label><textarea id="costNotes"></textarea></div><button id="saveCostBtn" class="gold" style="width:100%" onclick="saveJobCost('${jobId}')">Save cost</button>`)
+}
+async function saveJobCost(jobId){if(!requireOnline())return;const description=$('costDescription').value.trim();if(!description)return alert('Enter what the cost was for.');const btn=$('saveCostBtn');btn.disabled=true;btn.textContent='Saving…';const payload={owner_id:user.id,job_id:jobId,cost_date:$('costDate').value||today(),category:$('costCategory').value,description,quantity:Number($('costQty').value||1),unit_cost:Number($('costUnit').value||0),charge_to_customer:$('costCharge').checked,sell_price:Number($('costSell').value||0),notes:$('costNotes').value.trim()};const {error}=await sb.from('job_costs').insert(payload);if(error){btn.disabled=false;btn.textContent='Save cost';return alert(error.message)}await loadAll();openJob(jobId)}
 function documentStatusOptions(type,selected='draft'){
   const options=type==='invoice'?[['draft','Draft'],['sent','Sent / unpaid'],['paid','Paid'],['overdue','Overdue'],['void','Void']]:[['draft','Draft'],['sent','Sent'],['accepted','Accepted'],['declined','Declined'],['void','Void']];
   return options.map(([value,label])=>`<option value="${value}" ${value===selected?'selected':''}>${label}</option>`).join('')
@@ -702,6 +790,12 @@ function printDocument(id){
 .compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
 .inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.today-list-card{border-left:5px solid #667085}
 @media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
+
+.visit-card{border-left:4px solid var(--blue)}.cost-card{border-left:4px solid var(--gold)}
+.profit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.profit-box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.profit-box b{display:block;font-size:18px;color:var(--navy)}.profit-box span{font-size:11px;color:var(--muted)}
+.log-table{width:100%;border-collapse:collapse}.log-table th,.log-table td{padding:8px;border-bottom:1px solid var(--line);font-size:12px;text-align:left}.log-table th{color:var(--muted);text-transform:uppercase;font-size:10px}.log-table .num{text-align:right}
+.offline-banner{position:fixed;left:10px;right:10px;bottom:10px;z-index:50;background:#7a2e0e;color:#fff;padding:10px 12px;border-radius:12px;display:none;text-align:center;font-weight:700}.offline-banner.on{display:block}
+@media(max-width:760px){.profit-grid{grid-template-columns:repeat(2,1fr)}}
 </style></head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
 }
 
