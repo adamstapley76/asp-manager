@@ -40,6 +40,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;overflow-x:auto;margin:10px 0 12px}.filter-row button{white-space:nowrap;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
 .loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{overflow-x:auto}.doc-table{width:100%;border-collapse:collapse;min-width:560px}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right;white-space:nowrap}.print-only{display:none}
+.today-card{border-left:5px solid var(--gold)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.quick-grid button,.quick-grid a{width:100%}.day-head{position:sticky;top:71px;z-index:5;background:var(--bg);padding:8px 0;font-weight:850;color:var(--navy)}.day-group{margin-bottom:18px}.job-quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.job-quick a,.job-quick button{min-height:36px;padding:8px 10px;font-size:12px}.stock-low{border-left:4px solid #f79009}.stock-zero{border-left:4px solid var(--red)}.checkline{display:flex;align-items:center;gap:9px}.checkline input{width:auto}.backup-box{background:#eef4ff;border:1px solid #b2ccff;border-radius:13px;padding:13px}
 @media(max-width:760px){
   .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid,.line-row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}
 }
@@ -48,7 +49,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -71,10 +72,13 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <div class="card">
     <div class="app-nav">
-      <button id="navDashboard" class="light active" onclick="showPage('dashboard')">Dashboard</button>
+      <button id="navDashboard" class="light active" onclick="showPage('dashboard')">Today</button>
+      <button id="navDiary" class="light" onclick="showPage('diary')">Diary</button>
       <button id="navCustomers" class="light" onclick="showPage('customers')">Customers</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
       <button id="navDocuments" class="light" onclick="showPage('documents')">Quotes & invoices</button>
+      <button id="navVan" class="light" onclick="showPage('van')">Van Ready</button>
+      <button id="navSettings" class="light" onclick="showPage('settings')">Backup</button>
       <button class="gold" onclick="openNewJob()">+ New job</button>
     </div>
   </div>
@@ -89,20 +93,30 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card">
-      <div class="section-title"><h2>Quick actions</h2></div>
-      <div class="actions">
-        <button class="gold" onclick="openNewJob()">Add job</button>
+      <div class="section-title"><h2>Today</h2><span id="todayLabel" class="meta"></span></div>
+      <div class="quick-grid">
+        <button class="gold" onclick="openNewJob()">+ Book job</button>
         <button class="navy" onclick="openNewCustomer()">Add customer</button>
         <button class="light" onclick="openNewDocument('quote')">New quote</button>
         <button class="light" onclick="openNewDocument('invoice')">New invoice</button>
         <button class="light" onclick="showDue()">Service due list</button>
         <button class="light" onclick="openImport()">Import customers</button>
+        <button class="light" onclick="openQuickTask()">+ Quick reminder</button>
+        <button class="light" onclick="showPage('van')">Van list</button>
       </div>
     </div>
 
+    <div class="card today-card">
+      <div class="section-title"><h2>Today's jobs</h2><button class="light" onclick="showPage('diary')">Open diary</button></div>
+      <div id="todayJobs" class="list"></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Today's reminders</h2><button class="light" onclick="openQuickTask()">+ Add</button></div>
+      <div id="todayTasks" class="list"></div>
+    </div>
     <div class="split">
       <div class="card">
-        <div class="section-title"><h2>Upcoming jobs</h2><button class="light" onclick="showPage('jobs')">View all</button></div>
+        <div class="section-title"><h2>Next jobs</h2><button class="light" onclick="showPage('jobs')">View all</button></div>
         <div id="upcomingJobs" class="list"></div>
       </div>
       <div class="card">
@@ -113,6 +127,30 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div class="card">
       <div class="section-title"><h2>Recent quotes & invoices</h2><button class="light" onclick="showPage('documents')">View all</button></div>
       <div id="recentDocuments" class="list"></div>
+    </div>
+  </section>
+
+  <section id="pageDiary" class="hidden">
+    <div class="card">
+      <div class="section-title"><div><h2>Work diary</h2><div class="meta">Your booked work, linked to customers and navigation.</div></div><button class="gold" onclick="openNewJob()">+ Book job</button></div>
+      <div class="row"><div class="field"><label>From</label><input id="diaryFrom" type="date" onchange="renderDiary()"></div><div class="field"><label>Days shown</label><select id="diaryDays" onchange="renderDiary()"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></div></div>
+      <div id="diaryResults"></div>
+    </div>
+  </section>
+
+  <section id="pageVan" class="hidden">
+    <div class="card">
+      <div class="section-title"><div><h2>Van Ready</h2><div class="meta">A simple list for stock you have run out of or need to collect.</div></div><button class="gold" onclick="openStockItem()">+ Add item</button></div>
+      <div class="grid" style="margin-bottom:12px"><div class="kpi"><b id="stockNeedK">0</b><span>Items to buy</span></div><div class="kpi"><b id="stockZeroK">0</b><span>Out of stock</span></div></div>
+      <div id="stockResults" class="list"></div>
+    </div>
+  </section>
+
+  <section id="pageSettings" class="hidden">
+    <div class="card">
+      <div class="section-title"><div><h2>Data protection</h2><div class="meta">Your customer database matters more than the app code.</div></div></div>
+      <div class="backup-box"><strong>Download a complete backup</strong><div class="meta" style="margin:5px 0 12px">Exports customers, jobs, quotes, invoices, reminders and van stock into one dated JSON file.</div><button class="gold" onclick="downloadBackup()">Download backup now</button></div>
+      <div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
     </div>
   </section>
 
@@ -169,7 +207,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],jobsReady=true,documentsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],documents=[],tasks=[],stockItems=[],jobsReady=true,documentsReady=true,extrasReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function localDate(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
@@ -233,18 +271,22 @@ async function loadAll(){
   if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
   const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
   if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
+  const taskResult=await sb.from('tasks').select('*').order('due_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+  const stockResult=await sb.from('stock_items').select('*').order('needed',{ascending:false}).order('name',{ascending:true});
+  if(taskResult.error||stockResult.error){tasks=[];stockItems=[];extrasReady=false}else{tasks=taskResult.data||[];stockItems=stockResult.data||[];extrasReady=true}
   const missing=[];
   if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
   if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
+  if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
   if(missing.length){$('setupNotice').innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;$('setupNotice').classList.remove('hidden')}else $('setupNotice').classList.add('hidden');
   renderAll();
   appView.classList.remove('loading');
 }
-function renderAll(){renderDashboard();renderCustomers();renderJobs();renderDocuments()}
+function renderAll(){renderDashboard();renderDiary();renderCustomers();renderJobs();renderDocuments();renderTasks();renderStock()}
 
 function showPage(page){
   currentPage=page;
-  ['dashboard','customers','jobs','documents'].forEach(p=>{
+  ['dashboard','diary','customers','jobs','documents','van','settings'].forEach(p=>{
     $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
     $(`nav${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('active',p===page);
   });
@@ -272,10 +314,15 @@ function customerAddress(customer){return [customer?.address,customer?.postcode]
 function customerCard(customer){
   return `<div class="item"><div><h3>${esc(customer.name||'Unnamed customer')}</h3><div class="meta">${esc(customerAddress(customer)||'No address')}</div><div class="meta">${esc(customer.phone||customer.email||'No contact details')} · ${esc(customerStatusLabel(customer.status))}</div></div><div class="item-actions">${dueBadge(customer)}<button class="gold" onclick="openCustomer('${customer.id}')">Open</button></div></div>`;
 }
+function mapAddress(job){const c=customers.find(x=>x.id===job.customer_id);return [job.address||c?.address,job.postcode||c?.postcode].filter(Boolean).join(', ')}
+function appleMapsUrl(address){return `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`}
+function telUrl(value){return `tel:${String(value||'').replace(/[^+0-9]/g,'')}`}
+function whatsappUrl(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0'))digits='44'+digits.slice(1);return `https://wa.me/${digits}`}
+function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=mapAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a><a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function jobCard(job){
   const when=job.scheduled_date?`${displayDate(job.scheduled_date)}${job.scheduled_time?` at ${displayTime(job.scheduled_time)}`:''}`:'Not booked yet';
   const price=money(job.quoted_amount);
-  return `<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc([job.address,job.postcode].filter(Boolean).join(', ')||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span><button class="gold" onclick="openJob('${job.id}')">Open</button></div></div>`;
+  return `<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
@@ -283,6 +330,7 @@ function documentCard(document){
 }
 
 function renderDashboard(){
+  if($('todayLabel'))$('todayLabel').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));
   const openJobs=jobs.filter(j=>!['completed','cancelled'].includes(j.status));
   $('activeK').textContent=active.length;
@@ -290,12 +338,42 @@ function renderDashboard(){
   $('quotedK').textContent=documentsReady?documents.filter(d=>d.type==='quote'&&['draft','sent'].includes(d.status)).length:jobs.filter(j=>j.status==='quoted').length;
   $('unpaidK').textContent=documentsReady?documents.filter(d=>d.type==='invoice'&&['draft','sent','overdue'].includes(d.status)).length:0;
   $('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
+  const todayList=openJobs.filter(j=>j.scheduled_date===today()).sort((a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  if($('todayJobs'))$('todayJobs').innerHTML=todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today.</div>';
   const upcoming=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0).sort((a,b)=>(a.scheduled_date||'').localeCompare(b.scheduled_date||'')).slice(0,8);
   $('upcomingJobs').innerHTML=jobsReady?(upcoming.map(jobCard).join('')||'<div class="empty">No upcoming jobs booked.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   const priority=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).sort((a,b)=>(a.next_due||'').localeCompare(b.next_due||'')).slice(0,8);
   $('servicePriority').innerHTML=priority.map(customerCard).join('')||'<div class="empty">Nothing due in the next 30 days.</div>';
   $('recentDocuments').innerHTML=documentsReady?(documents.slice(0,6).map(documentCard).join('')||'<div class="empty">No quotes or invoices yet.</div>'):'<div class="empty">Run the v0.3 SQL setup to enable quotes and invoices.</div>';
 }
+
+function renderDiary(){
+  const holder=$('diaryResults');if(!holder)return;
+  if(!$('diaryFrom').value)$('diaryFrom').value=today();
+  const from=$('diaryFrom').value,days=Number($('diaryDays').value||14),to=addDays(from,days-1);
+  const relevant=jobs.filter(j=>j.scheduled_date&&j.scheduled_date>=from&&j.scheduled_date<=to&&!['cancelled'].includes(j.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  const groups={};relevant.forEach(j=>(groups[j.scheduled_date]??=[]).push(j));
+  holder.innerHTML=Object.keys(groups).map(date=>`<div class="day-group"><div class="day-head">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div><div class="list">${groups[date].map(jobCard).join('')}</div></div>`).join('')||'<div class="empty">No booked jobs in this period.</div>';
+}
+function renderTasks(){
+  const holder=$('todayTasks');if(!holder)return;
+  if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable reminders.</div>';return}
+  const due=tasks.filter(t=>!t.completed&&(!t.due_date||t.due_date<=today())).sort((a,b)=>(a.due_date||'').localeCompare(b.due_date||''));
+  holder.innerHTML=due.map(t=>`<div class="item"><div><div class="checkline"><input type="checkbox" onchange="completeTask('${t.id}')"><h3>${esc(t.title)}</h3></div><div class="meta">${esc(t.due_date?displayDate(t.due_date):'No date')}${t.notes?` · ${esc(t.notes)}`:''}</div></div><button class="light" onclick="deleteTask('${t.id}')">Remove</button></div>`).join('')||'<div class="empty">Nothing due today.</div>';
+}
+function openQuickTask(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Quick reminder</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Reminder</label><input id="taskTitle" placeholder="e.g. Order Worcester filter"></div><div class="row"><div class="field"><label>Due date</label><input id="taskDate" type="date" value="${today()}"></div><div class="field"><label>Linked customer (optional)</label><select id="taskCustomer">${customerOptions('')}</select></div></div><div class="field"><label>Notes</label><textarea id="taskNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveTask()">Save reminder</button>`)}
+async function saveTask(){const title=$('taskTitle').value.trim();if(!title)return alert('Enter the reminder.');const {error}=await sb.from('tasks').insert({owner_id:user.id,title,due_date:$('taskDate').value||null,customer_id:$('taskCustomer').value||null,notes:$('taskNotes').value.trim(),completed:false});if(error)return alert(error.message);await loadAll();closeModal()}
+async function completeTask(id){const {error}=await sb.from('tasks').update({completed:true,completed_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function deleteTask(id){if(!confirm('Remove this reminder?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
+function renderStock(){const holder=$('stockResults');if(!holder)return;if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable Van Ready.</div>';return}const list=[...stockItems].sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(a.quantity)-Number(b.quantity)||a.name.localeCompare(b.name));$('stockNeedK').textContent=list.filter(x=>x.needed).length;$('stockZeroK').textContent=list.filter(x=>Number(x.quantity)<=0).length;holder.innerHTML=list.map(x=>`<div class="item ${Number(x.quantity)<=0?'stock-zero':Number(x.quantity)<=Number(x.minimum_quantity||1)?'stock-low':''}"><div><h3>${esc(x.name)}</h3><div class="meta">In van: ${esc(x.quantity??0)} · Minimum: ${esc(x.minimum_quantity??1)}${x.merchant?` · ${esc(x.merchant)}`:''}</div></div><div class="item-actions"><button class="light" onclick="changeStock('${x.id}',-1)">− Used</button><button class="light" onclick="changeStock('${x.id}',1)">+ Bought</button><button class="${x.needed?'gold':'light'}" onclick="toggleNeeded('${x.id}',${!x.needed})">${x.needed?'On list':'Add to list'}</button><button class="danger" onclick="deleteStock('${x.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No van stock items yet. Add the things you regularly run out of.</div>'}
+function openStockItem(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Add van stock item</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="stockName" placeholder="e.g. 22mm lever valve"></div><div class="row"><div class="field"><label>Current quantity</label><input id="stockQty" type="number" min="0" value="0"></div><div class="field"><label>Minimum quantity</label><input id="stockMin" type="number" min="0" value="1"></div></div><div class="field"><label>Preferred merchant (optional)</label><input id="stockMerchant" placeholder="City Plumbing, Screwfix..."></div><label class="checkline"><input id="stockNeeded" type="checkbox" checked> Add to shopping list now</label><button class="gold" style="width:100%;margin-top:14px" onclick="saveStockItem()">Save item</button>`)}
+async function saveStockItem(){const name=$('stockName').value.trim();if(!name)return alert('Enter the item name.');const {error}=await sb.from('stock_items').insert({owner_id:user.id,name,quantity:Number($('stockQty').value||0),minimum_quantity:Number($('stockMin').value||1),merchant:$('stockMerchant').value.trim(),needed:$('stockNeeded').checked});if(error)return alert(error.message);await loadAll();closeModal();showPage('van')}
+async function changeStock(id,delta){const item=stockItems.find(x=>x.id===id);const quantity=Math.max(0,Number(item.quantity||0)+delta),needed=delta<0&&quantity<=Number(item.minimum_quantity||1)?true:item.needed;const {error}=await sb.from('stock_items').update({quantity,needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function toggleNeeded(id,needed){const {error}=await sb.from('stock_items').update({needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function deleteStock(id){if(!confirm('Delete this stock item?'))return;const {error}=await sb.from('stock_items').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function quickCompleteJob(id){if(!confirm('Mark this job completed?'))return;const {error}=await sb.from('jobs').update({status:'completed',completed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+function downloadBackup(){const data={format:'ASP Manager Backup',version:'0.4',created_at:new Date().toISOString(),user_email:user?.email||'',customers,jobs,documents,tasks,stock_items:stockItems};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`ASP_Manager_Backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+
 function setCustomerFilter(value){customerFilter=value;document.querySelectorAll('#customerFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderCustomers()}
 function renderCustomers(){
   const q=($('customerSearch')?.value||'').trim().toLowerCase();
@@ -459,7 +537,7 @@ function openJob(id){
   <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Run the v0.3 database update.</div>'}</div></div>
   <div class="actions" style="margin-top:14px">
     ${documentsReady?`<button class="gold" onclick="openNewDocument('quote','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','${id}')">New invoice</button>`:''}
-    <button class="gold" onclick="editJob('${id}')">Edit job</button>
+    ${mapAddress(j)?`<a class="btn navy" href="${appleMapsUrl(mapAddress(j))}" target="_blank" rel="noopener">Navigate</a>`:''}<button class="gold" onclick="editJob('${id}')">Edit job</button>
     ${j.status!=='booked'?`<button class="navy" onclick="setJobStatus('${id}','booked')">Mark booked</button>`:''}
     ${j.status!=='quoted'?`<button class="light" onclick="setJobStatus('${id}','quoted')">Mark quoted</button>`:''}
     ${j.status!=='completed'?`<button class="light" onclick="completeJob('${id}')">Complete</button>`:''}
@@ -631,6 +709,7 @@ async function importCSV(){
 
 (async()=>{
   const savedEmail=localStorage.getItem('asp-manager-login-email');if(savedEmail&&!$('loginEmail').value)$('loginEmail').value=savedEmail;
+  if($('diaryFrom'))$('diaryFrom').value=today();
   if(!sb)return;
   try{const {data,error}=await sb.auth.getSession();if(error)throw error;setLoggedIn(data.session?.user);if(user)await loadAll()}catch(error){setLoggedIn(null);authView.classList.remove('hidden');authMessage(friendlyError(error))}
 })();
