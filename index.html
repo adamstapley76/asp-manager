@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ASP Manager · Foundation Fix</title>
+<title>ASP Manager · Test Week</title>
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.getaddress.io/scripts/getaddress-autocomplete-3.1.6.js"></script>
@@ -65,11 +65,43 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .offline-banner{bottom:55px!important;background:#b54708!important}
   @media(max-width:760px){.app-nav{display:grid!important;grid-template-columns:1fr 1fr 1fr 1fr;position:sticky;top:58px;z-index:15;background:#fff;padding:6px;border-radius:12px;overflow:visible}.app-nav button{padding:8px 5px;font-size:12px;min-height:38px}.app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none}.more-grid{grid-template-columns:1fr 1fr}.job-quick a,.job-quick button{font-size:11px;padding:7px 8px}.card{margin-bottom:9px}}
 </style>
+
+<style id="testWeekStyles">
+  .wrap>.card:first-of-type{position:sticky;top:72px;z-index:19;padding:8px;margin-bottom:9px;border-radius:0 0 14px 14px}
+  .app-nav{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;overflow:visible!important;padding:0!important}
+  .app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none!important}
+  .app-nav button{min-height:40px;padding:8px 5px;white-space:nowrap}
+  .hero-today{margin-top:0!important}
+  .today-primary .section-title .actions{display:none}
+  .home-book{display:none!important}
+  .pipeline-card .section-title button{display:none}
+  .pipeline-card .attention-grid{grid-template-columns:repeat(2,1fr)}
+  .pipeline-card .attention{padding:8px;min-height:55px}
+  .pipeline-card .attention b{font-size:18px}
+  .service-summary{border-left:5px solid var(--gold)}
+  .service-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .service-summary-grid button{display:block;background:#fff;border:1px solid var(--line);padding:9px 6px;border-radius:11px;color:var(--navy)}
+  .service-summary-grid b{display:block;font-size:20px}.service-summary-grid span{font-size:10px;color:var(--muted)}
+  .service-row{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
+  .service-row h3{margin:0 0 3px;color:var(--navy);font-size:16px}.service-row .actions{margin-top:8px}
+  .service-row .actions a,.service-row .actions button{padding:8px 10px;min-height:36px;font-size:12px}
+  .job-compact{padding:10px!important}.job-compact .meta{font-size:12px}.job-compact .job-quick{margin-top:6px}
+  .job-compact .job-quick .light:nth-of-type(n+3){display:none}
+  .ga-autocomplete-list{z-index:9999!important}
+  input[autocapitalize="words"]{text-transform:none}
+  @media(max-width:760px){
+    header{position:sticky;top:0}.wrap>.card:first-of-type{top:70px}
+    .header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
+    .service-summary-grid{grid-template-columns:repeat(3,1fr)}
+    .today-primary .item{padding:8px}.today-primary .item-actions{display:none}
+    .sheet{max-height:96vh}
+  }
+</style>
 </head>
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.5.3 Foundation Fix</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.6 Test Week</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -109,12 +141,21 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card today-card today-primary">
-      <div class="section-title"><h2>Today's jobs</h2><div class="actions"><button class="gold" onclick="openNewJob()">Book work</button><button class="light" onclick="openQuickDiaryEntry()">Quick entry</button></div></div>
+      <div class="section-title"><h2>Today's jobs</h2><button class="light" onclick="openQuickDiaryEntry()">+ Quick</button></div>
       <div id="todayJobs" class="list"></div>
     </div>
 
+    <div class="card service-summary compact-section">
+      <div class="section-title"><div><h2>Services due</h2><div class="meta">Recurring work worth protecting.</div></div><button class="light" onclick="showDue('all')">Open</button></div>
+      <div class="service-summary-grid">
+        <button onclick="showDue('overdue')"><b id="serviceOverdueK">0</b><span>Overdue</span></button>
+        <button onclick="showDue('30')"><b id="service30K">0</b><span>Next 30 days</span></button>
+        <button onclick="showServiceDataCheck()"><b id="serviceNoDateK">0</b><span>No date / review</span></button>
+      </div>
+    </div>
+
     <div class="card pipeline-card">
-      <div class="section-title"><h2>Work not in the diary</h2><button class="light" onclick="openNewJob()">+ Add work</button></div>
+      <div class="section-title"><h2>Work queue</h2></div>
       <div class="attention-grid">
         <button class="attention" onclick="showPage('jobs');setJobFilter('to_book')"><b id="toBookK">0</b><span>To book</span></button>
         <button class="attention" onclick="showPage('jobs');setJobFilter('waiting')"><b id="waitingK">0</b><span>Waiting</span></button>
@@ -210,7 +251,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   </section>
 </div>
 
-<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: you can view the last loaded data, but saving is disabled until signal returns.</div>
+<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: new customers, bookings, visits and today-list items will save on this phone and sync when signal returns.</div>
 
 <script>
 const cfg=window.ASP_CONFIG;
@@ -383,10 +424,11 @@ async function enableAddressAutocomplete(inputId,postcodeId=''){
   const input=$(inputId);if(!input||!window.getAddress?.autocomplete||input.dataset.addressReady)return;
   input.dataset.addressReady='1';
   try{await getAddress.autocomplete(inputId,GETADDRESS_DOMAIN_TOKEN,{
-    suggestion_count:6,minimum_characters:2,show_postcode:true,show_county:false,
+    suggestion_count:6,minimum_characters:2,show_postcode:true,full_screen_on_mobile:false,full_length:true,enable_repositioning:true,
+    list_style:'z-index:9999;max-height:280px;overflow:auto;',
     selected:(result)=>{
       const lines=(result.formatted_address||[]).filter(Boolean);
-      input.value=lines.join(', ');
+      input.value=smartCaps(lines.join(', '));
       if(postcodeId&&$(postcodeId))$(postcodeId).value=(result.postcode||'').toUpperCase();
     },
     suggested_failed:(error)=>{console.warn('Live UK address lookup failed',error);showSyncNotice('Live UK address lookup is unavailable. You can still type the address manually.','error')}
@@ -394,12 +436,14 @@ async function enableAddressAutocomplete(inputId,postcodeId=''){
 }
 function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>enableAddressAutocomplete(inputId,postcodeId),40)}
 function telUrl(value){return `tel:${String(value||'').replace(/[^+0-9]/g,'')}`}
-function whatsappUrl(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0'))digits='44'+digits.slice(1);return `https://wa.me/${digits}`}
+function ukMobileDigits(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0044'))digits=digits.slice(2);if(digits.startsWith('0'))digits='44'+digits.slice(1);return digits}
+function whatsappUrl(value,text=''){const digits=ukMobileDigits(value);return `https://api.whatsapp.com/send?phone=${digits}${text?`&text=${encodeURIComponent(text)}`:''}`}
+function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=mapAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a><a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function jobCard(job){
   const when=job.scheduled_date?`${displayDate(job.scheduled_date)}${job.scheduled_time?` at ${displayTime(job.scheduled_time)}`:''}`:'Not booked yet';
   const price=money(job.quoted_amount);
-  return `<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+  return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
@@ -419,6 +463,13 @@ function renderDashboard(){
   const toBook=openJobs.filter(j=>j.status==='to_book').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   const waiting=openJobs.filter(j=>j.status==='waiting').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   if($('toBookK'))$('toBookK').textContent=toBook.length;if($('waitingK'))$('waitingK').textContent=waiting.length;
+  const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
+  const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
+  const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
+  const noDate=customers.filter(c=>c.status!=='archived'&&!c.next_due&&['active','booked','not_contacted'].includes(c.status)).length;
+  if($('serviceOverdueK'))$('serviceOverdueK').textContent=overdue.length;
+  if($('service30K'))$('service30K').textContent=due30.length;
+  if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
   if($('pipelinePreview'))$('pipelinePreview').innerHTML=[...toBook.slice(0,2),...waiting.slice(0,2)].map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today. Tap <b>Book work</b> to add one.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
@@ -482,7 +533,18 @@ function renderDocuments(){
 }
 $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);$('documentSearch').addEventListener('input',renderDocuments);
 
-function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on')}
+function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on');prepareFormInputs($('sheet'))}
+function prepareFormInputs(root=document){
+  root.querySelectorAll('input').forEach(input=>{
+    const id=(input.id||'').toLowerCase(),ph=(input.placeholder||'').toLowerCase();
+    if(/email/.test(id+ph)){input.type='email';input.autocomplete='email';input.autocapitalize='none'}
+    else if(/phone|mobile/.test(id+ph)){input.type='tel';input.autocomplete='tel'}
+    else if(/postcode/.test(id+ph)){input.autocapitalize='characters'}
+    else if(/name|address|title|boiler|town|work/.test(id+ph)){input.autocapitalize='words'}
+  });
+}
+function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
+document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
 function closeModal(){$('modal').classList.remove('on')}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal'))closeModal()});
 
@@ -498,9 +560,38 @@ function renderServiceCustomerSearch(){
   box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="completeService('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')||'<div class="empty">No customer found.</div>';
 }
 
-function showDue(){
-  const list=customers.filter(c=>['active','not_contacted','booked'].includes(c.status)&&c.next_due&&daysUntil(c.next_due)<=90).sort((a,b)=>a.next_due.localeCompare(b.next_due));
-  show(`<div class="head"><h2>Service due / overdue</h2><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list.map(customerCard).join('')||'<div class="empty">No active services due in 90 days.</div>'}</div>`);
+function serviceReminderStatus(customer){
+  if(customer.service_reminder_status==='booked')return 'Booked';
+  if(customer.service_reminder_status==='declined')return 'Declined this year';
+  if(customer.service_reminded_at)return `Reminded ${displayDate(String(customer.service_reminded_at).slice(0,10))}`;
+  return '';
+}
+function showDue(filter='all'){
+  const eligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready'&&c.next_due);
+  let list=eligible.filter(c=>daysUntil(c.next_due)<=90);
+  if(filter==='overdue')list=list.filter(c=>daysUntil(c.next_due)<0);
+  if(filter==='30')list=list.filter(c=>daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
+  list.sort((a,b)=>String(a.next_due).localeCompare(String(b.next_due)));
+  show(`<div class="head"><div><h2>Services due</h2><div class="meta">Only active, recent service customers are shown by default.</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="filter-row"><button class="light ${filter==='all'?'active':''}" onclick="showDue('all')">All due</button><button class="light ${filter==='overdue'?'active':''}" onclick="showDue('overdue')">Overdue</button><button class="light ${filter==='30'?'active':''}" onclick="showDue('30')">Next 30 days</button><button class="light" onclick="showServiceDataCheck()">Data check</button></div>
+  <div class="list">${list.map(serviceReminderCard).join('')||'<div class="empty">No service customers in this group.</div>'}</div>`);
+}
+function serviceReminderCard(c){
+  const d=daysUntil(c.next_due),status=serviceReminderStatus(c),text=serviceReminderText(c);
+  return `<div class="service-row"><h3>${esc(c.name)}</h3><div class="meta">${esc(customerAddress(c)||'No address')} · ${d<0?`${Math.abs(d)} days overdue`:`Due in ${d} days`} (${esc(displayDate(c.next_due))})</div>${status?`<div class="meta"><b>${esc(status)}</b></div>`:''}<div class="actions">${c.phone?`<a class="btn gold" href="${whatsappUrl(c.phone,text)}" target="_blank" rel="noopener" onclick="markServiceReminded('${c.id}','whatsapp')">WhatsApp</a>`:''}${c.email?`<a class="btn light" href="mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent('Boiler service reminder')}&body=${encodeURIComponent(text)}" onclick="markServiceReminded('${c.id}','email')">Email</a>`:''}<button class="navy" onclick="bookServiceForCustomer('${c.id}')">Book service</button><button class="light" onclick="openCustomer('${c.id}')">Customer</button></div></div>`;
+}
+async function markServiceReminded(id,method){
+  const when=new Date().toISOString();
+  const {error}=await sb.from('customers').update({service_reminded_at:when,service_reminder_method:method,service_reminder_status:'reminded',updated_at:when}).eq('id',id);
+  if(!error){const c=customers.find(x=>x.id===id);if(c){c.service_reminded_at=when;c.service_reminder_method=method;c.service_reminder_status='reminded'}}
+}
+function bookServiceForCustomer(id){closeModal();openNewJob();setTimeout(()=>{selectJobCustomer(id);applyJobTemplate('Boiler service')},80)}
+function showServiceDataCheck(){
+  const ready=customers.filter(c=>c.service_reminder_tier==='ready').length;
+  const review=customers.filter(c=>c.service_reminder_tier==='review').length;
+  const historic=customers.filter(c=>c.service_reminder_tier==='historic').length;
+  const noDate=customers.filter(c=>c.status!=='archived'&&!c.next_due).length;
+  show(`<div class="head"><div><h2>Service records check</h2><div class="meta">Historic records are retained without automatically chasing very old customers.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="grid"><div class="kpi"><b>${ready}</b><span>Ready for reminders</span></div><div class="kpi"><b>${review}</b><span>Review first</span></div><div class="kpi"><b>${historic}</b><span>Historic only</span></div><div class="kpi"><b>${noDate}</b><span>No date recorded</span></div></div><div class="muted-box" style="margin-top:12px"><b>How this works</b><div class="meta">Recent genuine service invoices seed the annual reminder list. Services from 2–4 years ago are held for review. Older records remain in the customer history but are not automatically chased. As you visit customers, update their phone, email and boiler details naturally.</div></div><button class="gold" style="width:100%;margin-top:12px" onclick="closeModal();showPage('customers')">Review customers</button>`)
 }
 function openCustomer(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
@@ -879,6 +970,38 @@ function printDocument(id){
   .offline-banner{bottom:55px!important;background:#b54708!important}
   @media(max-width:760px){.app-nav{display:grid!important;grid-template-columns:1fr 1fr 1fr 1fr;position:sticky;top:58px;z-index:15;background:#fff;padding:6px;border-radius:12px;overflow:visible}.app-nav button{padding:8px 5px;font-size:12px;min-height:38px}.app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none}.more-grid{grid-template-columns:1fr 1fr}.job-quick a,.job-quick button{font-size:11px;padding:7px 8px}.card{margin-bottom:9px}}
 </style>
+
+<style id="testWeekStyles">
+  .wrap>.card:first-of-type{position:sticky;top:72px;z-index:19;padding:8px;margin-bottom:9px;border-radius:0 0 14px 14px}
+  .app-nav{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;overflow:visible!important;padding:0!important}
+  .app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none!important}
+  .app-nav button{min-height:40px;padding:8px 5px;white-space:nowrap}
+  .hero-today{margin-top:0!important}
+  .today-primary .section-title .actions{display:none}
+  .home-book{display:none!important}
+  .pipeline-card .section-title button{display:none}
+  .pipeline-card .attention-grid{grid-template-columns:repeat(2,1fr)}
+  .pipeline-card .attention{padding:8px;min-height:55px}
+  .pipeline-card .attention b{font-size:18px}
+  .service-summary{border-left:5px solid var(--gold)}
+  .service-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .service-summary-grid button{display:block;background:#fff;border:1px solid var(--line);padding:9px 6px;border-radius:11px;color:var(--navy)}
+  .service-summary-grid b{display:block;font-size:20px}.service-summary-grid span{font-size:10px;color:var(--muted)}
+  .service-row{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
+  .service-row h3{margin:0 0 3px;color:var(--navy);font-size:16px}.service-row .actions{margin-top:8px}
+  .service-row .actions a,.service-row .actions button{padding:8px 10px;min-height:36px;font-size:12px}
+  .job-compact{padding:10px!important}.job-compact .meta{font-size:12px}.job-compact .job-quick{margin-top:6px}
+  .job-compact .job-quick .light:nth-of-type(n+3){display:none}
+  .ga-autocomplete-list{z-index:9999!important}
+  input[autocapitalize="words"]{text-transform:none}
+  @media(max-width:760px){
+    header{position:sticky;top:0}.wrap>.card:first-of-type{top:70px}
+    .header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
+    .service-summary-grid{grid-template-columns:repeat(3,1fr)}
+    .today-primary .item{padding:8px}.today-primary .item-actions{display:none}
+    .sheet{max-height:96vh}
+  }
+</style>
 </head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
 }
 
@@ -902,7 +1025,7 @@ function isExistingCustomer(candidate,seen=[]){
 }
 function cleanImportObject(raw){
   const status=['active','not_contacted','booked','dormant','archived'].includes(String(raw.status||'').trim())?String(raw.status).trim():'dormant';
-  const result={owner_id:user.id,name:String(raw.name||'').trim(),address:String(raw.address||'').trim(),postcode:String(raw.postcode||'').trim().toUpperCase(),phone:String(raw.phone||'').trim(),email:String(raw.email||'').trim().toLowerCase(),boiler_make_model:String(raw.boiler_make_model||'').trim(),notes:String(raw.notes||'').trim(),status,service_count:Number(raw.service_count||0)||0};
+  const result={owner_id:user.id,name:smartCaps(String(raw.name||'').trim()),address:smartCaps(String(raw.address||'').trim()),postcode:String(raw.postcode||'').trim().toUpperCase(),phone:String(raw.phone||'').trim(),email:String(raw.email||'').trim().toLowerCase(),boiler_make_model:smartCaps(String(raw.boiler_make_model||'').trim()),notes:String(raw.notes||'').trim(),status,service_count:Number(raw.service_count||0)||0};
   if(raw.last_service)result.last_service=String(raw.last_service).trim();
   if(raw.next_due)result.next_due=String(raw.next_due).trim();
   if(raw.last_invoice)result.last_invoice=String(raw.last_invoice).trim();
@@ -934,6 +1057,17 @@ async function importCSV(){
   pendingImportRows=[];await loadAll();showPage('customers');
   show(`<div class="head"><h2>Import complete</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice success"><strong>${imported} customers added</strong>The imported customers are now searchable in the Customers section.</div><button class="gold" style="width:100%" onclick="closeModal();showPage('customers')">View customers</button>`)
 }
+
+
+async function quickCompleteJob(id){if(!confirm('Mark this job complete?'))return;const when=new Date().toISOString();const {error}=await sb.from('jobs').update({status:'completed',updated_at:when}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function completeTask(id){const {error}=await sb.from('tasks').update({completed:true,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function deleteTask(id){if(!confirm('Remove this item?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
+function openStockItem(){show(`<div class="head"><h2>Add van stock item</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="stockName" placeholder="e.g. 22mm lever valve"></div><div class="row"><div class="field"><label>Quantity in van</label><input id="stockQty" type="number" min="0" value="0"></div><div class="field"><label>Minimum quantity</label><input id="stockMin" type="number" min="0" value="1"></div></div><div class="field"><label>Merchant (optional)</label><input id="stockMerchant" placeholder="e.g. City Plumbing"></div><button class="gold" style="width:100%" onclick="saveStockItem()">Save item</button>`)}
+async function saveStockItem(){const name=smartCaps($('stockName')?.value);if(!name)return alert('Enter the item.');const payload={owner_id:user.id,name,quantity:Number($('stockQty')?.value||0),minimum_quantity:Number($('stockMin')?.value||1),merchant:smartCaps($('stockMerchant')?.value||''),needed:Number($('stockQty')?.value||0)<=Number($('stockMin')?.value||1)};const {error}=await sb.from('stock_items').insert(payload);if(error)return alert(error.message);await loadAll();closeModal()}
+async function changeStock(id,delta){const item=stockItems.find(x=>x.id===id);if(!item)return;const quantity=Math.max(0,Number(item.quantity||0)+Number(delta||0));const needed=quantity<=Number(item.minimum_quantity||1);const {error}=await sb.from('stock_items').update({quantity,needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function toggleNeeded(id,needed){const {error}=await sb.from('stock_items').update({needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function deleteStock(id){if(!confirm('Delete this stock item?'))return;const {error}=await sb.from('stock_items').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
+function downloadBackup(){const payload={version:'0.6',created_at:new Date().toISOString(),customers,jobs,documents,tasks,stock_items:stockItems,job_visits:jobVisits,job_costs:jobCosts};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`ASP_Manager_Backup_${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 
 setTimeout(()=>{if(appView?.classList.contains('loading')){console.warn('Loading watchdog released the screen');appView.classList.remove('loading');const notice=$('setupNotice');if(notice){notice.innerHTML='<strong>Loading took too long.</strong> The screen has been unlocked. Refresh once if any section is missing.';notice.classList.remove('hidden')}}},12000);
 
