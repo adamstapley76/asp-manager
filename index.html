@@ -69,7 +69,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.5.2 Foundation Fix</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.5.3 Foundation Fix</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -440,6 +440,20 @@ function renderTasks(){
 function openQuickTask(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Add to today's list</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="taskTitle" placeholder="e.g. Pick up pump, call customer, buy CT1"></div><div class="row"><div class="field"><label>Due date</label><input id="taskDate" type="date" value="${today()}"></div><div class="field"><label>Linked customer (optional)</label><select id="taskCustomer">${customerOptions('')}</select></div></div><div class="field"><label>Notes</label><textarea id="taskNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveTask()">Add to today's list</button>`)}
 async function saveTask(){const title=$('taskTitle').value.trim();if(!title)return alert('Enter the item.');const payload={owner_id:user.id,title,due_date:$('taskDate').value||null,customer_id:$('taskCustomer').value||null,notes:$('taskNotes').value.trim(),completed:false};if(!isOnline()){const id=tempId();tasks.push({...payload,id,created_at:new Date().toISOString()});queueOperation('tasks','insert',payload,id);renderAll();closeModal();return}const {error}=await sb.from('tasks').insert(payload);if(error)return alert(error.message);await loadAll();closeModal()}
 function setJobFilter(value){jobFilter=value;document.querySelectorAll('#jobFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderJobs()}
+
+function renderStock(){
+  const holder=$('stockResults');
+  if(!holder)return;
+  if(!extrasReady){
+    holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable Van Ready.</div>';
+    return;
+  }
+  const list=[...stockItems].sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(a.quantity)-Number(b.quantity)||(a.name||'').localeCompare(b.name||''));
+  const needK=$('stockNeedK'); if(needK) needK.textContent=list.filter(x=>x.needed).length;
+  const zeroK=$('stockZeroK'); if(zeroK) zeroK.textContent=list.filter(x=>Number(x.quantity)<=0).length;
+  holder.innerHTML=list.map(x=>`<div class="item ${Number(x.quantity)<=0?'stock-zero':Number(x.quantity)<=Number(x.minimum_quantity||1)?'stock-low':''}"><div><h3>${esc(x.name)}</h3><div class="meta">In van: ${esc(x.quantity??0)} · Minimum: ${esc(x.minimum_quantity??1)}${x.merchant?` · ${esc(x.merchant)}`:''}</div></div><div class="item-actions"><button class="light" onclick="changeStock('${x.id}',-1)">− Used</button><button class="light" onclick="changeStock('${x.id}',1)">+ Bought</button><button class="${x.needed?'gold':'light'}" onclick="toggleNeeded('${x.id}',${!x.needed})">${x.needed?'On list':'Add to list'}</button><button class="danger" onclick="deleteStock('${x.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No van stock items yet. Add the things you regularly run out of.</div>';
+}
+
 function renderJobs(){
   if(!jobsReady){$('jobResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.2.sql</b> in Supabase to enable Jobs.</div>';return}
   const q=($('jobSearch')?.value||'').trim().toLowerCase();
