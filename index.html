@@ -45,12 +45,17 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 @media(max-width:760px){
   .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid,.line-row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}.attention-grid{grid-template-columns:1fr}.new-menu{grid-template-columns:1fr 1fr}
 }
+
+.hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
+.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
+.inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.today-list-card{border-left:5px solid #667085}
+@media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4.1</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4.2</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -87,7 +92,16 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   <section id="pageDashboard">
     <div class="card hero-today">
       <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="openNewMenu()">+ New</button></div>
-      <div class="meta">Everything you need for today. Nothing you don't.</div>
+    </div>
+
+    <div class="card today-card today-primary">
+      <div class="section-title"><h2>Today's jobs</h2><div class="actions"><button class="gold" onclick="openNewJob()">Book work</button><button class="light" onclick="openQuickDiaryEntry()">Quick entry</button></div></div>
+      <div id="todayJobs" class="list"></div>
+    </div>
+
+    <div class="card today-list-card">
+      <div class="section-title"><h2>Today's list</h2><button class="light" onclick="openQuickTask()">+ Add</button></div>
+      <div id="todayTasks" class="list"></div>
     </div>
 
     <div class="card">
@@ -96,28 +110,18 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="gold" onclick="openNewJob()">Book work</button>
         <button class="navy" onclick="openNewCustomer()">Add customer</button>
         <button class="light" onclick="openServicePicker()">Add service</button>
-        <button class="light" onclick="openQuickTask()">Add reminder</button>
+        <button class="light" onclick="openNewDocument('quote')">New quote</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-title"><h2>Needs attention</h2></div>
+    <div class="card compact-attention">
+      <div class="section-title"><h3>Needs attention</h3></div>
       <div class="attention-grid">
-        <button class="attention" onclick="showPage('documents');setDocumentFilter('quotes')"><b id="quotedK">0</b><span>Quotes waiting</span></button>
-        <button class="attention" onclick="showPage('documents');setDocumentFilter('invoices')"><b id="unpaidK">0</b><span>Unpaid invoices</span></button>
+        <button class="attention" onclick="showPage('documents');setDocumentFilter('quotes')"><b id="quotedK">0</b><span>Quotes</span></button>
+        <button class="attention" onclick="showPage('documents');setDocumentFilter('invoices')"><b id="unpaidK">0</b><span>Invoices</span></button>
         <button class="attention" onclick="showDue()"><b id="dueK">0</b><span>Services due</span></button>
       </div>
     </div>
-
-    <div class="card today-card">
-      <div class="section-title"><h2>Today's jobs</h2><button class="light" onclick="showPage('diary')">Open diary</button></div>
-      <div id="todayJobs" class="list"></div>
-    </div>
-    <div class="card">
-      <div class="section-title"><h2>Today's reminders</h2><button class="light" onclick="openQuickTask()">+ Add</button></div>
-      <div id="todayTasks" class="list"></div>
-    </div>
-
   </section>
 
   <section id="pageDiary" class="hidden">
@@ -346,8 +350,8 @@ function renderTasks(){
   const due=tasks.filter(t=>!t.completed&&(!t.due_date||t.due_date<=today())).sort((a,b)=>(a.due_date||'').localeCompare(b.due_date||''));
   holder.innerHTML=due.map(t=>`<div class="item"><div><div class="checkline"><input type="checkbox" onchange="completeTask('${t.id}')"><h3>${esc(t.title)}</h3></div><div class="meta">${esc(t.due_date?displayDate(t.due_date):'No date')}${t.notes?` · ${esc(t.notes)}`:''}</div></div><button class="light" onclick="deleteTask('${t.id}')">Remove</button></div>`).join('')||'<div class="empty">Nothing due today.</div>';
 }
-function openQuickTask(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Quick reminder</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Reminder</label><input id="taskTitle" placeholder="e.g. Order Worcester filter"></div><div class="row"><div class="field"><label>Due date</label><input id="taskDate" type="date" value="${today()}"></div><div class="field"><label>Linked customer (optional)</label><select id="taskCustomer">${customerOptions('')}</select></div></div><div class="field"><label>Notes</label><textarea id="taskNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveTask()">Save reminder</button>`)}
-async function saveTask(){const title=$('taskTitle').value.trim();if(!title)return alert('Enter the reminder.');const {error}=await sb.from('tasks').insert({owner_id:user.id,title,due_date:$('taskDate').value||null,customer_id:$('taskCustomer').value||null,notes:$('taskNotes').value.trim(),completed:false});if(error)return alert(error.message);await loadAll();closeModal()}
+function openQuickTask(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Add to today's list</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="taskTitle" placeholder="e.g. Pick up pump, call customer, buy CT1"></div><div class="row"><div class="field"><label>Due date</label><input id="taskDate" type="date" value="${today()}"></div><div class="field"><label>Linked customer (optional)</label><select id="taskCustomer">${customerOptions('')}</select></div></div><div class="field"><label>Notes</label><textarea id="taskNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveTask()">Add to today's list</button>`)}
+async function saveTask(){const title=$('taskTitle').value.trim();if(!title)return alert('Enter the item.');const {error}=await sb.from('tasks').insert({owner_id:user.id,title,due_date:$('taskDate').value||null,customer_id:$('taskCustomer').value||null,notes:$('taskNotes').value.trim(),completed:false});if(error)return alert(error.message);await loadAll();closeModal()}
 async function completeTask(id){const {error}=await sb.from('tasks').update({completed:true,completed_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
 async function deleteTask(id){if(!confirm('Remove this reminder?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
 function renderStock(){const holder=$('stockResults');if(!holder)return;if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable Van Ready.</div>';return}const list=[...stockItems].sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(a.quantity)-Number(b.quantity)||a.name.localeCompare(b.name));$('stockNeedK').textContent=list.filter(x=>x.needed).length;$('stockZeroK').textContent=list.filter(x=>Number(x.quantity)<=0).length;holder.innerHTML=list.map(x=>`<div class="item ${Number(x.quantity)<=0?'stock-zero':Number(x.quantity)<=Number(x.minimum_quantity||1)?'stock-low':''}"><div><h3>${esc(x.name)}</h3><div class="meta">In van: ${esc(x.quantity??0)} · Minimum: ${esc(x.minimum_quantity??1)}${x.merchant?` · ${esc(x.merchant)}`:''}</div></div><div class="item-actions"><button class="light" onclick="changeStock('${x.id}',-1)">− Used</button><button class="light" onclick="changeStock('${x.id}',1)">+ Bought</button><button class="${x.needed?'gold':'light'}" onclick="toggleNeeded('${x.id}',${!x.needed})">${x.needed?'On list':'Add to list'}</button><button class="danger" onclick="deleteStock('${x.id}')">Delete</button></div></div>`).join('')||'<div class="empty">No van stock items yet. Add the things you regularly run out of.</div>'}
@@ -401,7 +405,7 @@ function closeModal(){$('modal').classList.remove('on')}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal'))closeModal()});
 
 function openNewMenu(){
-  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickTask()">Reminder</button></div>`)
+  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openQuickTask()">Today's list item</button></div>`)
 }
 function openServicePicker(){
   show(`<div class="head"><h2>Add completed service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
@@ -497,26 +501,44 @@ async function saveService(id){
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
 let selectedJobCustomerId='';
 function customerSearchText(c){return [c.name,c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
+function inferJobType(title){
+  const t=String(title||'').toLowerCase();
+  if(/service/.test(t))return 'Boiler service';
+  if(/gas safety|cp12|landlord/.test(t))return 'Gas safety certificate';
+  if(/install|replacement|new boiler|conversion/.test(t))return 'Boiler installation';
+  if(/quote|estimate|survey/.test(t))return 'Quote visit';
+  if(/boiler|heating|pump|radiator|cylinder|valve|thermostat/.test(t))return 'Heating repair';
+  if(/bath|shower|toilet|wc|tap|leak|waste|plumb/.test(t))return 'Plumbing repair';
+  return 'Other';
+}
+function applyJobTemplate(value){if(!$('jTitle'))return;$('jTitle').value=value;$('jobTypeHint').textContent=`Type: ${inferJobType(value)}`;$('jDescription')?.focus()}
+function updateJobTypeHint(){if($('jobTypeHint'))$('jobTypeHint').textContent=`Type: ${inferJobType($('jTitle')?.value)}`}
 function openNewJob(customerId=''){
-  if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong>Open Supabase → SQL Editor → New query, paste the file contents and press Run.</div>`);
+  if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong></div>`);
   selectedJobCustomerId=customerId||'';
   const customer=customers.find(c=>c.id===customerId);
   show(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="field"><label>Find customer</label><input id="jCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div></div>
-  <div class="field"><label>Job title</label><input id="jTitle" placeholder="e.g. Boiler service, WC repair, boiler quote"></div>
-  <div class="row"><div class="field"><label>Status</label><select id="jStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked" selected>Booked</option><option value="in_progress">In progress</option></select></div><div class="field"><label>Job type</label><select id="jType"><option value="">Choose type</option><option>Boiler installation</option><option>Boiler repair</option><option>Boiler service</option><option>Gas safety certificate</option><option>Heating repair</option><option>Plumbing repair</option><option>Bathroom work</option><option>Quote visit</option><option>Other</option></select></div></div>
-  <div class="row"><div class="field"><label>Booked date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
-  <div class="field"><label>Address</label><input id="jAddress" value="${esc(customer?.address||'')}"></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Quoted price ex VAT</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div>
-  <div class="field"><label>Job details / notes</label><textarea id="jDescription"></textarea></div>
-  <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Save job</button>`);
+  <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="inlineCustomerCreate" class="inline-create hidden"></div></div>
+  <div class="field"><label>Work needed</label><input id="jTitle" placeholder="e.g. Boiler service, pump replacement, WC repair" oninput="updateJobTypeHint()"><div id="jobTypeHint" class="meta">Type: Other</div></div>
+  <div class="choice-grid"><button type="button" class="choice" onclick="applyJobTemplate('Boiler service')">Boiler service</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler repair')">Boiler repair</button><button type="button" class="choice" onclick="applyJobTemplate('Quote visit')">Quote visit</button><button type="button" class="choice" onclick="applyJobTemplate('Gas safety certificate')">Gas safety</button></div>
+  <div class="row"><div class="field"><label>Date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
+  <div class="field"><label>Address</label><input id="jAddress" list="knownAddresses" value="${esc(customer?.address||'')}" placeholder="Start typing a saved customer address"><datalist id="knownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc([c.address,c.postcode].filter(Boolean).join(', '))}">`).join('')}</datalist></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Price ex VAT (optional)</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div>
+  <div class="field"><label>Notes (optional)</label><textarea id="jDescription"></textarea></div>
+  <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Book work</button>`);
   if(customer)selectJobCustomer(customer.id,false); else setTimeout(()=>$('jCustomerSearch')?.focus(),50);
 }
 function renderJobCustomerSearch(){
-  const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase();
-  if(!box)return;if(q.length<1){box.innerHTML='';return}
-  const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,12);
-  box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="selectJobCustomer('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')||'<div class="empty">No customer found. Add the customer first.</div>';
+  const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase(),creator=$('inlineCustomerCreate');
+  if(!box)return;if(q.length<1){box.innerHTML='';creator?.classList.add('hidden');return}
+  const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,10);
+  box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="selectJobCustomer('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('');
+  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=`<strong>No customer found</strong><div class="meta">Create them here without leaving Book Work.</div><div class="field"><label>Name</label><input id="inlineName" value="${esc(($('jCustomerSearch')?.value||'').trim())}"></div><div class="row"><div class="field"><label>Phone</label><input id="inlinePhone" inputmode="tel"></div><div class="field"><label>Postcode</label><input id="inlinePostcode"></div></div><div class="field"><label>Address</label><input id="inlineAddress"></div><button type="button" class="navy" style="width:100%" onclick="createCustomerInsideJob()">Create and select customer</button>`}else creator?.classList.add('hidden');
+}
+async function createCustomerInsideJob(){
+  const name=$('inlineName')?.value.trim();if(!name)return alert('Enter the customer name.');
+  const payload={owner_id:user.id,name,address:$('inlineAddress')?.value.trim()||'',postcode:$('inlinePostcode')?.value.trim().toUpperCase()||'',phone:$('inlinePhone')?.value.trim()||'',email:'',boiler_make_model:'',notes:'Created while booking work.',status:'active',service_count:0};
+  const {data,error}=await sb.from('customers').insert(payload).select().single();if(error)return alert(error.message);customers.push(data);selectedJobCustomerId=data.id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(data.id,false);$('inlineCustomerCreate')?.classList.add('hidden');
 }
 function selectJobCustomer(id,updateSearch=true){
   const c=customers.find(x=>x.id===id);if(!c)return;selectedJobCustomerId=id;
@@ -530,10 +552,20 @@ async function saveNewJob(){
   const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';
   const price=$('jPrice').value.trim();
-  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:$('jType').value||null,status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
-  const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Save job';if(error)return alert(error.message);
+  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
+  const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Book work';if(error)return alert(error.message);
   if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
   await loadAll();if(data)openJob(data.id)
+}
+
+function openQuickDiaryEntry(){
+  if(!jobsReady)return alert('Run the jobs database setup first.');
+  show(`<div class="head"><h2>Quick diary entry</h2><button class="light" onclick="closeModal()">Close</button></div><div class="meta" style="margin-bottom:12px">For friends, informal visits or anything you just need in the working day.</div><div class="field"><label>What is it?</label><input id="quickTitle" placeholder="e.g. Les - pump"></div><div class="row"><div class="field"><label>Date</label><input id="quickDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="quickTime" type="time"></div></div><div class="field"><label>Area / address (optional)</label><input id="quickAddress" list="quickKnownAddresses"><datalist id="quickKnownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc([c.address,c.postcode].filter(Boolean).join(', '))}">`).join('')}</datalist></div><div class="field"><label>Notes / parts to remember (optional)</label><textarea id="quickNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveQuickDiaryEntry()">Add to diary</button>`);setTimeout(()=>$('quickTitle')?.focus(),50)
+}
+async function saveQuickDiaryEntry(){
+  const title=$('quickTitle').value.trim();if(!title)return alert('Enter a short title.');
+  const rawAddress=$('quickAddress').value.trim();const pc=(rawAddress.match(/([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i)||[])[1]||'';const address=pc?rawAddress.slice(0,rawAddress.length-pc.length).replace(/,\s*$/,''):rawAddress;
+  const {data,error}=await sb.from('jobs').insert({owner_id:user.id,customer_id:null,title,job_type:inferJobType(title),status:'booked',scheduled_date:$('quickDate').value||today(),scheduled_time:$('quickTime').value||null,address,postcode:pc.toUpperCase(),description:$('quickNotes').value.trim(),quoted_amount:null}).select().single();if(error)return alert(error.message);await loadAll();closeModal();showPage('dashboard')
 }
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
@@ -665,7 +697,12 @@ async function deleteDocument(id){if(!confirm('Permanently delete this document?
 function printDocument(id){
   const d=documents.find(x=>x.id===id);if(!d)return;const c=documentCustomer(d),j=documentJob(d),lines=Array.isArray(d.line_items)?d.line_items:[],w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print this document.');
   const rows=lines.map(line=>`<tr><td>${esc(line.description)}</td><td class="n">${esc(line.quantity)}</td><td class="n">${esc(money(line.unit_price))}</td><td class="n">${esc(money((Number(line.quantity)||0)*(Number(line.unit_price)||0)))}</td></tr>`).join('');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(documentNumber(d))}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;margin:38px;line-height:1.4}.top{display:flex;justify-content:space-between;gap:30px;border-bottom:4px solid #10263F;padding-bottom:18px}.brand{font-size:25px;font-weight:800;color:#10263F}.gold{color:#9a6a00}.meta{font-size:13px;color:#667085}.box{margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:25px}.label{font-size:11px;text-transform:uppercase;color:#667085;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:25px}th,td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left}th{font-size:11px;text-transform:uppercase;color:#667085}.n{text-align:right}.tot{width:330px;margin:18px 0 0 auto}.line{display:flex;justify-content:space-between;padding:6px 0}.grand{font-size:19px;font-weight:bold;border-top:2px solid #10263F;margin-top:5px;padding-top:10px}.notes{margin-top:28px;padding:15px;background:#f7f7f7}.footer{margin-top:45px;border-top:1px solid #ddd;padding-top:12px;font-size:11px;color:#667085}@media print{body{margin:18mm}.no-print{display:none}}</style></head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(documentNumber(d))}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;margin:38px;line-height:1.4}.top{display:flex;justify-content:space-between;gap:30px;border-bottom:4px solid #10263F;padding-bottom:18px}.brand{font-size:25px;font-weight:800;color:#10263F}.gold{color:#9a6a00}.meta{font-size:13px;color:#667085}.box{margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:25px}.label{font-size:11px;text-transform:uppercase;color:#667085;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:25px}th,td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left}th{font-size:11px;text-transform:uppercase;color:#667085}.n{text-align:right}.tot{width:330px;margin:18px 0 0 auto}.line{display:flex;justify-content:space-between;padding:6px 0}.grand{font-size:19px;font-weight:bold;border-top:2px solid #10263F;margin-top:5px;padding-top:10px}.notes{margin-top:28px;padding:15px;background:#f7f7f7}.footer{margin-top:45px;border-top:1px solid #ddd;padding-top:12px;font-size:11px;color:#667085}@media print{body{margin:18mm}.no-print{display:none}}
+.hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
+.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
+.inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.today-list-card{border-left:5px solid #667085}
+@media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
 }
 
 function openImport(){
