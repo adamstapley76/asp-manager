@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ASP Manager · Foundation</title>
+<title>ASP Manager · Foundation Fix</title>
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.getaddress.io/scripts/getaddress-autocomplete-3.1.6.js"></script>
@@ -292,30 +292,42 @@ if(sb)sb.auth.onAuthStateChange(async(_,session)=>{setLoggedIn(session?.user);if
 
 async function loadAll(){
   updateOfflineState();updateSyncPill();
-  if(!isOnline()){loadCachedSnapshot();return}
+  if(!isOnline()){loadCachedSnapshot();appView.classList.remove('loading');return}
   appView.classList.add('loading');
-  const customerResult=await sb.from('customers').select('*').order('name',{ascending:true});
-  if(customerResult.error){appView.classList.remove('loading');if(loadCachedSnapshot())return;return alert(customerResult.error.message)}
-  customers=customerResult.data||[];
-  const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
-  if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
-  const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
-  if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
-  const taskResult=await sb.from('tasks').select('*').order('due_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
-  const stockResult=await sb.from('stock_items').select('*').order('needed',{ascending:false}).order('name',{ascending:true});
-  if(taskResult.error||stockResult.error){tasks=[];stockItems=[];extrasReady=false}else{tasks=taskResult.data||[];stockItems=stockResult.data||[];extrasReady=true}
-  const visitResult=await sb.from('job_visits').select('*').order('visit_date',{ascending:false}).order('created_at',{ascending:false});
-  const costResult=await sb.from('job_costs').select('*').order('cost_date',{ascending:false}).order('created_at',{ascending:false});
-  if(visitResult.error||costResult.error){jobVisits=[];jobCosts=[];workLogsReady=false}else{jobVisits=visitResult.data||[];jobCosts=costResult.data||[];workLogsReady=true}
-  const missing=[];
-  if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
-  if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
-  if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
-  if(!workLogsReady)missing.push('<b>supabase_setup_v0.5 Foundation.sql</b> for visits, materials and profit');
-  if(missing.length){$('setupNotice').innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;$('setupNotice').classList.remove('hidden')}else $('setupNotice').classList.add('hidden');
-  renderAll();cacheSnapshot();updateSyncPill();appView.classList.remove('loading');
+  try{
+    const customerResult=await sb.from('customers').select('*').order('name',{ascending:true});
+    if(customerResult.error){if(loadCachedSnapshot())return;throw customerResult.error}
+    customers=customerResult.data||[];
+    const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+    if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
+    const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
+    if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
+    const taskResult=await sb.from('tasks').select('*').order('due_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+    const stockResult=await sb.from('stock_items').select('*').order('needed',{ascending:false}).order('name',{ascending:true});
+    if(taskResult.error||stockResult.error){tasks=[];stockItems=[];extrasReady=false}else{tasks=taskResult.data||[];stockItems=stockResult.data||[];extrasReady=true}
+    const visitResult=await sb.from('job_visits').select('*').order('visit_date',{ascending:false}).order('created_at',{ascending:false});
+    const costResult=await sb.from('job_costs').select('*').order('cost_date',{ascending:false}).order('created_at',{ascending:false});
+    if(visitResult.error||costResult.error){jobVisits=[];jobCosts=[];workLogsReady=false}else{jobVisits=visitResult.data||[];jobCosts=costResult.data||[];workLogsReady=true}
+    const missing=[];
+    if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
+    if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
+    if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
+    if(!workLogsReady)missing.push('<b>the visits/materials SQL</b>');
+    const notice=$('setupNotice');
+    if(notice){if(missing.length){notice.innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;notice.classList.remove('hidden')}else notice.classList.add('hidden')}
+    renderAll();cacheSnapshot();updateSyncPill();
+  }catch(error){
+    console.error('ASP Manager load failed',error);
+    const usedCache=loadCachedSnapshot();
+    const notice=$('setupNotice');
+    if(notice){notice.innerHTML=`<strong>ASP Manager could not fully refresh.</strong>${esc(friendlyError(error))}${usedCache?' Showing the last saved copy on this device.':''}`;notice.classList.remove('hidden')}
+    if(!usedCache)showSyncNotice('Could not load the app. Refresh once or check the connection.','error');
+  }finally{
+    appView.classList.remove('loading');
+  }
 }
-function renderAll(){renderDashboard();renderDiary();renderCustomers();renderJobs();renderDocuments();renderTasks();renderStock()}
+function safeRender(name,fn){try{fn()}catch(error){console.error(`Render failed: ${name}`,error);const notice=$('setupNotice');if(notice){notice.innerHTML+=`<div style="margin-top:6px">${esc(name)} section could not display, but the rest of the app remains available.</div>`;notice.classList.remove('hidden')}}}
+function renderAll(){safeRender('Today',renderDashboard);safeRender('Diary',renderDiary);safeRender('Customers',renderCustomers);safeRender('Jobs',renderJobs);safeRender('Documents',renderDocuments);safeRender('Today list',renderTasks);safeRender('Van stock',renderStock)}
 
 function showPage(page){
   currentPage=page;
@@ -891,6 +903,8 @@ async function importCSV(){
   pendingImportRows=[];await loadAll();showPage('customers');
   show(`<div class="head"><h2>Import complete</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice success"><strong>${imported} customers added</strong>The imported customers are now searchable in the Customers section.</div><button class="gold" style="width:100%" onclick="closeModal();showPage('customers')">View customers</button>`)
 }
+
+setTimeout(()=>{if(appView?.classList.contains('loading')){console.warn('Loading watchdog released the screen');appView.classList.remove('loading');const notice=$('setupNotice');if(notice){notice.innerHTML='<strong>Loading took too long.</strong> The screen has been unlocked. Refresh once if any section is missing.';notice.classList.remove('hidden')}}},12000);
 
 (async()=>{
   const savedEmail=localStorage.getItem('asp-manager-login-email');if(savedEmail&&!$('loginEmail').value)$('loginEmail').value=savedEmail;
