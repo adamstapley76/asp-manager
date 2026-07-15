@@ -69,7 +69,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.5 Foundation</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.5.2 Foundation Fix</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -358,6 +358,23 @@ function customerName(id){return customers.find(c=>c.id===id)?.name||'No custome
 function customerAddress(customer){return [customer?.address,customer?.postcode].filter(Boolean).join(', ')}
 function customerCard(customer){
   return `<div class="item"><div><h3>${esc(customer.name||'Unnamed customer')}</h3><div class="meta">${esc(customerAddress(customer)||'No address')}</div><div class="meta">${esc(customer.phone||customer.email||'No contact details')} · ${esc(customerStatusLabel(customer.status))}</div></div><div class="item-actions">${dueBadge(customer)}<button class="gold" onclick="openCustomer('${customer.id}')">Open</button></div></div>`;
+}
+
+function setCustomerFilter(value){
+  customerFilter=value;
+  document.querySelectorAll('#customerFilters button').forEach(button=>button.classList.toggle('active',button.dataset.filter===value));
+  renderCustomers();
+}
+function renderCustomers(){
+  const holder=$('customerResults');
+  if(!holder)return;
+  const q=($('customerSearch')?.value||'').trim().toLowerCase();
+  let list=[...customers];
+  if(customerFilter==='active')list=list.filter(c=>['active','not_contacted'].includes(c.status));
+  else if(customerFilter!=='all')list=list.filter(c=>c.status===customerFilter);
+  if(q)list=list.filter(c=>customerSearchText(c).includes(q));
+  list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
+  holder.innerHTML=list.map(customerCard).join('')||'<div class="empty">No customers match this search.</div>';
 }
 function mapAddress(job){const c=customers.find(x=>x.id===job.customer_id);return [job.address||c?.address,job.postcode||c?.postcode].filter(Boolean).join(', ')}
 function appleMapsUrl(address){return `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`}
