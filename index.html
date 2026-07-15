@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ASP Manager</title>
+<title>ASP Manager · Today</title>
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -41,15 +41,16 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
 .loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{overflow-x:auto}.doc-table{width:100%;border-collapse:collapse;min-width:560px}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right;white-space:nowrap}.print-only{display:none}
 .today-card{border-left:5px solid var(--gold)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.quick-grid button,.quick-grid a{width:100%}.day-head{position:sticky;top:71px;z-index:5;background:var(--bg);padding:8px 0;font-weight:850;color:var(--navy)}.day-group{margin-bottom:18px}.job-quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.job-quick a,.job-quick button{min-height:36px;padding:8px 10px;font-size:12px}.stock-low{border-left:4px solid #f79009}.stock-zero{border-left:4px solid var(--red)}.checkline{display:flex;align-items:center;gap:9px}.checkline input{width:auto}.backup-box{background:#eef4ff;border:1px solid #b2ccff;border-radius:13px;padding:13px}
+.hero-today{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:0}.hero-today h1{margin:0;font-size:25px}.hero-today .meta{color:#d0d5dd}.attention-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.attention{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}.attention b{display:block;font-size:21px;color:var(--navy)}.attention span{font-size:11px;color:var(--muted)}.customer-search-results{display:grid;gap:7px;max-height:250px;overflow:auto;margin-top:7px}.customer-pick{width:100%;text-align:left;background:#fff;border:1px solid var(--line);padding:10px;border-radius:10px;display:block}.customer-pick strong{display:block;color:var(--navy)}.selected-customer{background:#ecfdf3;border:1px solid #abefc6;border-radius:11px;padding:10px;margin-top:8px}.new-menu{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.new-menu button{min-height:58px;font-size:14px}
 @media(max-width:760px){
-  .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid,.line-row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}
+  .grid{grid-template-columns:repeat(2,1fr)}.row,.row-3,.split,.detail-grid,.line-row{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item-actions{justify-content:flex-start}.wrap{padding:11px 10px 30px}.header-inner{padding:12px}.user-email{display:none}.toolbar{grid-template-columns:1fr}.toolbar button{width:100%}.sheet{padding:15px}.card{border-radius:15px}.section-title{align-items:center}.attention-grid{grid-template-columns:1fr}.new-menu{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
 <body>
 <header>
   <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4</div></div>
+    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.4.1</div></div>
     <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
   </div>
 </header>
@@ -76,33 +77,35 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <button id="navDiary" class="light" onclick="showPage('diary')">Diary</button>
       <button id="navCustomers" class="light" onclick="showPage('customers')">Customers</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
-      <button id="navDocuments" class="light" onclick="showPage('documents')">Quotes & invoices</button>
-      <button id="navVan" class="light" onclick="showPage('van')">Van Ready</button>
-      <button id="navSettings" class="light" onclick="showPage('settings')">Backup</button>
-      <button class="gold" onclick="openNewJob()">+ New job</button>
+      <button id="navDocuments" class="light" onclick="showPage('documents')">Money</button>
+      <button id="navVan" class="light" onclick="showPage('van')">Van</button>
+      <button id="navSettings" class="light" onclick="showPage('settings')">More</button>
+      <button class="gold" onclick="openNewMenu()">+ New</button>
     </div>
   </div>
 
   <section id="pageDashboard">
-    <div class="grid" style="margin-bottom:13px">
-      <div class="kpi"><b id="activeK">0</b><span>Active customers</span></div>
-      <div class="kpi"><b id="weekJobsK">0</b><span>Jobs next 7 days</span></div>
-      <div class="kpi"><b id="quotedK">0</b><span>Quotes waiting</span></div>
-      <div class="kpi"><b id="unpaidK">0</b><span>Unpaid invoices</span></div>
-      <div class="kpi"><b id="dueK">0</b><span>Services due / overdue</span></div>
+    <div class="card hero-today">
+      <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="openNewMenu()">+ New</button></div>
+      <div class="meta">Everything you need for today. Nothing you don't.</div>
     </div>
 
     <div class="card">
-      <div class="section-title"><h2>Today</h2><span id="todayLabel" class="meta"></span></div>
+      <div class="section-title"><h2>Quick actions</h2></div>
       <div class="quick-grid">
-        <button class="gold" onclick="openNewJob()">+ Book job</button>
+        <button class="gold" onclick="openNewJob()">Book work</button>
         <button class="navy" onclick="openNewCustomer()">Add customer</button>
-        <button class="light" onclick="openNewDocument('quote')">New quote</button>
-        <button class="light" onclick="openNewDocument('invoice')">New invoice</button>
-        <button class="light" onclick="showDue()">Service due list</button>
-        <button class="light" onclick="openImport()">Import customers</button>
-        <button class="light" onclick="openQuickTask()">+ Quick reminder</button>
-        <button class="light" onclick="showPage('van')">Van list</button>
+        <button class="light" onclick="openServicePicker()">Add service</button>
+        <button class="light" onclick="openQuickTask()">Add reminder</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><h2>Needs attention</h2></div>
+      <div class="attention-grid">
+        <button class="attention" onclick="showPage('documents');setDocumentFilter('quotes')"><b id="quotedK">0</b><span>Quotes waiting</span></button>
+        <button class="attention" onclick="showPage('documents');setDocumentFilter('invoices')"><b id="unpaidK">0</b><span>Unpaid invoices</span></button>
+        <button class="attention" onclick="showDue()"><b id="dueK">0</b><span>Services due</span></button>
       </div>
     </div>
 
@@ -114,20 +117,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="section-title"><h2>Today's reminders</h2><button class="light" onclick="openQuickTask()">+ Add</button></div>
       <div id="todayTasks" class="list"></div>
     </div>
-    <div class="split">
-      <div class="card">
-        <div class="section-title"><h2>Next jobs</h2><button class="light" onclick="showPage('jobs')">View all</button></div>
-        <div id="upcomingJobs" class="list"></div>
-      </div>
-      <div class="card">
-        <div class="section-title"><h2>Service priority</h2><button class="light" onclick="showDue()">View due</button></div>
-        <div id="servicePriority" class="list"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title"><h2>Recent quotes & invoices</h2><button class="light" onclick="showPage('documents')">View all</button></div>
-      <div id="recentDocuments" class="list"></div>
-    </div>
+
   </section>
 
   <section id="pageDiary" class="hidden">
@@ -330,21 +320,16 @@ function documentCard(document){
 }
 
 function renderDashboard(){
-  if($('todayLabel'))$('todayLabel').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const now=new Date(),hour=now.getHours();
+  if($('greeting'))$('greeting').textContent=`Good ${hour<12?'morning':hour<18?'afternoon':'evening'} Adam`;
+  if($('todayLabel'))$('todayLabel').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const active=customers.filter(c=>['active','not_contacted','booked'].includes(c.status));
   const openJobs=jobs.filter(j=>!['completed','cancelled'].includes(j.status));
-  $('activeK').textContent=active.length;
-  $('weekJobsK').textContent=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0&&daysUntil(j.scheduled_date)<=7).length;
-  $('quotedK').textContent=documentsReady?documents.filter(d=>d.type==='quote'&&['draft','sent'].includes(d.status)).length:jobs.filter(j=>j.status==='quoted').length;
-  $('unpaidK').textContent=documentsReady?documents.filter(d=>d.type==='invoice'&&['draft','sent','overdue'].includes(d.status)).length:0;
-  $('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
+  if($('quotedK'))$('quotedK').textContent=documentsReady?documents.filter(d=>d.type==='quote'&&['draft','sent'].includes(d.status)).length:jobs.filter(j=>j.status==='quoted').length;
+  if($('unpaidK'))$('unpaidK').textContent=documentsReady?documents.filter(d=>d.type==='invoice'&&['draft','sent','overdue'].includes(d.status)).length:0;
+  if($('dueK'))$('dueK').textContent=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).length;
   const todayList=openJobs.filter(j=>j.scheduled_date===today()).sort((a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
-  if($('todayJobs'))$('todayJobs').innerHTML=todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today.</div>';
-  const upcoming=openJobs.filter(j=>j.scheduled_date&&daysUntil(j.scheduled_date)>=0).sort((a,b)=>(a.scheduled_date||'').localeCompare(b.scheduled_date||'')).slice(0,8);
-  $('upcomingJobs').innerHTML=jobsReady?(upcoming.map(jobCard).join('')||'<div class="empty">No upcoming jobs booked.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
-  const priority=active.filter(c=>c.next_due&&daysUntil(c.next_due)<=30).sort((a,b)=>(a.next_due||'').localeCompare(b.next_due||'')).slice(0,8);
-  $('servicePriority').innerHTML=priority.map(customerCard).join('')||'<div class="empty">Nothing due in the next 30 days.</div>';
-  $('recentDocuments').innerHTML=documentsReady?(documents.slice(0,6).map(documentCard).join('')||'<div class="empty">No quotes or invoices yet.</div>'):'<div class="empty">Run the v0.3 SQL setup to enable quotes and invoices.</div>';
+  if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today. Tap <b>Book work</b> to add one.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
 
 function renderDiary(){
@@ -415,6 +400,18 @@ function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on')}
 function closeModal(){$('modal').classList.remove('on')}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal'))closeModal()});
 
+function openNewMenu(){
+  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickTask()">Reminder</button></div>`)
+}
+function openServicePicker(){
+  show(`<div class="head"><h2>Add completed service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
+}
+function renderServiceCustomerSearch(){
+  const q=($('serviceCustomerSearch')?.value||'').trim().toLowerCase(),box=$('serviceCustomerResults');if(!box)return;if(!q){box.innerHTML='';return}
+  const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,12);
+  box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="completeService('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')||'<div class="empty">No customer found.</div>';
+}
+
 function showDue(){
   const list=customers.filter(c=>['active','not_contacted','booked'].includes(c.status)&&c.next_due&&daysUntil(c.next_due)<=90).sort((a,b)=>a.next_due.localeCompare(b.next_due));
   show(`<div class="head"><h2>Service due / overdue</h2><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list.map(customerCard).join('')||'<div class="empty">No active services due in 90 days.</div>'}</div>`);
@@ -432,10 +429,10 @@ function openCustomer(id){
     <div class="detail"><b>Last service</b><span>${esc(c.last_service?displayDate(c.last_service):'Not recorded')}</span></div>
     <div class="detail"><b>Notes</b><span>${esc(c.notes||'No notes')}</span></div>
   </div>
-  <div class="actions">
-    <button class="gold" onclick="openNewJob('${id}')">Add job</button>
-    ${documentsReady?`<button class="light" onclick="openNewDocument('quote','','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','','${id}')">New invoice</button>`:''}
+  <div class="quick-grid">
     <button class="navy" onclick="completeService('${id}')">Complete service</button>
+    <button class="gold" onclick="openNewJob('${id}')">Book work</button>
+    ${documentsReady?`<button class="light" onclick="openNewDocument('quote','','${id}')">New quote</button><button class="light" onclick="openNewDocument('invoice','','${id}')">New invoice</button>`:''}
     <button class="light" onclick="editCustomer('${id}')">Edit customer</button>
     <button class="light" onclick="changeCustomerStatus('${id}','${c.status==='archived'?'active':'archived'}')">${c.status==='archived'?'Restore':'Archive'}</button>
   </div>
@@ -498,25 +495,42 @@ async function saveService(id){
 }
 
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
+let selectedJobCustomerId='';
+function customerSearchText(c){return [c.name,c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
 function openNewJob(customerId=''){
   if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong>Open Supabase → SQL Editor → New query, paste the file contents and press Run.</div>`);
+  selectedJobCustomerId=customerId||'';
   const customer=customers.find(c=>c.id===customerId);
-  show(`<div class="head"><h2>New job</h2><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="field"><label>Customer</label><select id="jCustomer" onchange="fillJobAddress()">${customerOptions(customerId)}</select></div>
+  show(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="field"><label>Find customer</label><input id="jCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div></div>
   <div class="field"><label>Job title</label><input id="jTitle" placeholder="e.g. Boiler service, WC repair, boiler quote"></div>
-  <div class="row"><div class="field"><label>Status</label><select id="jStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked">Booked</option><option value="in_progress">In progress</option></select></div><div class="field"><label>Job type</label><select id="jType"><option value="">Choose type</option><option>Boiler installation</option><option>Boiler repair</option><option>Boiler service</option><option>Gas safety certificate</option><option>Heating repair</option><option>Plumbing repair</option><option>Bathroom work</option><option>Quote visit</option><option>Other</option></select></div></div>
-  <div class="row"><div class="field"><label>Booked date</label><input id="jDate" type="date"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
+  <div class="row"><div class="field"><label>Status</label><select id="jStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="booked" selected>Booked</option><option value="in_progress">In progress</option></select></div><div class="field"><label>Job type</label><select id="jType"><option value="">Choose type</option><option>Boiler installation</option><option>Boiler repair</option><option>Boiler service</option><option>Gas safety certificate</option><option>Heating repair</option><option>Plumbing repair</option><option>Bathroom work</option><option>Quote visit</option><option>Other</option></select></div></div>
+  <div class="row"><div class="field"><label>Booked date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time"></div></div>
   <div class="field"><label>Address</label><input id="jAddress" value="${esc(customer?.address||'')}"></div>
   <div class="row"><div class="field"><label>Postcode</label><input id="jPostcode" value="${esc(customer?.postcode||'')}"></div><div class="field"><label>Quoted price ex VAT</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div></div>
   <div class="field"><label>Job details / notes</label><textarea id="jDescription"></textarea></div>
   <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Save job</button>`);
+  if(customer)selectJobCustomer(customer.id,false); else setTimeout(()=>$('jCustomerSearch')?.focus(),50);
 }
-function fillJobAddress(){const c=customers.find(x=>x.id===$('jCustomer').value);if(!c)return;$('jAddress').value=c.address||'';$('jPostcode').value=c.postcode||''}
+function renderJobCustomerSearch(){
+  const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase();
+  if(!box)return;if(q.length<1){box.innerHTML='';return}
+  const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,12);
+  box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="selectJobCustomer('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')||'<div class="empty">No customer found. Add the customer first.</div>';
+}
+function selectJobCustomer(id,updateSearch=true){
+  const c=customers.find(x=>x.id===id);if(!c)return;selectedJobCustomerId=id;
+  if(updateSearch&&$('jCustomerSearch'))$('jCustomerSearch').value=c.name||'';
+  if($('jCustomerResults'))$('jCustomerResults').innerHTML='';
+  if($('jSelectedCustomer')){$('jSelectedCustomer').classList.remove('hidden');$('jSelectedCustomer').innerHTML=`<strong>${esc(c.name)}</strong><div class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</div>`}
+  if($('jAddress'))$('jAddress').value=c.address||'';if($('jPostcode'))$('jPostcode').value=c.postcode||'';
+}
+function fillJobAddress(){const c=customers.find(x=>x.id===selectedJobCustomerId);if(!c)return;$('jAddress').value=c.address||'';$('jPostcode').value=c.postcode||''}
 async function saveNewJob(){
   const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';
   const price=$('jPrice').value.trim();
-  const payload={owner_id:user.id,customer_id:$('jCustomer').value||null,title,job_type:$('jType').value||null,status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
+  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:$('jType').value||null,status:$('jStatus').value,scheduled_date:$('jDate').value||null,scheduled_time:$('jTime').value||null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price)};
   const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Save job';if(error)return alert(error.message);
   if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
   await loadAll();if(data)openJob(data.id)
