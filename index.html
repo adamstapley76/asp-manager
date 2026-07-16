@@ -39,6 +39,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .badge{display:inline-block;border:0;min-height:auto;cursor:default;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.service-date-button{cursor:pointer}.service-date-button:hover{outline:2px solid #c89b3c55}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
 .modal{position:fixed;left:0;right:0;top:var(--modal-top,0);height:var(--modal-available-height,100dvh);width:100%;max-width:100%;overflow:hidden;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none;overscroll-behavior:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto;touch-action:pan-y;scrollbar-gutter:stable}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.workflow-view{position:fixed;left:0;right:0;top:var(--visual-viewport-top);height:100dvh;height:var(--visual-viewport-height);z-index:100;background:#fff;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;touch-action:pan-y}.workflow-view.hidden{display:none!important}.workflow-header{flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:max(12px,env(safe-area-inset-top)) 15px 11px;border-bottom:1px solid var(--line);background:#fff}.workflow-header h2{margin:0;color:var(--navy)}.workflow-scroll{flex:1 1 auto;min-height:0;width:100%;max-width:760px;margin:0 auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:12px 15px calc(40px + env(safe-area-inset-bottom));scroll-padding-top:12px;scroll-padding-bottom:calc(40px + env(safe-area-inset-bottom))}body.workflow-active>header,body.workflow-active>#appView{visibility:hidden;pointer-events:none}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}
@@ -110,10 +111,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
     .job-sheet{padding-left:12px;padding-right:12px}.job-sheet .head{padding-top:11px;padding-bottom:9px;margin-bottom:9px}.job-sheet .detail-grid{gap:6px;margin:7px 0}.job-sheet .detail{padding:7px 8px}.job-sheet .muted-box{padding:9px}.job-sheet .primary-job-actions{gap:6px;margin:8px 0}.job-sheet .primary-job-actions>*{min-height:38px;padding:8px 10px}.job-sheet .secondary-panel{margin-top:8px}.job-sheet .secondary-panel summary{padding:9px}.job-sheet .item{padding:8px}.job-sheet .actions{gap:6px}
     .profit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet{scroll-padding-top:72px;scroll-padding-bottom:calc(28px + env(safe-area-inset-bottom))}
-    .modal.native-form-modal{top:var(--visual-viewport-top);height:var(--visual-viewport-height);padding:0;background:#fff;z-index:50;align-items:stretch}
-    .native-form-sheet{display:flex;flex-direction:column;width:100%;height:100%;max-height:100%;padding:0;overflow:hidden;overscroll-behavior:none;border-radius:0}
-    .native-form-sheet>.head{position:relative;top:auto;flex:0 0 auto;width:100%;margin:0;padding:max(12px,env(safe-area-inset-top)) 15px 11px;background:#fff;border-bottom:1px solid var(--line);z-index:2}
-    .native-form-scroll{flex:1 1 auto;min-height:0;width:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:12px 15px calc(34px + env(safe-area-inset-bottom));scroll-padding-top:12px;scroll-padding-bottom:calc(34px + env(safe-area-inset-bottom))}
   }
 </style>
 </head>
@@ -274,6 +271,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   </section>
 </div>
 
+<section id="workflowView" class="workflow-view hidden" aria-hidden="true"><div id="workflowHeader" class="workflow-header"></div><div id="workflowScroll" class="workflow-scroll"></div></section>
 <div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: new customers, bookings, visits and materials will save on this phone and sync when signal returns.</div>
 
 <script>
@@ -300,13 +298,13 @@ addEventListener('orientationchange',()=>setTimeout(syncFixedChromeHeights,100))
 function ensureActiveFieldVisible(behavior='auto'){
   const field=document.activeElement;if(!field||!/^(INPUT|TEXTAREA|SELECT)$/.test(field.tagName))return;
   const viewport=window.visualViewport,viewportTop=viewport?.offsetTop||0,viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
-  const sheet=field.closest('.sheet'),nativeScroller=field.closest('.native-form-scroll'),scrollContainer=nativeScroller||sheet,rect=field.getBoundingClientRect();
+  const sheet=field.closest('.sheet'),workflowScroller=field.closest('.workflow-scroll'),scrollContainer=workflowScroller||sheet,rect=field.getBoundingClientRect();
   const stickyHead=sheet?.querySelector(':scope > .head'),chromeBottom=(document.querySelector('header')?.getBoundingClientRect().bottom||0)+($('mobileNavShell')?.getBoundingClientRect().height||0);
-  const containerRect=scrollContainer?.getBoundingClientRect(),visibleTop=nativeScroller?(containerRect.top+12):(sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10);
+  const containerRect=scrollContainer?.getBoundingClientRect(),visibleTop=workflowScroller?(containerRect.top+12):(sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10);
   const visibleBottom=Math.min(viewportBottom-18,containerRect?.bottom??viewportBottom-18);
   let delta=0;if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;else if(rect.top<visibleTop)delta=rect.top-visibleTop;
   if(!delta)return;
-  if(scrollContainer)scrollContainer.scrollBy({top:delta,behavior:nativeScroller?'auto':behavior});
+  if(scrollContainer)scrollContainer.scrollBy({top:delta,behavior:workflowScroller?'auto':behavior});
 }
 function handleViewportChange(){syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
 addEventListener('resize',handleViewportChange);
@@ -655,18 +653,24 @@ $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').add
 function show(html,sheetClass=''){
   const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
   lockBackgroundPage();
-  modal.classList.toggle('native-form-modal',sheetClass==='native-form-sheet');
   sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   prepareFormInputs(sheet);
 }
-function showNativeForm(html){
-  show(html,'native-form-sheet');
-  const sheet=$('sheet'),head=sheet?.querySelector(':scope > .head');if(!sheet||!head)return;
-  const scroller=document.createElement('div');scroller.className='native-form-scroll';
-  while(head.nextSibling)scroller.appendChild(head.nextSibling);
-  sheet.appendChild(scroller);syncFixedChromeHeights();
+function showWorkflow(html){
+  if($('modal')?.classList.contains('on'))closeModal();
+  const view=$('workflowView'),header=$('workflowHeader'),scroller=$('workflowScroll');if(!view||!header||!scroller)return;
+  lockBackgroundPage();document.body.classList.add('workflow-active');
+  [document.querySelector('body>header'),appView].forEach(element=>{if(!element)return;element.inert=true;element.setAttribute('aria-hidden','true')});
+  const template=document.createElement('template');template.innerHTML=html.trim();const head=template.content.firstElementChild;
+  if(!head?.classList.contains('head'))throw new Error('Workflow view requires a header.');
+  header.innerHTML=head.innerHTML;head.remove();scroller.replaceChildren(template.content);scroller.scrollTop=0;
+  view.classList.remove('hidden');view.setAttribute('aria-hidden','false');prepareFormInputs(view);syncFixedChromeHeights();
+}
+function closeWorkflow(){
+  const view=$('workflowView');if(!view||view.classList.contains('hidden'))return;
+  view.classList.add('hidden');view.setAttribute('aria-hidden','true');$('workflowHeader').innerHTML='';$('workflowScroll').innerHTML='';document.body.classList.remove('workflow-active');[document.querySelector('body>header'),appView].forEach(element=>{if(!element)return;element.inert=false;element.removeAttribute('aria-hidden')});unlockBackgroundPage();
 }
 function prepareFormInputs(root=document){
   root.querySelectorAll('input').forEach(input=>{
@@ -686,7 +690,7 @@ function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
-  modal.classList.remove('on','native-form-modal');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
+  modal.classList.remove('on');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
   if(sheet){sheet.innerHTML='';sheet.className='sheet'}
 }
 let lockedPageScrollY=0;
@@ -697,7 +701,7 @@ function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=b
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
-document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible(event.target.closest('.native-form-scroll')?'auto':'smooth')))});
+document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible(event.target.closest('.workflow-scroll')?'auto':'smooth')))});
 
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openMaterialsList()">Material to get</button></div>`)
@@ -898,7 +902,7 @@ function openNewJob(customerId=''){
   if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong></div>`);
   selectedJobCustomerId=customerId||'';
   const customer=customers.find(c=>c.id===customerId);
-  showNativeForm(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeModal()">Close</button></div>
+  showWorkflow(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeWorkflow()">Close</button></div>
   <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" autocapitalize="words" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="inlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Work needed</label><input id="jTitle" autocomplete="off" autocapitalize="words" placeholder="e.g. Boiler service, pump replacement, WC repair" oninput="updateJobTypeHint()"><div id="jobTypeHint" class="meta">Type: Other</div></div>
   <div class="choice-grid"><button type="button" class="choice" onclick="applyJobTemplate('Boiler service')">Boiler service</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler repair')">Boiler repair</button><button type="button" class="choice" onclick="applyJobTemplate('Quote visit')">Quote visit</button><button type="button" class="choice" onclick="applyJobTemplate('Gas safety certificate')">Gas safety</button></div>
@@ -938,14 +942,14 @@ async function saveNewJob(){
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';setModalBusy(true);
   const price=$('jPrice').value.trim(),stage=$('jStage')?.value||'booked';
   const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?($('jTime').value||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null,lead_source:$('jLeadSource')?.value||null};
-  if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';setModalBusy(false);renderAll();closeModal();showPage('dashboard');return}
+  if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';setModalBusy(false);renderAll();closeWorkflow();showPage('dashboard');return}
   try{
     const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)throw error;
     if(payload.customer_id&&payload.status==='booked'){const {error:customerError}=await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);if(customerError)console.error('Job saved but customer status update failed',customerError)}
     await loadAll();
     const saved=jobs.find(job=>job.id===data?.id);
     if(!saved)throw new Error('The job saved, but was not returned by the refreshed jobs list. Close and reopen Jobs to find it.');
-    openJob(saved.id);
+    closeWorkflow();openJob(saved.id);
   }catch(error){console.error('Book work failed',error);alert(friendlyError(error))}
   finally{setModalBusy(false);appView.classList.remove('loading');if(button?.isConnected){button.disabled=false;button.textContent='Book work'}}
 }
@@ -1036,7 +1040,7 @@ async function saveCompletedJob(id){
 function editJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const linkedCustomer=customers.find(c=>c.id===j.customer_id);selectedEditJobCustomerId=j.customer_id||'';
-  showNativeForm(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
+  showWorkflow(`<div class="head"><h2>Edit job</h2><button class="light" onclick="closeWorkflow();openJob('${id}')">Back</button></div>
   <div class="field"><label>Customer</label><input id="ejCustomerSearch" type="text" inputmode="text" autocomplete="off" autocapitalize="words" placeholder="Search name, address, postcode or phone" value="${esc(linkedCustomer?.name||'')}" oninput="renderEditJobCustomerSearch()"><div id="ejCustomerResults" class="customer-search-results"></div><div id="ejSelectedCustomer" class="${linkedCustomer?'selected-customer':'hidden'}"></div><div id="editInlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Job title</label><input id="ejTitle" value="${esc(j.title)}"></div>
   <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="to_book">To book</option><option value="waiting">Waiting</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
@@ -1074,7 +1078,7 @@ async function saveJobEdit(id){
   const completingService=isServiceJob(jobs.find(j=>j.id===id))&&payload.status==='completed'&&jobs.find(j=>j.id===id)?.status!=='completed';
   if(completingService)payload.status=jobs.find(j=>j.id===id).status;else if(payload.status==='completed')payload.completed_at=new Date().toISOString();
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
-  await loadAll();if(completingService)return completeJob(id);openJob(id)
+  await loadAll();closeWorkflow();if(completingService)return completeJob(id);openJob(id)
 }
 async function deleteJob(id){if(!confirm('Permanently delete this job? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('jobs').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
 
