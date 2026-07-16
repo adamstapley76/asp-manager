@@ -90,7 +90,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .job-compact .job-quick .light:nth-of-type(n+3){display:none}
   .ga-autocomplete-list{z-index:9999!important}
   input[autocapitalize="words"]{text-transform:none}
-  .tomorrow-card{border-left:5px solid #98a2b3}.tomorrow-card .item{padding:9px 10px}.tomorrow-job{cursor:pointer}.tomorrow-job:active{background:#f8fafc}.tomorrow-job .item-actions{align-self:center}
+  .tomorrow-card{border-left:5px solid #98a2b3}.dashboard-job{padding:9px 10px!important}.dashboard-job h3{font-size:15px!important}.dashboard-job .meta{font-size:12px}.dashboard-job>.item-actions{align-self:center}.dashboard-job>.item-actions .gold{min-height:36px;height:36px;padding:7px 11px;font-size:12px}.dashboard-job.clickable{cursor:pointer}.dashboard-job.clickable:active{background:#f8fafc}
   .primary-job-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.primary-job-actions>*{width:100%}
   .secondary-panel{margin-top:12px}.secondary-panel summary{cursor:pointer;font-weight:800;color:var(--navy);padding:12px;border:1px solid var(--line);border-radius:11px;background:#f8fafc;list-style:none}.secondary-panel summary::-webkit-details-marker{display:none}.secondary-panel[open] summary{margin-bottom:10px}
   .service-callout{background:#fff8df;border:1px solid #f2d487;border-radius:12px;padding:11px;margin:10px 0}
@@ -99,7 +99,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     #appView{padding-top:calc(var(--header-height) + var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:var(--header-height);z-index:39;margin:0;padding:6px 10px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
     #authView{padding-top:70px}.app-nav{border-radius:0!important}
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
-    .today-primary .item{padding:8px}.today-primary .item-actions{display:none}
+    .today-primary .item{padding:8px}
     .modal{top:calc(var(--header-height) + var(--mobile-nav-height));bottom:auto;height:var(--modal-available-height);align-items:stretch;padding-top:max(8px,env(safe-area-inset-top))}
     .sheet{height:100%;max-height:100%;border-radius:16px 16px 0 0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
     .sheet>.head{position:sticky;top:0;z-index:4;background:#fff;padding:15px 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
@@ -496,9 +496,11 @@ function jobCard(job){
   const price=money(job.quoted_amount);
   return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
-function tomorrowJobCard(job){
-  const when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount);
-  return `<div class="item job-compact tomorrow-job" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div></div><div class="item-actions"><button class="gold" onclick="event.stopPropagation();openJob('${job.id}')">Open</button></div></div>`;
+function dashboardJobCard(job,mode='today'){
+  const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount),address=mapAddress(job),openOnly=mode==='tomorrow';
+  const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>${whatsappUrl(customer.phone)?`<a class="btn light" href="${whatsappUrl(customer.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`:''}${job.status!=='completed'?`<button class="light" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`;
+  const clickAttrs=openOnly?` role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"`:'';
+  return `<div class="item job-compact dashboard-job ${openOnly?'clickable':''}"${clickAttrs}><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><button class="gold" onclick="${openOnly?'event.stopPropagation();':''}openJob('${job.id}')">Open</button></div></div>`;
 }
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
@@ -529,8 +531,8 @@ function renderDashboard(){
   if($('service30K'))$('service30K').textContent=due30.length;
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
   if($('pipelinePreview'))$('pipelinePreview').innerHTML=[...toBook.slice(0,2),...waiting.slice(0,2)].map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
-  if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
-  if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(tomorrowJobCard).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
+  if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
+  if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
 
 function renderDiary(){
@@ -793,8 +795,19 @@ async function saveService(id){
 }
 
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
-let selectedJobCustomerId='';
+let selectedJobCustomerId='',selectedEditJobCustomerId='';
 function customerSearchText(c){return [c.name,c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
+function matchingCustomers(query,limit=10){const q=String(query||'').trim().toLowerCase();return q?customers.filter(c=>customerSearchText(c).includes(q)).slice(0,limit):[]}
+function customerPickHtml(list,selectFunction){return list.map(c=>`<button type="button" class="customer-pick" onclick="${selectFunction}('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')}
+function inlineCustomerCreatorHtml(prefix,initialName,createFunction,context){
+  return `<strong>No customer found</strong><div class="meta">Create them here without leaving ${esc(context)}.</div><div class="field"><label>Name</label><input id="${prefix}Name" type="text" inputmode="text" autocomplete="name" autocapitalize="words" autocorrect="on" spellcheck="true" value="${esc(initialName)}"></div><div class="row"><div class="field"><label>Phone</label><input id="${prefix}Phone" type="tel" inputmode="tel" autocomplete="tel"></div><div class="field"><label>Email (optional)</label><input id="${prefix}Email" type="email" inputmode="email" autocomplete="email" autocapitalize="none"></div></div><div class="field"><label>Address</label><input id="${prefix}Address" type="text" inputmode="text" autocomplete="street-address" autocapitalize="words"></div><div class="field"><label>Postcode</label><input id="${prefix}Postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters"></div><button type="button" class="navy" style="width:100%" onclick="${createFunction}()">Create and select customer</button>`;
+}
+async function createInlineCustomer(prefix,note){
+  const name=$(`${prefix}Name`)?.value.trim();if(!name){alert('Enter the customer name.');return null}
+  const payload={owner_id:user.id,name,address:$(`${prefix}Address`)?.value.trim()||'',postcode:$(`${prefix}Postcode`)?.value.trim().toUpperCase()||'',phone:$(`${prefix}Phone`)?.value.trim()||'',email:$(`${prefix}Email`)?.value.trim().toLowerCase()||'',boiler_make_model:'',notes:note,status:'active',service_count:0};
+  if(!isOnline()){const data={...payload,id:tempId(),created_at:new Date().toISOString()};customers.push(data);queueOperation('customers','insert',payload,data.id);return data}
+  const {data,error}=await sb.from('customers').insert(payload).select().single();if(error){alert(error.message);return null}customers.push(data);return data;
+}
 function inferJobType(title){
   const t=String(title||'').toLowerCase();
   if(/service/.test(t))return 'Boiler service';
@@ -830,15 +843,13 @@ function toggleJobStageFields(){const stage=$('jStage')?.value||'booked';$('jobD
 function renderJobCustomerSearch(){
   const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase(),creator=$('inlineCustomerCreate');
   if(!box)return;if(q.length<1){box.innerHTML='';creator?.classList.add('hidden');return}
-  const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,10);
-  box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="selectJobCustomer('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('');
-  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=`<strong>No customer found</strong><div class="meta">Create them here without leaving Book Work.</div><div class="field"><label>Name</label><input id="inlineName" type="text" inputmode="text" autocomplete="name" autocapitalize="words" autocorrect="on" spellcheck="true" value="${esc(($('jCustomerSearch')?.value||'').trim())}"></div><div class="row"><div class="field"><label>Phone</label><input id="inlinePhone" type="tel" inputmode="tel" autocomplete="tel"></div><div class="field"><label>Postcode</label><input id="inlinePostcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters"></div></div><div class="field"><label>Address</label><input id="inlineAddress" type="text" inputmode="text" autocomplete="street-address" autocapitalize="words"></div><button type="button" class="navy" style="width:100%" onclick="createCustomerInsideJob()">Create and select customer</button>`;enableAddressAutocompleteSoon('inlineAddress','inlinePostcode');prepareFormInputs(creator)}else creator?.classList.add('hidden');
+  const matches=matchingCustomers(q);
+  box.innerHTML=customerPickHtml(matches,'selectJobCustomer');
+  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=inlineCustomerCreatorHtml('inline',($('jCustomerSearch')?.value||'').trim(),'createCustomerInsideJob','Book Work');enableAddressAutocompleteSoon('inlineAddress','inlinePostcode');prepareFormInputs(creator)}else creator?.classList.add('hidden');
 }
 async function createCustomerInsideJob(){
-  const name=$('inlineName')?.value.trim();if(!name)return alert('Enter the customer name.');
-  const payload={owner_id:user.id,name,address:$('inlineAddress')?.value.trim()||'',postcode:$('inlinePostcode')?.value.trim().toUpperCase()||'',phone:$('inlinePhone')?.value.trim()||'',email:'',boiler_make_model:'',notes:'Created while booking work.',status:'active',service_count:0};
-  if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};customers.push(data);queueOperation('customers','insert',payload,id);selectedJobCustomerId=id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(id,false);$('inlineCustomerCreate')?.classList.add('hidden');return}
-  const {data,error}=await sb.from('customers').insert(payload).select().single();if(error)return alert(error.message);customers.push(data);selectedJobCustomerId=data.id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(data.id,false);$('inlineCustomerCreate')?.classList.add('hidden');
+  const data=await createInlineCustomer('inline','Created while booking work.');if(!data)return;
+  selectedJobCustomerId=data.id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(data.id,false);$('inlineCustomerCreate')?.classList.add('hidden');
 }
 function selectJobCustomer(id,updateSearch=true){
   const c=customers.find(x=>x.id===id);if(!c)return;selectedJobCustomerId=id;
@@ -949,8 +960,9 @@ async function saveCompletedJob(id){
 }
 function editJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
+  const linkedCustomer=customers.find(c=>c.id===j.customer_id);selectedEditJobCustomerId=j.customer_id||'';
   show(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
-  <div class="field"><label>Customer</label><select id="ejCustomer">${customerOptions(j.customer_id)}</select></div>
+  <div class="field"><label>Customer</label><input id="ejCustomerSearch" type="text" inputmode="text" autocomplete="off" autocapitalize="words" placeholder="Search name, address, postcode or phone" value="${esc(linkedCustomer?.name||'')}" oninput="renderEditJobCustomerSearch()"><div id="ejCustomerResults" class="customer-search-results"></div><div id="ejSelectedCustomer" class="${linkedCustomer?'selected-customer':'hidden'}"></div><div id="editInlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Job title</label><input id="ejTitle" value="${esc(j.title)}"></div>
   <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="to_book">To book</option><option value="waiting">Waiting</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
   <div class="row"><div class="field"><label>Booked date</label><input id="ejDate" type="date" value="${esc(j.scheduled_date)}"></div><div class="field"><label>Time</label><input id="ejTime" type="time" value="${esc(displayTime(j.scheduled_time))}"></div></div>
@@ -960,12 +972,30 @@ function editJob(id){
   <div class="field"><label>Invoice number</label><input id="ejInvoice" value="${esc(j.invoice_number)}"></div>
   <div class="field"><label>Job details / notes</label><textarea id="ejDescription">${esc(j.description)}</textarea></div>
   <button class="gold" style="width:100%" onclick="saveJobEdit('${id}')">Save changes</button>`);
-  $('ejStatus').value=j.status;if($('ejBilling'))$('ejBilling').value=j.billing_method||'time_materials';if($('ejLeadSource'))$('ejLeadSource').value=j.lead_source||'';enableAddressAutocompleteSoon('ejAddress','ejPostcode');
+  $('ejStatus').value=j.status;if($('ejBilling'))$('ejBilling').value=j.billing_method||'time_materials';if($('ejLeadSource'))$('ejLeadSource').value=j.lead_source||'';if(linkedCustomer)selectEditJobCustomer(linkedCustomer.id,false,false);enableAddressAutocompleteSoon('ejAddress','ejPostcode');
+}
+function renderEditJobCustomerSearch(){
+  const box=$('ejCustomerResults'),creator=$('editInlineCustomerCreate'),query=($('ejCustomerSearch')?.value||'').trim();if(!box)return;
+  if(!query){box.innerHTML='';creator?.classList.add('hidden');return}
+  const matches=matchingCustomers(query);box.innerHTML=customerPickHtml(matches,'selectEditJobCustomer');
+  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=inlineCustomerCreatorHtml('editInline',query,'createCustomerInsideJobEdit','Edit Job');enableAddressAutocompleteSoon('editInlineAddress','editInlinePostcode');prepareFormInputs(creator)}else creator?.classList.add('hidden');
+}
+function selectEditJobCustomer(id,updateSearch=true,fillAddress=true){
+  const customer=customers.find(c=>c.id===id);if(!customer)return;selectedEditJobCustomerId=id;
+  if(updateSearch&&$('ejCustomerSearch'))$('ejCustomerSearch').value=customer.name||'';
+  if($('ejCustomerResults'))$('ejCustomerResults').innerHTML='';
+  if($('editInlineCustomerCreate'))$('editInlineCustomerCreate').classList.add('hidden');
+  if($('ejSelectedCustomer')){$('ejSelectedCustomer').classList.remove('hidden');$('ejSelectedCustomer').innerHTML=`<strong>${esc(customer.name)}</strong><div class="meta">${esc([customer.address,customer.postcode,customer.phone].filter(Boolean).join(' · '))}</div>`}
+  if(fillAddress){if($('ejAddress'))$('ejAddress').value=customer.address||'';if($('ejPostcode'))$('ejPostcode').value=customer.postcode||''}
+}
+async function createCustomerInsideJobEdit(){
+  const customer=await createInlineCustomer('editInline','Created while editing a job.');if(!customer)return;
+  if($('ejCustomerSearch'))$('ejCustomerSearch').value=customer.name;selectEditJobCustomer(customer.id,false,true);
 }
 async function saveJobEdit(id){
   if(!requireOnline())return;
   const price=$('ejPrice').value.trim();
-  const payload={customer_id:$('ejCustomer').value||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),agreed_price:price===''?null:Number(price),billing_method:$('ejBilling')?.value||'time_materials',invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),lead_source:$('ejLeadSource')?.value||null,updated_at:new Date().toISOString()};
+  const payload={customer_id:selectedEditJobCustomerId||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),agreed_price:price===''?null:Number(price),billing_method:$('ejBilling')?.value||'time_materials',invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),lead_source:$('ejLeadSource')?.value||null,updated_at:new Date().toISOString()};
   const completingService=isServiceJob(jobs.find(j=>j.id===id))&&payload.status==='completed'&&jobs.find(j=>j.id===id)?.status!=='completed';
   if(completingService)payload.status=jobs.find(j=>j.id===id).status;else if(payload.status==='completed')payload.completed_at=new Date().toISOString();
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);

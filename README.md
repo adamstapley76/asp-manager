@@ -27,6 +27,8 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Keeps the sheet heading and Close action sticky while the sheet body scrolls independently.
 - Applies explicit text, telephone, email, decimal and postcode keyboard attributes across generated forms.
 - Forces customer name fields to alphabetic text entry with name autocomplete and word capitalisation.
+- Uses the shared customer-first search and inline creation flow when editing an existing job.
+- Renders Today and Tomorrow with one compact dashboard job-card component; Tomorrow remains whole-card clickable with open-only actions.
 
 ## Mobile test checklist
 
