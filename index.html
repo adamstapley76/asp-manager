@@ -15,17 +15,18 @@
   --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff;
   --header-height:58px;--mobile-nav-height:52px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
-body{margin:0;max-width:100%;overflow-x:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
-body.modal-open{overflow:hidden;position:fixed;left:0;right:0;width:100%}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth;width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+body{margin:0;width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+html.modal-open,body.modal-open{overflow:hidden!important;overscroll-behavior:none}
+body.modal-open{position:fixed;left:0;right:0;width:100%;max-width:100%}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px #0003}
 .header-inner{max-width:1080px;margin:auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{font-weight:850;font-size:21px;letter-spacing:-.2px}.sub{font-size:12px;color:#d0d5dd;margin-top:1px}
 .user-area{display:flex;gap:8px;align-items:center}.user-email{font-size:12px;color:#d0d5dd;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wrap{width:100%;max-width:1080px;margin:auto;padding:14px 14px 40px;overflow-x:clip}.wrap>*,section,.card,.item,.field,.row,.row-3,.split,.sheet{min-width:0;max-width:100%}
+.wrap{width:100%;max-width:1080px;margin:auto;padding:14px 14px 40px;overflow-x:hidden}.wrap>*,section,.card,.item,.field,.row,.row-3,.split,.sheet{min-width:0;max-width:100%}img,svg,video,canvas,table{max-width:100%}
 .card{width:100%;background:#fff;border:1px solid #edf0f2;border-radius:17px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #1018280d}
 .section-title{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2,.section-title h3{margin:0;color:var(--navy)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi b{display:block;font-size:28px;line-height:1.1;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
@@ -53,7 +54,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
 .compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
 .inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.materials-card{border-left:5px solid #667085}
-.materials-preview{display:grid;gap:2px}.material-compact-row{display:flex;align-items:center;gap:9px;min-height:34px;padding:5px 2px;border-bottom:1px solid #eef0f2;font-size:14px}.material-compact-row:last-child{border-bottom:0}.material-check{width:18px;height:18px;border:1.5px solid #98a2b3;border-radius:4px;flex:0 0 auto}.material-compact-row button{display:flex;width:100%;min-height:34px;padding:4px 2px;border-radius:5px;background:transparent;color:var(--text);justify-content:flex-start;font-weight:650;text-align:left}.material-full-list{display:grid;gap:3px}.material-full-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}.material-full-row .material-name{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex:1;min-width:0;min-height:40px;padding:6px 2px;background:transparent;color:var(--text);font-weight:700;text-align:left}
+.materials-preview{display:grid;gap:2px}.material-compact-row{display:flex;align-items:center;gap:9px;min-height:34px;padding:5px 2px;border-bottom:1px solid #eef0f2;font-size:14px;font-weight:650}.material-compact-row:last-child{border-bottom:0}.material-check{width:18px;height:18px;border:1.5px solid #98a2b3;border-radius:4px;flex:0 0 auto}.material-full-list{display:grid;gap:3px}.material-full-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}.material-full-row .material-name{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex:1;min-width:0;min-height:40px;padding:6px 2px;background:transparent;color:var(--text);font-weight:700;text-align:left}
 @media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 
@@ -85,8 +86,10 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .service-summary-grid button{display:block;background:#fff;border:1px solid var(--line);padding:9px 6px;border-radius:11px;color:var(--navy)}
   .service-summary-grid b{display:block;font-size:20px}.service-summary-grid span{font-size:10px;color:var(--muted)}
   .service-row{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
-  .service-row h3{margin:0 0 3px;color:var(--navy);font-size:16px}.service-row .actions{margin-top:8px}
-  .service-row .actions a,.service-row .actions button{padding:8px 10px;min-height:36px;font-size:12px}
+.service-row h3{margin:0 0 3px;color:var(--navy);font-size:16px}.service-row .actions{margin-top:8px}
+.service-row .actions a,.service-row .actions button{padding:8px 10px;min-height:36px;font-size:12px}
+.profit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.profit-box{min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}.profit-box b{display:block;max-width:100%;overflow-wrap:anywhere;font-size:17px;line-height:1.2;color:var(--navy)}.profit-box span{display:block;max-width:100%;overflow-wrap:anywhere;font-size:11px;line-height:1.25;color:var(--muted);margin-top:2px}
+.floating-accessibility-safe,#userwayAccessibilityIcon,.uwy,#INDmenu-btn,[data-accessibility-widget],vercel-live-feedback{bottom:calc(82px + env(safe-area-inset-bottom))!important;right:10px!important;left:auto!important}
   .job-compact{padding:10px!important}.job-compact .meta{font-size:12px}.job-compact .job-quick{margin-top:6px}
   .job-compact .job-quick .light:nth-of-type(n+3){display:none}
   .ga-autocomplete-list{z-index:9999!important}
@@ -105,6 +108,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     .sheet{width:100%;height:100%;max-height:100%;border-radius:0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto}
     .sheet>.head{position:sticky;top:0;z-index:4;background:#fff;padding:15px 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .job-sheet{padding-left:12px;padding-right:12px}.job-sheet .head{padding-top:11px;padding-bottom:9px;margin-bottom:9px}.job-sheet .detail-grid{gap:6px;margin:7px 0}.job-sheet .detail{padding:7px 8px}.job-sheet .muted-box{padding:9px}.job-sheet .primary-job-actions{gap:6px;margin:8px 0}.job-sheet .primary-job-actions>*{min-height:38px;padding:8px 10px}.job-sheet .secondary-panel{margin-top:8px}.job-sheet .secondary-panel summary{padding:9px}.job-sheet .item{padding:8px}.job-sheet .actions{gap:6px}
+    .profit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet{scroll-padding-top:72px;scroll-padding-bottom:calc(28px + env(safe-area-inset-bottom))}
   }
 </style>
 </head>
@@ -565,7 +570,7 @@ function renderMaterials(){
   const holder=$('materialsList');if(!holder)return;
   if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable the buying list.</div>';return}
   const list=tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}));
-  holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><span class="material-check" aria-hidden="true"></span><button type="button" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</button></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
+  holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><span class="material-check" aria-hidden="true"></span><span>${esc(t.title)}</span></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
 }
 function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}))}
 function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')"><span class="material-check" aria-hidden="true"></span>${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
@@ -637,9 +642,10 @@ function renderDocuments(){
 }
 $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);$('documentSearch').addEventListener('input',renderDocuments);
 
-function show(html){
+function show(html,sheetClass=''){
   const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
   lockBackgroundPage();
+  sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   prepareFormInputs(sheet);
@@ -663,11 +669,12 @@ document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanc
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
   modal.classList.remove('on');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
-  if(sheet)sheet.innerHTML='';
+  if(sheet){sheet.innerHTML='';sheet.className='sheet'}
 }
 let lockedPageScrollY=0;
-function lockBackgroundPage(){if(document.body.classList.contains('modal-open'))return;lockedPageScrollY=window.scrollY;document.body.style.top=`-${lockedPageScrollY}px`;document.body.classList.add('modal-open')}
-function unlockBackgroundPage(){if(!document.body.classList.contains('modal-open'))return;document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockedPageScrollY)}
+function lockBackgroundPage(){if(document.body.classList.contains('modal-open'))return;lockedPageScrollY=window.scrollY;document.body.style.top=`-${lockedPageScrollY}px`;document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open');requestAnimationFrame(()=>window.scrollTo(0,0))}
+function unlockBackgroundPage(){if(!document.body.classList.contains('modal-open'))return;document.documentElement.classList.remove('modal-open');document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockedPageScrollY)}
+addEventListener('scroll',()=>{if(document.body.classList.contains('modal-open')&&window.scrollY!==0)window.scrollTo(0,0)},{passive:true});
 function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=busy?'1':'0'}
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
@@ -973,7 +980,7 @@ function openJob(id){
     <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Materials & costs</h3><button class="gold" onclick="openAddCost('${id}')">Add cost</button></div>${costRows?`<table class="log-table"><tbody>${costRows}</tbody></table>`:'<div class="meta">No costs recorded yet.</div>'}</div>`:''}
     <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Documents are unavailable.</div>'}</div></div>
     <div class="actions" style="margin-top:12px">${j.status!=='waiting'?`<button class="light" onclick="openPutOnWaiting('${id}')">Put on waiting</button>`:''}${j.status!=='to_book'?`<button class="light" onclick="moveJobToBook('${id}')">Move to To book</button>`:''}<button class="light" onclick="openScheduleReturn('${id}')">Book into diary</button>${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}<button class="danger" onclick="deleteJob('${id}')">Delete mistake</button></div>
-  </details>`);
+  </details>`,'job-sheet');
 }
 function openPutOnWaiting(jobId){show(`<div class="head"><h2>Put job on waiting</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="field"><label>Waiting for</label><select id="waitReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div><div class="field"><label>Note</label><textarea id="waitNote" placeholder="e.g. Waiting for customer to choose tiles"></textarea></div><div class="field"><label>Optional follow-up date</label><input id="waitFollow" type="date"></div><button class="gold" style="width:100%" onclick="saveWaitingJob('${jobId}')">Save as waiting</button>`)}
 async function saveWaitingJob(jobId){if(!requireOnline())return;const job=jobs.find(j=>j.id===jobId),note=$('waitNote').value.trim();const description=[job?.description,note].filter(Boolean).join('\n');const {error}=await sb.from('jobs').update({status:'waiting',scheduled_date:null,scheduled_time:null,waiting_reason:$('waitReason').value,follow_up_date:$('waitFollow').value||null,description,updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
