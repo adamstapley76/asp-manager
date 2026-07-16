@@ -14,6 +14,16 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Simplified booked-job actions, with history, visits, costs, documents and waiting controls under More job details.
 - Mobile-friendly field attributes and 16px inputs to prevent iPhone Safari zoom.
 
+### Phone-test follow-up
+
+- Coalesces overlapping refreshes and defers database work outside Supabase auth callbacks so booking cannot leave the app locked.
+- Re-enables booking controls and removes the loading state on every completion/error path.
+- Opens a newly saved job only after it is present in the refreshed jobs collection.
+- Makes compact Tomorrow's Jobs cards tappable with a visible Open action.
+- Closes an active modal before Today, Customers, Book or More navigation runs.
+- Restores body scrolling and modal pointer state reliably when sheets close.
+- Keeps Delete mistake inside the expanded More job details panel.
+
 ## Mobile test checklist
 
 1. Open `asp-manager.vercel.app` in iPhone Safari, sign in, and confirm Today / Customers / Book / More remain directly below the blue header while scrolling.

@@ -18,6 +18,7 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+body.modal-open{overflow:hidden}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px #0003}
@@ -36,7 +37,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .badge{display:inline-block;border:0;min-height:auto;cursor:default;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.service-date-button{cursor:pointer}.service-date-button:hover{outline:2px solid #c89b3c55}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
-.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30}.modal.on{display:flex}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}
@@ -89,7 +90,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .job-compact .job-quick .light:nth-of-type(n+3){display:none}
   .ga-autocomplete-list{z-index:9999!important}
   input[autocapitalize="words"]{text-transform:none}
-  .tomorrow-card{border-left:5px solid #98a2b3}.tomorrow-card .item{padding:9px 10px}.tomorrow-card .job-quick{display:none}
+  .tomorrow-card{border-left:5px solid #98a2b3}.tomorrow-card .item{padding:9px 10px}.tomorrow-job{cursor:pointer}.tomorrow-job:active{background:#f8fafc}.tomorrow-job .item-actions{align-self:center}
   .primary-job-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.primary-job-actions>*{width:100%}
   .secondary-panel{margin-top:12px}.secondary-panel summary{cursor:pointer;font-weight:800;color:var(--navy);padding:12px;border:1px solid var(--line);border-radius:11px;background:#f8fafc;list-style:none}.secondary-panel summary::-webkit-details-marker{display:none}.secondary-panel[open] summary{margin-bottom:10px}
   .service-callout{background:#fff8df;border:1px solid #f2d487;border-radius:12px;padding:11px;margin:10px 0}
@@ -130,10 +131,10 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <div id="mobileNavShell" class="card mobile-nav-shell">
     <nav id="primaryMobileNav" class="app-nav primary-mobile-nav" aria-label="Primary">
-      <button id="navDashboard" class="light active" onclick="showPage('dashboard')">Today</button>
-      <button id="navCustomers" class="light" onclick="showPage('customers')">Customers</button>
-      <button class="gold" onclick="openNewJob()">Book</button>
-      <button id="navSettings" class="light" onclick="showPage('settings')">More</button>
+      <button id="navDashboard" class="light active" onclick="closeModalAndShowPage('dashboard')">Today</button>
+      <button id="navCustomers" class="light" onclick="closeModalAndShowPage('customers')">Customers</button>
+      <button class="gold" onclick="closeModalAndBook()">Book</button>
+      <button id="navSettings" class="light" onclick="closeModalAndShowPage('settings')">More</button>
       <button id="navDiary" class="light" onclick="showPage('diary')">Diary</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
       <button id="navDocuments" class="light" onclick="showPage('documents')">Money</button>
@@ -348,9 +349,21 @@ function setLoggedIn(sessionUser){
   authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);$('userArea').classList.toggle('hidden',!user);
   $('userEmail').textContent=user?.email||'';
 }
-if(sb)sb.auth.onAuthStateChange(async(_,session)=>{setLoggedIn(session?.user);if(user){await syncOfflineQueue();await loadAll()}});
+if(sb)sb.auth.onAuthStateChange((_,session)=>{
+  setLoggedIn(session?.user);
+  if(!user)return;
+  // Supabase advises returning from auth callbacks before making further
+  // Supabase calls. Deferring also lets loadAll coalesce repeated auth events.
+  queueMicrotask(async()=>{try{await syncOfflineQueue();await loadAll()}catch(error){console.error('Post-auth refresh failed',error);appView.classList.remove('loading')}});
+});
 
-async function loadAll(){
+let loadAllPromise=null;
+function loadAll(){
+  if(loadAllPromise)return loadAllPromise;
+  loadAllPromise=performLoadAll().finally(()=>{appView.classList.remove('loading');loadAllPromise=null});
+  return loadAllPromise;
+}
+async function performLoadAll(){
   updateOfflineState();updateSyncPill();
   if(!isOnline()){loadCachedSnapshot();appView.classList.remove('loading');return}
   appView.classList.add('loading');
@@ -474,6 +487,10 @@ function jobCard(job){
   const price=money(job.quoted_amount);
   return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
+function tomorrowJobCard(job){
+  const when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount);
+  return `<div class="item job-compact tomorrow-job" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div></div><div class="item-actions"><button class="gold" onclick="event.stopPropagation();openJob('${job.id}')">Open</button></div></div>`;
+}
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
   return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span></div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button></div></div>`;
@@ -504,7 +521,7 @@ function renderDashboard(){
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
   if($('pipelinePreview'))$('pipelinePreview').innerHTML=[...toBook.slice(0,2),...waiting.slice(0,2)].map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(jobCard).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
-  if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(jobCard).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
+  if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(tomorrowJobCard).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
 
 function renderDiary(){
@@ -566,7 +583,12 @@ function renderDocuments(){
 }
 $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);$('documentSearch').addEventListener('input',renderDocuments);
 
-function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on');prepareFormInputs($('sheet'))}
+function show(html){
+  const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
+  sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
+  modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
+  prepareFormInputs(sheet);
+}
 function prepareFormInputs(root=document){
   root.querySelectorAll('input').forEach(input=>{
     const id=(input.id||'').toLowerCase(),ph=(input.placeholder||'').toLowerCase();
@@ -579,8 +601,15 @@ function prepareFormInputs(root=document){
 }
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
-function closeModal(){$('modal').classList.remove('on')}
-$('modal').addEventListener('click',event=>{if(event.target===$('modal'))closeModal()});
+function closeModal(){
+  const modal=$('modal'),sheet=$('sheet');if(!modal)return;
+  modal.classList.remove('on');modal.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');
+  if(sheet)sheet.innerHTML='';
+}
+function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=busy?'1':'0'}
+function closeModalAndShowPage(page){closeModal();showPage(page)}
+function closeModalAndBook(){closeModal();openNewJob()}
+$('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
 $('modal').addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;setTimeout(()=>event.target.scrollIntoView({block:'center',behavior:'smooth'}),250)});
 
 function openNewMenu(){
@@ -807,11 +836,19 @@ function selectJobCustomer(id,updateSearch=true){
 }
 async function saveNewJob(){
   const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
-  const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';
+  const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';setModalBusy(true);
   const price=$('jPrice').value.trim(),stage=$('jStage')?.value||'booked';
   const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?($('jTime').value||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null,lead_source:$('jLeadSource')?.value||null};
-  if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';renderAll();closeModal();showPage('dashboard');return}
-  try{const {data,error}=await sb.from('jobs').insert(payload).select().single();button.disabled=false;button.textContent='Book work';if(error)return alert(friendlyError(error));if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);await loadAll();if(data)openJob(data.id)}catch(error){button.disabled=false;button.textContent='Book work';alert(friendlyError(error))}
+  if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';setModalBusy(false);renderAll();closeModal();showPage('dashboard');return}
+  try{
+    const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)throw error;
+    if(payload.customer_id&&payload.status==='booked'){const {error:customerError}=await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);if(customerError)console.error('Job saved but customer status update failed',customerError)}
+    await loadAll();
+    const saved=jobs.find(job=>job.id===data?.id);
+    if(!saved)throw new Error('The job saved, but was not returned by the refreshed jobs list. Close and reopen Jobs to find it.');
+    openJob(saved.id);
+  }catch(error){console.error('Book work failed',error);alert(friendlyError(error))}
+  finally{setModalBusy(false);appView.classList.remove('loading');if(button?.isConnected){button.disabled=false;button.textContent='Book work'}}
 }
 
 function openQuickDiaryEntry(){
