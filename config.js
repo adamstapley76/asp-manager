@@ -1,4 +1,5 @@
 window.ASP_CONFIG = {
   supabaseUrl: "https://njlxklvpbcmmyaartboh.supabase.co",
-  supabaseKey: "sb_publishable_meIRH_kySoqLaBuJlWeDEg_rf6RXquH"
+  supabaseKey: "sb_publishable_meIRH_kySoqLaBuJlWeDEg_rf6RXquH",
+  getAddressDomainToken: "dtoken_hEDzcyiWMr2C2pHLasX-u7IrFILS9ImQBT7_24MJ99Vp96kc0_K8vI1eyhADhPZyoHfyuboeWzrIf7xUuO43tsM32kNwyhdOmQ6rlh7wg9O2s_9Wq_1ikH2KFNandb1vrGKm49cRwHajLMKPSJEv8bRiUJbt_U7bseAzgXgQxIJ33SGx7EYtwsEF30s_f9IyNOaHvfnUbWBZSQNpvQD6YQ"
 };
