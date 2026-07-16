@@ -306,10 +306,17 @@ function ensureActiveFieldVisible(behavior='auto'){
   if(!delta)return;
   if(scrollContainer)scrollContainer.scrollBy({top:delta,behavior:workflowScroller?'auto':behavior});
 }
-function handleViewportChange(){syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
+let workflowViewportSettleTimer=0;
+function workflowIsActive(){return document.body.classList.contains('workflow-active')}
+function scheduleWorkflowViewportSettle(delay=140){
+  clearTimeout(workflowViewportSettleTimer);
+  workflowViewportSettleTimer=setTimeout(()=>{workflowViewportSettleTimer=0;if(!workflowIsActive())return;syncFixedChromeHeights();ensureActiveFieldVisible('auto')},delay);
+}
+function handleViewportChange(){if(workflowIsActive()){scheduleWorkflowViewportSettle();return}syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
+function handleViewportScroll(){if(workflowIsActive())return;syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
 addEventListener('resize',handleViewportChange);
 window.visualViewport?.addEventListener('resize',handleViewportChange);
-window.visualViewport?.addEventListener('scroll',handleViewportChange);
+window.visualViewport?.addEventListener('scroll',handleViewportScroll);
 syncFixedChromeHeights();
 
 function localDate(date=new Date()){
@@ -670,6 +677,7 @@ function showWorkflow(html){
 }
 function closeWorkflow(){
   const view=$('workflowView');if(!view||view.classList.contains('hidden'))return;
+  clearTimeout(workflowViewportSettleTimer);workflowViewportSettleTimer=0;
   view.classList.add('hidden');view.setAttribute('aria-hidden','true');$('workflowHeader').innerHTML='';$('workflowScroll').innerHTML='';document.body.classList.remove('workflow-active');[document.querySelector('body>header'),appView].forEach(element=>{if(!element)return;element.inert=false;element.removeAttribute('aria-hidden')});unlockBackgroundPage();
 }
 function prepareFormInputs(root=document){
@@ -696,12 +704,12 @@ function closeModal(){
 let lockedPageScrollY=0;
 function lockBackgroundPage(){if(document.body.classList.contains('modal-open'))return;lockedPageScrollY=window.scrollY;document.body.style.top=`-${lockedPageScrollY}px`;document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open');requestAnimationFrame(()=>window.scrollTo(0,0))}
 function unlockBackgroundPage(){if(!document.body.classList.contains('modal-open'))return;document.documentElement.classList.remove('modal-open');document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockedPageScrollY)}
-addEventListener('scroll',()=>{if(document.body.classList.contains('modal-open')&&window.scrollY!==0)window.scrollTo(0,0)},{passive:true});
+addEventListener('scroll',()=>{if(document.body.classList.contains('modal-open')&&!workflowIsActive()&&window.scrollY!==0)window.scrollTo(0,0)},{passive:true});
 function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=busy?'1':'0'}
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
-document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible(event.target.closest('.workflow-scroll')?'auto':'smooth')))});
+document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;if(event.target.closest('.workflow-scroll')){scheduleWorkflowViewportSettle(280);return}requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible('smooth')))});
 
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openMaterialsList()">Material to get</button></div>`)
