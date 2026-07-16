@@ -29,6 +29,11 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Forces customer name fields to alphabetic text entry with name autocomplete and word capitalisation.
 - Uses the shared customer-first search and inline creation flow when editing an existing job.
 - Renders Today and Tomorrow with one compact dashboard job-card component; Tomorrow remains whole-card clickable with open-only actions.
+- Keeps the active mobile field visible by adjusting the correct sheet/page scroll container on `visualViewport` changes.
+- Removes page-level horizontal overflow and makes wide document content wrap on mobile.
+- Opens Services Due on Next 30 Days, followed by Overdue and Review / no date.
+- Replaces Today's List with one undated Materials To Get buying list using the existing lightweight task storage.
+- Can copy a job material into Materials To Get and increases the existing quantity instead of duplicating its name.
 
 ## Mobile test checklist
 
@@ -44,6 +49,10 @@ The app remains a single-page `index.html` application using `config.js` and the
 10. Edit a job, preserve/change Lead source, save it, and check address, postcode, price, billing, dates and notes.
 11. Focus name, address, postcode, phone, price and notes fields on iPhone; confirm there is no Safari zoom or separate typing screen and the field remains above the keyboard.
 12. Switch offline, add supported queued work, restore signal, and confirm it syncs without losing customers, jobs, documents, tasks, stock, visits or costs.
+13. With the iPhone keyboard open, move through Book Work, Edit Job, customer, notes, quote and diary fields; confirm the focused field remains above the keyboard and the page never moves sideways.
+14. Open Services Due and confirm Next 30 Days is selected first, with Overdue and Review / no date available.
+15. Add, purchase and delete an item in Materials To Get. Add the same item twice and confirm its quantity increases.
+16. Add a material to a job with Add to Materials To Get selected; confirm the job cost remains attached and the buying-list quantity is updated.
 
 ## Existing database upgrades
 

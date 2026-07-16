@@ -16,8 +16,8 @@
   --header-height:58px;--mobile-nav-height:52px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;max-width:100%;overflow-x:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
 body.modal-open{overflow:hidden}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
@@ -25,25 +25,25 @@ header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-sh
 .header-inner{max-width:1080px;margin:auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{font-weight:850;font-size:21px;letter-spacing:-.2px}.sub{font-size:12px;color:#d0d5dd;margin-top:1px}
 .user-area{display:flex;gap:8px;align-items:center}.user-email{font-size:12px;color:#d0d5dd;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wrap{max-width:1080px;margin:auto;padding:14px 14px 40px}
-.card{background:#fff;border:1px solid #edf0f2;border-radius:17px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #1018280d}
+.wrap{width:100%;max-width:1080px;margin:auto;padding:14px 14px 40px;overflow-x:clip}.wrap>*,section,.card,.item,.field,.row,.row-3,.split,.sheet{min-width:0;max-width:100%}
+.card{width:100%;background:#fff;border:1px solid #edf0f2;border-radius:17px;padding:15px;margin-bottom:13px;box-shadow:0 2px 10px #1018280d}
 .section-title{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2,.section-title h3{margin:0;color:var(--navy)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi b{display:block;font-size:28px;line-height:1.1;color:var(--navy)}.kpi span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
-button,.btn{border:0;border-radius:11px;padding:11px 14px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
+button,.btn{max-width:100%;border:0;border-radius:11px;padding:11px 14px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
 button:disabled{opacity:.55;cursor:not-allowed}.gold{background:var(--gold);color:var(--navy)}.gold:hover{background:var(--gold2)}.navy{background:var(--navy);color:#fff}.navy:hover{background:var(--navy2)}.light{background:#fff;color:var(--navy);border:1px solid #d0d5dd}.danger{background:#fee4e2;color:var(--red)}.ghost{background:transparent;color:inherit;border:1px solid #ffffff42;padding:8px 11px;min-height:auto}
 input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;padding:11px;background:#fff;color:var(--text)}input:focus,select:focus,textarea:focus{outline:2px solid #c89b3c55;border-color:var(--gold)}textarea{min-height:95px;resize:vertical}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;color:var(--muted);margin-bottom:5px}.hint{font-size:11px;color:var(--muted);margin-top:4px}
 .actions{display:flex;gap:8px;flex-wrap:wrap}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.app-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}.app-nav button{white-space:nowrap}.app-nav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.app-nav{display:flex;gap:7px;flex-wrap:wrap;overflow-x:hidden;padding-bottom:2px}.app-nav button{white-space:nowrap}.app-nav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .badge{display:inline-block;border:0;min-height:auto;cursor:default;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.service-date-button{cursor:pointer}.service-date-button:hover{outline:2px solid #c89b3c55}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
-.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.modal{position:fixed;inset:0;width:100%;max-width:100%;overflow:hidden;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}
-.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;overflow-x:auto;margin:10px 0 12px}.filter-row button{white-space:nowrap;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;flex-wrap:wrap;overflow-x:hidden;margin:10px 0 12px}.filter-row button{white-space:normal;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
-.loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{overflow-x:auto}.doc-table{width:100%;border-collapse:collapse;min-width:560px}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right;white-space:nowrap}.print-only{display:none}
+.loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{max-width:100%;overflow-x:hidden}.doc-table{width:100%;table-layout:fixed;border-collapse:collapse}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right}.print-only{display:none}
 .today-card{border-left:5px solid var(--gold)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.quick-grid button,.quick-grid a{width:100%}.day-head{position:sticky;top:71px;z-index:5;background:var(--bg);padding:8px 0;font-weight:850;color:var(--navy)}.day-group{margin-bottom:18px}.job-quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.job-quick a,.job-quick button{min-height:36px;padding:8px 10px;font-size:12px}.stock-low{border-left:4px solid #f79009}.stock-zero{border-left:4px solid var(--red)}.checkline{display:flex;align-items:center;gap:9px}.checkline input{width:auto}.backup-box{background:#eef4ff;border:1px solid #b2ccff;border-radius:13px;padding:13px}
 .hero-today{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:0}.hero-today h1{margin:0;font-size:25px}.hero-today .meta{color:#d0d5dd}.attention-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.attention{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}.attention b{display:block;font-size:21px;color:var(--navy)}.attention span{font-size:11px;color:var(--muted)}.customer-search-results{display:grid;gap:7px;max-height:250px;overflow:auto;margin-top:7px}.customer-pick{width:100%;text-align:left;background:#fff;border:1px solid var(--line);padding:10px;border-radius:10px;display:block}.customer-pick strong{display:block;color:var(--navy)}.selected-customer{background:#ecfdf3;border:1px solid #abefc6;border-radius:11px;padding:10px;margin-top:8px}.new-menu{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.new-menu button{min-height:58px;font-size:14px}
 @media(max-width:760px){
@@ -52,7 +52,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
 .hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
 .compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
-.inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.today-list-card{border-left:5px solid #667085}
+.inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.materials-card{border-left:5px solid #667085}
 @media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 
@@ -101,7 +101,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
     .today-primary .item{padding:8px}
     .modal{top:calc(var(--header-height) + var(--mobile-nav-height));bottom:auto;height:var(--modal-available-height);align-items:stretch;padding-top:max(8px,env(safe-area-inset-top))}
-    .sheet{height:100%;max-height:100%;border-radius:16px 16px 0 0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
+    .sheet{width:100%;height:100%;max-height:100%;border-radius:16px 16px 0 0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto}
     .sheet>.head{position:sticky;top:0;z-index:4;background:#fff;padding:15px 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
@@ -160,12 +160,19 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card service-summary compact-section">
-      <div class="section-title"><div><h2>Services due</h2><div class="meta">Recurring work worth protecting.</div></div><button class="light" onclick="showDue('all')">Open</button></div>
+      <div class="section-title"><div><h2>Services due</h2><div class="meta">Recurring work worth protecting.</div></div><button class="light" onclick="showDue('30')">Open</button></div>
       <div class="service-summary-grid">
-        <button onclick="showDue('overdue')"><b id="serviceOverdueK">0</b><span>Overdue</span></button>
         <button onclick="showDue('30')"><b id="service30K">0</b><span>Next 30 days</span></button>
-        <button onclick="showServiceDataCheck()"><b id="serviceNoDateK">0</b><span>No date / review</span></button>
+        <button onclick="showDue('overdue')"><b id="serviceOverdueK">0</b><span>Overdue</span></button>
+        <button onclick="showDue('review')"><b id="serviceNoDateK">0</b><span>Review / no date</span></button>
       </div>
+    </div>
+
+    <div class="card materials-card compact-section">
+      <div class="section-title"><div><h2>Materials To Get</h2><div class="meta">One simple buying list.</div></div></div>
+      <div class="row material-add-row"><div class="field"><label>Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" placeholder="e.g. 15mm copper"></div><div class="field"><label>Quantity (optional)</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div>
+      <button class="gold" style="width:100%;margin-bottom:10px" onclick="saveMaterialItem()">Add to Materials To Get</button>
+      <div id="materialsList" class="list"></div>
     </div>
 
     <div class="card pipeline-card">
@@ -177,10 +184,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div id="pipelinePreview" class="list" style="margin-top:12px"></div>
     </div>
 
-    <div class="card today-list-card compact-section">
-      <div class="section-title"><h2>Today's list</h2><button class="light" onclick="openQuickTask()">+ Add</button></div>
-      <div id="todayTasks" class="list"></div>
-    </div>
   </section>
 
   <section id="pageDiary" class="hidden">
@@ -211,7 +214,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div class="card">
       <div class="section-title"><div><h2>Data protection</h2><div class="meta">Your customer database matters more than the app code.</div></div></div>
       <div class="backup-box"><strong>Download a complete backup</strong><div class="meta" style="margin:5px 0 12px">Exports customers, jobs, quotes, invoices, reminders and van stock into one dated JSON file.</div><button class="gold" onclick="downloadBackup()">Download backup now</button></div>
-      <div class="muted-box" style="margin-top:12px"><b>Offline foundation</b><div class="meta">New customers, booked work, quick entries, today-list items, visits and job costs save on this device first when there is no signal. They sync automatically when connection returns. Quotes, invoices, payments and complex edits still require an internet connection.</div></div><div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
+      <div class="muted-box" style="margin-top:12px"><b>Offline foundation</b><div class="meta">New customers, booked work, quick entries, materials, visits and job costs save on this device first when there is no signal. They sync automatically when connection returns. Quotes, invoices, payments and complex edits still require an internet connection.</div></div><div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
     </div>
   </section>
 
@@ -263,7 +266,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   </section>
 </div>
 
-<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: new customers, bookings, visits and today-list items will save on this phone and sync when signal returns.</div>
+<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: new customers, bookings, visits and materials will save on this phone and sync when signal returns.</div>
 
 <script>
 const cfg=window.ASP_CONFIG;
@@ -284,9 +287,21 @@ function syncFixedChromeHeights(){
 new ResizeObserver(syncFixedChromeHeights).observe(document.querySelector('header'));
 new ResizeObserver(syncFixedChromeHeights).observe($('mobileNavShell'));
 addEventListener('orientationchange',()=>setTimeout(syncFixedChromeHeights,100));
-addEventListener('resize',syncFixedChromeHeights);
-window.visualViewport?.addEventListener('resize',syncFixedChromeHeights);
-window.visualViewport?.addEventListener('scroll',syncFixedChromeHeights);
+function ensureActiveFieldVisible(behavior='auto'){
+  const field=document.activeElement;if(!field||!/^(INPUT|TEXTAREA|SELECT)$/.test(field.tagName))return;
+  const viewport=window.visualViewport,viewportTop=viewport?.offsetTop||0,viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
+  const sheet=field.closest('.sheet'),rect=field.getBoundingClientRect();
+  const stickyHead=sheet?.querySelector(':scope > .head'),chromeBottom=(document.querySelector('header')?.getBoundingClientRect().bottom||0)+($('mobileNavShell')?.getBoundingClientRect().height||0);
+  const visibleTop=sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10;
+  const visibleBottom=viewportBottom-16;
+  let delta=0;if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;else if(rect.top<visibleTop)delta=rect.top-visibleTop;
+  if(!delta)return;
+  if(sheet)sheet.scrollBy({top:delta,behavior});else window.scrollBy({top:delta,behavior});
+}
+function handleViewportChange(){syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
+addEventListener('resize',handleViewportChange);
+window.visualViewport?.addEventListener('resize',handleViewportChange);
+window.visualViewport?.addEventListener('scroll',handleViewportChange);
 syncFixedChromeHeights();
 
 function localDate(date=new Date()){
@@ -409,7 +424,7 @@ async function performLoadAll(){
   }
 }
 function safeRender(name,fn){try{fn()}catch(error){console.error(`Render failed: ${name}`,error);const notice=$('setupNotice');if(notice){notice.innerHTML+=`<div style="margin-top:6px">${esc(name)} section could not display, but the rest of the app remains available.</div>`;notice.classList.remove('hidden')}}}
-function renderAll(){safeRender('Today',renderDashboard);safeRender('Diary',renderDiary);safeRender('Customers',renderCustomers);safeRender('Jobs',renderJobs);safeRender('Documents',renderDocuments);safeRender('Today list',renderTasks);safeRender('Van stock',renderStock)}
+function renderAll(){safeRender('Today',renderDashboard);safeRender('Diary',renderDiary);safeRender('Customers',renderCustomers);safeRender('Jobs',renderJobs);safeRender('Documents',renderDocuments);safeRender('Materials',renderMaterials);safeRender('Van stock',renderStock)}
 
 function showPage(page){
   currentPage=page;
@@ -543,14 +558,35 @@ function renderDiary(){
   const groups={};relevant.forEach(j=>(groups[j.scheduled_date]??=[]).push(j));
   holder.innerHTML=Object.keys(groups).map(date=>`<div class="day-group"><div class="day-head">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div><div class="list">${groups[date].map(jobCard).join('')}</div></div>`).join('')||'<div class="empty">No booked jobs in this period.</div>';
 }
-function renderTasks(){
-  const holder=$('todayTasks');if(!holder)return;
-  if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable reminders.</div>';return}
-  const due=tasks.filter(t=>!t.completed&&(!t.due_date||t.due_date<=today())).sort((a,b)=>(a.due_date||'').localeCompare(b.due_date||''));
-  holder.innerHTML=due.map(t=>`<div class="item"><div><div class="checkline"><input type="checkbox" onchange="completeTask('${t.id}')"><h3>${esc(t.title)}</h3></div><div class="meta">${esc(t.due_date?displayDate(t.due_date):'No date')}${t.notes?` · ${esc(t.notes)}`:''}</div></div><button class="light" onclick="deleteTask('${t.id}')">Remove</button></div>`).join('')||'<div class="empty">Nothing due today.</div>';
+function normaliseMaterialName(value){return String(value||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function materialQuantity(task){const match=String(task?.notes||'').match(/^Quantity:\s*([0-9.]+)/i);return Math.max(.01,Number(match?.[1]||1))}
+function materialQuantityNote(quantity){return `Quantity: ${Number(quantity||1)}`}
+function renderMaterials(){
+  const holder=$('materialsList');if(!holder)return;
+  if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable the buying list.</div>';return}
+  const list=tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}));
+  holder.innerHTML=list.map(t=>`<div class="item"><div><h3>${esc(t.title)}</h3><div class="meta">Quantity: ${esc(materialQuantity(t))}</div></div><div class="item-actions"><button class="gold" onclick="markMaterialPurchased('${t.id}')">Purchased</button><button class="danger" onclick="deleteMaterialItem('${t.id}')">Delete</button></div></div>`).join('')||'<div class="empty">Nothing to buy.</div>';
 }
-function openQuickTask(){if(!extrasReady)return alert('Run supabase_setup_v0.4.sql first.');show(`<div class="head"><h2>Add to today's list</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="taskTitle" placeholder="e.g. Pick up pump, call customer, buy CT1"></div><div class="row"><div class="field"><label>Due date</label><input id="taskDate" type="date" value="${today()}"></div><div class="field"><label>Linked customer (optional)</label><select id="taskCustomer">${customerOptions('')}</select></div></div><div class="field"><label>Notes</label><textarea id="taskNotes"></textarea></div><button class="gold" style="width:100%" onclick="saveTask()">Add to today's list</button>`)}
-async function saveTask(){const title=$('taskTitle').value.trim();if(!title)return alert('Enter the item.');const payload={owner_id:user.id,title,due_date:$('taskDate').value||null,customer_id:$('taskCustomer').value||null,notes:$('taskNotes').value.trim(),completed:false};if(!isOnline()){const id=tempId();tasks.push({...payload,id,created_at:new Date().toISOString()});queueOperation('tasks','insert',payload,id);renderAll();closeModal();return}const {error}=await sb.from('tasks').insert(payload);if(error)return alert(error.message);await loadAll();closeModal()}
+async function addMaterialToGet(title,quantity=1,refresh=true){
+  const cleanTitle=smartCaps(String(title||'').trim()),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
+  const existing=tasks.find(t=>!t.completed&&!t.due_date&&normaliseMaterialName(t.title)===normaliseMaterialName(cleanTitle));
+  if(existing){
+    const notes=materialQuantityNote(materialQuantity(existing)+qty),update={notes,updated_at:new Date().toISOString()};
+    if(!isOnline()){existing.notes=notes;queueOperation('tasks','update',update,'',{id:existing.id});renderMaterials();return existing}
+    const {error}=await sb.from('tasks').update(update).eq('id',existing.id);if(error)throw error;
+  }else{
+    const payload={owner_id:user.id,title:cleanTitle,due_date:null,customer_id:null,notes:materialQuantityNote(qty),completed:false};
+    if(!isOnline()){const record={...payload,id:tempId(),created_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderMaterials();return record}
+    const {error}=await sb.from('tasks').insert(payload);if(error)throw error;
+  }
+  if(refresh)await loadAll();return true;
+}
+async function saveMaterialItem(){
+  const title=$('materialTitle')?.value.trim(),quantity=Number($('materialQty')?.value||1);if(!title)return alert('Enter the material.');
+  try{await addMaterialToGet(title,quantity,true);$('materialTitle').value='';$('materialQty').value='';$('materialTitle').focus()}catch(error){alert(friendlyError(error))}
+}
+async function markMaterialPurchased(id){const item=tasks.find(t=>t.id===id);if(!item)return;const update={completed:true,updated_at:new Date().toISOString()};if(!isOnline()){Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderMaterials();return}const {error}=await sb.from('tasks').update(update).eq('id',id);if(error)return alert(error.message);await loadAll()}
+async function deleteMaterialItem(id){if(!confirm('Delete this material?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
 function setJobFilter(value){jobFilter=value;document.querySelectorAll('#jobFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderJobs()}
 
 function renderStock(){
@@ -625,11 +661,12 @@ function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=b
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
-$('modal').addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;setTimeout(()=>event.target.scrollIntoView({block:'center',behavior:'smooth'}),250)});
+document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible('smooth')))});
 
 function openNewMenu(){
-  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openQuickTask()">Today's list item</button></div>`)
+  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openMaterialsList()">Material to get</button></div>`)
 }
+function openMaterialsList(){closeModal();showPage('dashboard');requestAnimationFrame(()=>$('materialTitle')?.focus())}
 function openServicePicker(){
   show(`<div class="head"><h2>Book boiler service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
 }
@@ -661,16 +698,17 @@ function serviceReminderStatus(customer){
   if(customer.service_reminded_at)return `Reminded ${displayDate(String(customer.service_reminded_at).slice(0,10))}`;
   return '';
 }
-function showDue(filter='all'){
+function showDue(filter='30'){
   const eligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready'&&c.next_due);
-  let list=eligible.filter(c=>daysUntil(c.next_due)<=90);
+  let list=filter==='review'?customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier==='review'||!c.next_due)):eligible.filter(c=>daysUntil(c.next_due)<=90);
   if(filter==='overdue')list=list.filter(c=>daysUntil(c.next_due)<0);
   if(filter==='30')list=list.filter(c=>daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
-  list.sort((a,b)=>String(a.next_due).localeCompare(String(b.next_due)));
+  list.sort((a,b)=>String(a.next_due||'9999').localeCompare(String(b.next_due||'9999'))||String(a.name||'').localeCompare(String(b.name||'')));
   show(`<div class="head"><div><h2>Services due</h2><div class="meta">Only active, recent service customers are shown by default.</div></div><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="filter-row"><button class="light ${filter==='all'?'active':''}" onclick="showDue('all')">All due</button><button class="light ${filter==='overdue'?'active':''}" onclick="showDue('overdue')">Overdue</button><button class="light ${filter==='30'?'active':''}" onclick="showDue('30')">Next 30 days</button><button class="light" onclick="showServiceDataCheck()">Data check</button></div>
-  <div class="list">${list.map(serviceReminderCard).join('')||'<div class="empty">No service customers in this group.</div>'}</div>`);
+  <div class="filter-row"><button class="light ${filter==='30'?'active':''}" onclick="showDue('30')">Next 30 days</button><button class="light ${filter==='overdue'?'active':''}" onclick="showDue('overdue')">Overdue</button><button class="light ${filter==='review'?'active':''}" onclick="showDue('review')">Review / no date</button><button class="light ${filter==='all'?'active':''}" onclick="showDue('all')">All due</button></div>
+  <div class="list">${list.map(c=>filter==='review'?serviceReviewCard(c):serviceReminderCard(c)).join('')||'<div class="empty">No service customers in this group.</div>'}</div>`);
 }
+function serviceReviewCard(c){return `<div class="service-row"><h3>${esc(c.name)}</h3><div class="meta">${esc(customerAddress(c)||'No address')} · ${c.next_due?`Review date: ${esc(displayDate(c.next_due))}`:'No service date recorded'}</div><div class="actions"><button class="navy" onclick="bookServiceForCustomer('${c.id}')">Book service</button><button class="light" onclick="openCustomer('${c.id}')">Open customer</button></div></div>`}
 function serviceReminderCard(c){
   const d=daysUntil(c.next_due),status=serviceReminderStatus(c),text=serviceReminderText(c);
   const wa=whatsappUrl(c.phone,text);
@@ -1030,9 +1068,19 @@ function openAddCost(jobId){
   <div class="field"><label>Description</label><input id="costDescription" placeholder="e.g. Grundfos pump"></div>
   <div class="row-3"><div class="field"><label>Quantity</label><input id="costQty" type="number" inputmode="decimal" step="any" value="1"></div><div class="field"><label>Your unit cost £</label><input id="costUnit" type="number" inputmode="decimal" step="any"></div><div class="field"><label>Charge per unit £</label><input id="costSell" type="number" inputmode="decimal" step="any"></div></div>
   <div class="checkline"><input id="costCharge" type="checkbox"><label for="costCharge">Charge this item to the customer / treat as an extra</label></div>
+  <div class="checkline" style="margin-top:10px"><input id="costAddToMaterials" type="checkbox"><label for="costAddToMaterials">Add to Materials To Get</label></div>
   <div class="field" style="margin-top:10px"><label>Private note</label><textarea id="costNotes"></textarea></div><button id="saveCostBtn" class="gold" style="width:100%" onclick="saveJobCost('${jobId}')">Save cost</button>`)
 }
-async function saveJobCost(jobId){const description=$('costDescription').value.trim();if(!description)return alert('Enter what the cost was for.');const payload={owner_id:user.id,job_id:jobId,cost_date:$('costDate').value||today(),category:$('costCategory').value,description,quantity:Number($('costQty').value||1),unit_cost:Number($('costUnit').value||0),charge_to_customer:$('costCharge').checked,sell_price:Number($('costSell').value||0),notes:$('costNotes').value.trim()};if(!isOnline()){const id=tempId();jobCosts.push({...payload,id,created_at:new Date().toISOString()});queueOperation('job_costs','insert',payload,id);renderAll();closeModal();showSyncNotice('Cost saved on this phone — waiting for signal');return}const btn=$('saveCostBtn');btn.disabled=true;btn.textContent='Saving…';const {error}=await sb.from('job_costs').insert(payload);if(error){btn.disabled=false;btn.textContent='Save cost';return alert(error.message)}await loadAll();openJob(jobId)}
+async function saveJobCost(jobId){
+  const description=$('costDescription').value.trim();if(!description)return alert('Enter what the cost was for.');
+  const quantity=Number($('costQty').value||1),addToMaterials=$('costAddToMaterials').checked;
+  const payload={owner_id:user.id,job_id:jobId,cost_date:$('costDate').value||today(),category:$('costCategory').value,description,quantity,unit_cost:Number($('costUnit').value||0),charge_to_customer:$('costCharge').checked,sell_price:Number($('costSell').value||0),notes:$('costNotes').value.trim()};
+  if(!isOnline()){const id=tempId();jobCosts.push({...payload,id,created_at:new Date().toISOString()});queueOperation('job_costs','insert',payload,id);if(addToMaterials)await addMaterialToGet(description,quantity,false);renderAll();closeModal();showSyncNotice('Cost and buying list saved on this phone — waiting for signal');return}
+  const btn=$('saveCostBtn');btn.disabled=true;btn.textContent='Saving…';
+  try{const {error}=await sb.from('job_costs').insert(payload);if(error)throw error;if(addToMaterials)await addMaterialToGet(description,quantity,false);await loadAll();openJob(jobId)}
+  catch(error){alert(friendlyError(error))}
+  finally{if(btn?.isConnected){btn.disabled=false;btn.textContent='Save cost'}}
+}
 function jobOptions(selected='',customerId=''){
   const eligible=customerId?jobs.filter(j=>j.customer_id===customerId):jobs;
   return `<option value="">No job linked</option>`+eligible.map(j=>`<option value="${j.id}" ${j.id===selected?'selected':''}>${esc(j.title)} — ${esc(customerName(j.customer_id))}</option>`).join('')
@@ -1167,8 +1215,6 @@ async function importCSV(){
 
 
 async function quickCompleteJob(id){const job=jobs.find(j=>j.id===id);if(isServiceJob(job))return completeJob(id);if(!confirm('Mark this job complete?'))return;const when=new Date().toISOString();const {error}=await sb.from('jobs').update({status:'completed',completed_at:when,updated_at:when}).eq('id',id);if(error)return alert(error.message);await loadAll()}
-async function completeTask(id){const {error}=await sb.from('tasks').update({completed:true,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
-async function deleteTask(id){if(!confirm('Remove this item?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
 function openStockItem(){show(`<div class="head"><h2>Add van stock item</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Item</label><input id="stockName" placeholder="e.g. 22mm lever valve"></div><div class="row"><div class="field"><label>Quantity in van</label><input id="stockQty" type="number" min="0" value="0"></div><div class="field"><label>Minimum quantity</label><input id="stockMin" type="number" min="0" value="1"></div></div><div class="field"><label>Merchant (optional)</label><input id="stockMerchant" placeholder="e.g. City Plumbing"></div><button class="gold" style="width:100%" onclick="saveStockItem()">Save item</button>`)}
 async function saveStockItem(){const name=smartCaps($('stockName')?.value);if(!name)return alert('Enter the item.');const payload={owner_id:user.id,name,quantity:Number($('stockQty')?.value||0),minimum_quantity:Number($('stockMin')?.value||1),merchant:smartCaps($('stockMerchant')?.value||''),needed:Number($('stockQty')?.value||0)<=Number($('stockMin')?.value||1)};const {error}=await sb.from('stock_items').insert(payload);if(error)return alert(error.message);await loadAll();closeModal()}
 async function changeStock(id,delta){const item=stockItems.find(x=>x.id===id);if(!item)return;const quantity=Math.max(0,Number(item.quantity||0)+Number(delta||0));const needed=quantity<=Number(item.minimum_quantity||1);const {error}=await sb.from('stock_items').update({quantity,needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
