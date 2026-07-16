@@ -13,7 +13,7 @@
   --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
   --text:#1f2937;--muted:#667085;--line:#e4e7ec;--red:#b42318;--amber:#b54708;
   --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff;
-  --header-height:58px;--mobile-nav-height:52px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
+  --header-height:58px;--mobile-nav-height:52px;--visual-viewport-top:0px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
 *{box-sizing:border-box;min-width:0}
 html{scroll-behavior:smooth;width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
@@ -110,6 +110,10 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
     .job-sheet{padding-left:12px;padding-right:12px}.job-sheet .head{padding-top:11px;padding-bottom:9px;margin-bottom:9px}.job-sheet .detail-grid{gap:6px;margin:7px 0}.job-sheet .detail{padding:7px 8px}.job-sheet .muted-box{padding:9px}.job-sheet .primary-job-actions{gap:6px;margin:8px 0}.job-sheet .primary-job-actions>*{min-height:38px;padding:8px 10px}.job-sheet .secondary-panel{margin-top:8px}.job-sheet .secondary-panel summary{padding:9px}.job-sheet .item{padding:8px}.job-sheet .actions{gap:6px}
     .profit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet{scroll-padding-top:72px;scroll-padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+    .modal.native-form-modal{top:var(--visual-viewport-top);height:var(--visual-viewport-height);padding:0;background:#fff;z-index:50;align-items:stretch}
+    .native-form-sheet{display:flex;flex-direction:column;width:100%;height:100%;max-height:100%;padding:0;overflow:hidden;overscroll-behavior:none;border-radius:0}
+    .native-form-sheet>.head{position:relative;top:auto;flex:0 0 auto;width:100%;margin:0;padding:max(12px,env(safe-area-inset-top)) 15px 11px;background:#fff;border-bottom:1px solid var(--line);z-index:2}
+    .native-form-scroll{flex:1 1 auto;min-height:0;width:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:12px 15px calc(34px + env(safe-area-inset-bottom));scroll-padding-top:12px;scroll-padding-bottom:calc(34px + env(safe-area-inset-bottom))}
   }
 </style>
 </head>
@@ -285,6 +289,7 @@ function syncFixedChromeHeights(){
   const viewport=window.visualViewport,viewportHeight=viewport?.height||window.innerHeight,isMobile=matchMedia('(max-width:760px)').matches;
   if(header)document.documentElement.style.setProperty('--header-height',headerHeight+'px');
   if(nav)document.documentElement.style.setProperty('--mobile-nav-height',navHeight+'px');
+  document.documentElement.style.setProperty('--visual-viewport-top',(viewport?.offsetTop||0)+'px');
   document.documentElement.style.setProperty('--visual-viewport-height',viewportHeight+'px');
   document.documentElement.style.setProperty('--modal-top',((viewport?.offsetTop||0)+(isMobile?headerHeight+navHeight:0))+'px');
   document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-(isMobile?headerHeight+navHeight:0))+'px');
@@ -295,13 +300,13 @@ addEventListener('orientationchange',()=>setTimeout(syncFixedChromeHeights,100))
 function ensureActiveFieldVisible(behavior='auto'){
   const field=document.activeElement;if(!field||!/^(INPUT|TEXTAREA|SELECT)$/.test(field.tagName))return;
   const viewport=window.visualViewport,viewportTop=viewport?.offsetTop||0,viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
-  const sheet=field.closest('.sheet'),rect=field.getBoundingClientRect();
+  const sheet=field.closest('.sheet'),nativeScroller=field.closest('.native-form-scroll'),scrollContainer=nativeScroller||sheet,rect=field.getBoundingClientRect();
   const stickyHead=sheet?.querySelector(':scope > .head'),chromeBottom=(document.querySelector('header')?.getBoundingClientRect().bottom||0)+($('mobileNavShell')?.getBoundingClientRect().height||0);
-  const visibleTop=sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10;
-  const visibleBottom=viewportBottom-16;
+  const containerRect=scrollContainer?.getBoundingClientRect(),visibleTop=nativeScroller?(containerRect.top+12):(sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10);
+  const visibleBottom=Math.min(viewportBottom-18,containerRect?.bottom??viewportBottom-18);
   let delta=0;if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;else if(rect.top<visibleTop)delta=rect.top-visibleTop;
   if(!delta)return;
-  if(sheet)sheet.scrollBy({top:delta,behavior});
+  if(scrollContainer)scrollContainer.scrollBy({top:delta,behavior:nativeScroller?'auto':behavior});
 }
 function handleViewportChange(){syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
 addEventListener('resize',handleViewportChange);
@@ -650,10 +655,18 @@ $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').add
 function show(html,sheetClass=''){
   const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
   lockBackgroundPage();
+  modal.classList.toggle('native-form-modal',sheetClass==='native-form-sheet');
   sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   prepareFormInputs(sheet);
+}
+function showNativeForm(html){
+  show(html,'native-form-sheet');
+  const sheet=$('sheet'),head=sheet?.querySelector(':scope > .head');if(!sheet||!head)return;
+  const scroller=document.createElement('div');scroller.className='native-form-scroll';
+  while(head.nextSibling)scroller.appendChild(head.nextSibling);
+  sheet.appendChild(scroller);syncFixedChromeHeights();
 }
 function prepareFormInputs(root=document){
   root.querySelectorAll('input').forEach(input=>{
@@ -673,7 +686,7 @@ function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
-  modal.classList.remove('on');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
+  modal.classList.remove('on','native-form-modal');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
   if(sheet){sheet.innerHTML='';sheet.className='sheet'}
 }
 let lockedPageScrollY=0;
@@ -684,7 +697,7 @@ function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=b
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
-document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible('smooth')))});
+document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible(event.target.closest('.native-form-scroll')?'auto':'smooth')))});
 
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openMaterialsList()">Material to get</button></div>`)
@@ -885,7 +898,7 @@ function openNewJob(customerId=''){
   if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong></div>`);
   selectedJobCustomerId=customerId||'';
   const customer=customers.find(c=>c.id===customerId);
-  show(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeModal()">Close</button></div>
+  showNativeForm(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeModal()">Close</button></div>
   <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" autocapitalize="words" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="inlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Work needed</label><input id="jTitle" autocomplete="off" autocapitalize="words" placeholder="e.g. Boiler service, pump replacement, WC repair" oninput="updateJobTypeHint()"><div id="jobTypeHint" class="meta">Type: Other</div></div>
   <div class="choice-grid"><button type="button" class="choice" onclick="applyJobTemplate('Boiler service')">Boiler service</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler repair')">Boiler repair</button><button type="button" class="choice" onclick="applyJobTemplate('Quote visit')">Quote visit</button><button type="button" class="choice" onclick="applyJobTemplate('Gas safety certificate')">Gas safety</button></div>
@@ -1023,7 +1036,7 @@ async function saveCompletedJob(id){
 function editJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const linkedCustomer=customers.find(c=>c.id===j.customer_id);selectedEditJobCustomerId=j.customer_id||'';
-  show(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
+  showNativeForm(`<div class="head"><h2>Edit job</h2><button class="light" onclick="openJob('${id}')">Back</button></div>
   <div class="field"><label>Customer</label><input id="ejCustomerSearch" type="text" inputmode="text" autocomplete="off" autocapitalize="words" placeholder="Search name, address, postcode or phone" value="${esc(linkedCustomer?.name||'')}" oninput="renderEditJobCustomerSearch()"><div id="ejCustomerResults" class="customer-search-results"></div><div id="ejSelectedCustomer" class="${linkedCustomer?'selected-customer':'hidden'}"></div><div id="editInlineCustomerCreate" class="inline-create hidden"></div></div>
   <div class="field"><label>Job title</label><input id="ejTitle" value="${esc(j.title)}"></div>
   <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="to_book">To book</option><option value="waiting">Waiting</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
