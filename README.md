@@ -30,10 +30,13 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Uses the shared customer-first search and inline creation flow when editing an existing job.
 - Renders Today and Tomorrow with one compact dashboard job-card component; Tomorrow remains whole-card clickable with open-only actions.
 - Keeps the active mobile field visible by adjusting the correct sheet/page scroll container on `visualViewport` changes.
+- Locks the dashboard at its exact scroll position while a form is open; the sheet is now the only scrolling surface and resizes from the live iPhone visual viewport.
 - Removes page-level horizontal overflow and makes wide document content wrap on mobile.
 - Opens Services Due on Next 30 Days, followed by Overdue and Review / no date.
 - Replaces Today's List with one undated Materials To Get buying list using the existing lightweight task storage.
 - Can copy a job material into Materials To Get and increases the existing quantity instead of duplicating its name.
+- Shows only five compact buying-list rows on the dashboard, with the complete add/purchase/delete flow in a dedicated mobile sheet.
+- Treats a failed Supabase transport request as offline work even when iOS still reports an internet connection, while logging and displaying genuine schema or RLS errors unchanged.
 
 ## Mobile test checklist
 

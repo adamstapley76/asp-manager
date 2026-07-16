@@ -18,7 +18,7 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
 body{margin:0;max-width:100%;overflow-x:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
-body.modal-open{overflow:hidden}
+body.modal-open{overflow:hidden;position:fixed;left:0;right:0;width:100%}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px #0003}
@@ -37,7 +37,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .badge{display:inline-block;border:0;min-height:auto;cursor:default;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.service-date-button{cursor:pointer}.service-date-button:hover{outline:2px solid #c89b3c55}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
-.modal{position:fixed;inset:0;width:100%;max-width:100%;overflow:hidden;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.modal{position:fixed;left:0;right:0;top:var(--modal-top,0);height:var(--modal-available-height,100dvh);width:100%;max-width:100%;overflow:hidden;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none;overscroll-behavior:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto;touch-action:pan-y;scrollbar-gutter:stable}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}
@@ -53,6 +53,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
 .compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
 .inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.materials-card{border-left:5px solid #667085}
+.materials-preview{display:grid;gap:2px}.material-compact-row{display:flex;align-items:center;gap:9px;min-height:34px;padding:5px 2px;border-bottom:1px solid #eef0f2;font-size:14px}.material-compact-row:last-child{border-bottom:0}.material-check{width:18px;height:18px;border:1.5px solid #98a2b3;border-radius:4px;flex:0 0 auto}.material-compact-row button{display:flex;width:100%;min-height:34px;padding:4px 2px;border-radius:5px;background:transparent;color:var(--text);justify-content:flex-start;font-weight:650;text-align:left}.material-full-list{display:grid;gap:3px}.material-full-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}.material-full-row .material-name{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex:1;min-width:0;min-height:40px;padding:6px 2px;background:transparent;color:var(--text);font-weight:700;text-align:left}
 @media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 
@@ -100,8 +101,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     #authView{padding-top:70px}.app-nav{border-radius:0!important}
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
     .today-primary .item{padding:8px}
-    .modal{top:calc(var(--header-height) + var(--mobile-nav-height));bottom:auto;height:var(--modal-available-height);align-items:stretch;padding-top:max(8px,env(safe-area-inset-top))}
-    .sheet{width:100%;height:100%;max-height:100%;border-radius:16px 16px 0 0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto}
+    .modal{top:var(--modal-top,0);height:var(--modal-available-height,100dvh);align-items:stretch;padding:0;background:#fff}
+    .sheet{width:100%;height:100%;max-height:100%;border-radius:0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto}
     .sheet>.head{position:sticky;top:0;z-index:4;background:#fff;padding:15px 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
@@ -169,10 +170,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card materials-card compact-section">
-      <div class="section-title"><div><h2>Materials To Get</h2><div class="meta">One simple buying list.</div></div></div>
-      <div class="row material-add-row"><div class="field"><label>Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" placeholder="e.g. 15mm copper"></div><div class="field"><label>Quantity (optional)</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div>
-      <button class="gold" style="width:100%;margin-bottom:10px" onclick="saveMaterialItem()">Add to Materials To Get</button>
-      <div id="materialsList" class="list"></div>
+      <div class="section-title"><h2>Materials To Get</h2><button class="light" onclick="openMaterialsList()">View All</button></div>
+      <div id="materialsList" class="materials-preview"></div>
     </div>
 
     <div class="card pipeline-card">
@@ -278,11 +277,12 @@ let sb=null,user=null,customers=[],jobs=[],documents=[],tasks=[],stockItems=[],j
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
   const headerHeight=header?.getBoundingClientRect().height||0,navHeight=nav?.getBoundingClientRect().height||0;
-  const viewport=window.visualViewport,viewportHeight=viewport?.height||window.innerHeight;
+  const viewport=window.visualViewport,viewportHeight=viewport?.height||window.innerHeight,isMobile=matchMedia('(max-width:760px)').matches;
   if(header)document.documentElement.style.setProperty('--header-height',headerHeight+'px');
   if(nav)document.documentElement.style.setProperty('--mobile-nav-height',navHeight+'px');
   document.documentElement.style.setProperty('--visual-viewport-height',viewportHeight+'px');
-  document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-headerHeight-navHeight)+'px');
+  document.documentElement.style.setProperty('--modal-top',((viewport?.offsetTop||0)+(isMobile?headerHeight+navHeight:0))+'px');
+  document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-(isMobile?headerHeight+navHeight:0))+'px');
 }
 new ResizeObserver(syncFixedChromeHeights).observe(document.querySelector('header'));
 new ResizeObserver(syncFixedChromeHeights).observe($('mobileNavShell'));
@@ -296,7 +296,7 @@ function ensureActiveFieldVisible(behavior='auto'){
   const visibleBottom=viewportBottom-16;
   let delta=0;if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;else if(rect.top<visibleTop)delta=rect.top-visibleTop;
   if(!delta)return;
-  if(sheet)sheet.scrollBy({top:delta,behavior});else window.scrollBy({top:delta,behavior});
+  if(sheet)sheet.scrollBy({top:delta,behavior});
 }
 function handleViewportChange(){syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
 addEventListener('resize',handleViewportChange);
@@ -565,28 +565,35 @@ function renderMaterials(){
   const holder=$('materialsList');if(!holder)return;
   if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable the buying list.</div>';return}
   const list=tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}));
-  holder.innerHTML=list.map(t=>`<div class="item"><div><h3>${esc(t.title)}</h3><div class="meta">Quantity: ${esc(materialQuantity(t))}</div></div><div class="item-actions"><button class="gold" onclick="markMaterialPurchased('${t.id}')">Purchased</button><button class="danger" onclick="deleteMaterialItem('${t.id}')">Delete</button></div></div>`).join('')||'<div class="empty">Nothing to buy.</div>';
+  holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><span class="material-check" aria-hidden="true"></span><button type="button" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</button></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
 }
+function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}))}
+function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')"><span class="material-check" aria-hidden="true"></span>${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
 async function addMaterialToGet(title,quantity=1,refresh=true){
   const cleanTitle=smartCaps(String(title||'').trim()),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
   const existing=tasks.find(t=>!t.completed&&!t.due_date&&normaliseMaterialName(t.title)===normaliseMaterialName(cleanTitle));
   if(existing){
     const notes=materialQuantityNote(materialQuantity(existing)+qty),update={notes,updated_at:new Date().toISOString()};
     if(!isOnline()){existing.notes=notes;queueOperation('tasks','update',update,'',{id:existing.id});renderMaterials();return existing}
-    const {error}=await sb.from('tasks').update(update).eq('id',existing.id);if(error)throw error;
+    try{const {error}=await sb.from('tasks').update(update).eq('id',existing.id);if(error)throw error;existing.notes=notes}
+    catch(error){console.error('Materials To Get update failed',error);if(!isTransportError(error))throw error;existing.notes=notes;queueOperation('tasks','update',update,'',{id:existing.id});renderAll();showSyncNotice('Material saved on this phone — waiting to sync');return existing}
   }else{
     const payload={owner_id:user.id,title:cleanTitle,due_date:null,customer_id:null,notes:materialQuantityNote(qty),completed:false};
     if(!isOnline()){const record={...payload,id:tempId(),created_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderMaterials();return record}
-    const {error}=await sb.from('tasks').insert(payload);if(error)throw error;
+    try{const {data,error}=await sb.from('tasks').insert(payload).select().single();if(error)throw error;if(data)tasks.push(data)}
+    catch(error){console.error('Materials To Get insert failed',error);if(!isTransportError(error))throw error;const record={...payload,id:tempId(),created_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderAll();showSyncNotice('Material saved on this phone — waiting to sync');return record}
   }
-  if(refresh)await loadAll();return true;
+  if(refresh)await loadAll();else renderAll();return true;
 }
+function isTransportError(error){return /failed to fetch|networkerror|load failed|network request failed/i.test(error?.message||String(error||''))}
 async function saveMaterialItem(){
   const title=$('materialTitle')?.value.trim(),quantity=Number($('materialQty')?.value||1);if(!title)return alert('Enter the material.');
-  try{await addMaterialToGet(title,quantity,true);$('materialTitle').value='';$('materialQty').value='';$('materialTitle').focus()}catch(error){alert(friendlyError(error))}
+  const button=$('saveMaterialBtn');if(button){button.disabled=true;button.textContent='Adding…'}
+  try{await addMaterialToGet(title,quantity,true);if($('materialTitle'))$('materialTitle').value='';if($('materialQty'))$('materialQty').value='';renderFullMaterials();$('materialTitle')?.focus()}catch(error){console.error('Materials To Get could not save',error);alert(error?.message||String(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Add item'}}
 }
-async function markMaterialPurchased(id){const item=tasks.find(t=>t.id===id);if(!item)return;const update={completed:true,updated_at:new Date().toISOString()};if(!isOnline()){Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderMaterials();return}const {error}=await sb.from('tasks').update(update).eq('id',id);if(error)return alert(error.message);await loadAll()}
-async function deleteMaterialItem(id){if(!confirm('Delete this material?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
+function openMaterialActions(id){const item=tasks.find(t=>t.id===id);if(!item)return;show(`<div class="head"><div><h2>${esc(item.title)}</h2>${materialQuantity(item)>1?`<div class="meta">Quantity ${esc(materialQuantity(item))}</div>`:''}</div><button class="light" onclick="openMaterialsList()">Back</button></div><div class="actions"><button class="gold" onclick="markMaterialPurchased('${id}')">Mark Purchased</button><button class="danger" onclick="deleteMaterialItem('${id}')">Delete</button></div>`)}
+async function markMaterialPurchased(id){const item=tasks.find(t=>t.id===id);if(!item)return;const update={completed:true,updated_at:new Date().toISOString()};if(!isOnline()){Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderAll();openMaterialsList();return}try{const {error}=await sb.from('tasks').update(update).eq('id',id);if(error)throw error;await loadAll();openMaterialsList()}catch(error){console.error('Material purchase update failed',error);if(!isTransportError(error))return alert(error.message);Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderAll();openMaterialsList()}}
+async function deleteMaterialItem(id){if(!confirm('Delete this material?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll();openMaterialsList()}
 function setJobFilter(value){jobFilter=value;document.querySelectorAll('#jobFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderJobs()}
 
 function renderStock(){
@@ -632,6 +639,7 @@ $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').add
 
 function show(html){
   const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
+  lockBackgroundPage();
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   prepareFormInputs(sheet);
@@ -654,9 +662,12 @@ function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
-  modal.classList.remove('on');modal.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');
+  modal.classList.remove('on');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
   if(sheet)sheet.innerHTML='';
 }
+let lockedPageScrollY=0;
+function lockBackgroundPage(){if(document.body.classList.contains('modal-open'))return;lockedPageScrollY=window.scrollY;document.body.style.top=`-${lockedPageScrollY}px`;document.body.classList.add('modal-open')}
+function unlockBackgroundPage(){if(!document.body.classList.contains('modal-open'))return;document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockedPageScrollY)}
 function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=busy?'1':'0'}
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
@@ -666,7 +677,7 @@ document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="gold" onclick="openNewJob()">Book work</button><button class="navy" onclick="openNewCustomer()">Customer</button><button class="light" onclick="openServicePicker()">Boiler service</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button><button class="light" onclick="openQuickDiaryEntry()">Quick diary entry</button><button class="light" onclick="openMaterialsList()">Material to get</button></div>`)
 }
-function openMaterialsList(){closeModal();showPage('dashboard');requestAnimationFrame(()=>$('materialTitle')?.focus())}
+function openMaterialsList(){show(`<div class="head"><div><h2>Materials To Get</h2><div class="meta">Quick buying list</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="row material-add-row"><div class="field"><label for="materialTitle">Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" autocomplete="off" placeholder="e.g. White silicone"></div><div class="field"><label for="materialQty">Quantity (optional)</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div><button id="saveMaterialBtn" class="gold" style="width:100%;margin-bottom:12px" onclick="saveMaterialItem()">Add item</button><div id="fullMaterialsList" class="material-full-list"></div>`);renderFullMaterials()}
 function openServicePicker(){
   show(`<div class="head"><h2>Book boiler service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
 }
