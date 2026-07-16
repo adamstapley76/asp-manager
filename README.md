@@ -23,6 +23,10 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Closes an active modal before Today, Customers, Book or More navigation runs.
 - Restores body scrolling and modal pointer state reliably when sheets close.
 - Keeps Delete mistake inside the expanded More job details panel.
+- Sizes mobile sheets from the live `visualViewport` minus the measured header/navigation and safe areas.
+- Keeps the sheet heading and Close action sticky while the sheet body scrolls independently.
+- Applies explicit text, telephone, email, decimal and postcode keyboard attributes across generated forms.
+- Forces customer name fields to alphabetic text entry with name autocomplete and word capitalisation.
 
 ## Mobile test checklist
 

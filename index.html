@@ -13,7 +13,7 @@
   --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
   --text:#1f2937;--muted:#667085;--line:#e4e7ec;--red:#b42318;--amber:#b54708;
   --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff;
-  --header-height:58px;--mobile-nav-height:52px
+  --header-height:58px;--mobile-nav-height:52px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -37,7 +37,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff}.item:hover{border-color:#c7ccd2}.item h3{margin:0 0 4px;font-size:16px;color:var(--navy)}.meta{font-size:13px;color:var(--muted);line-height:1.45}.item-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .badge{display:inline-block;border:0;min-height:auto;cursor:default;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;white-space:nowrap}.service-date-button{cursor:pointer}.service-date-button:hover{outline:2px solid #c89b3c55}.over,.cancelled{background:#fee4e2;color:var(--red)}.due,.quoted{background:#fef0c7;color:var(--amber)}.future,.completed{background:#dcfae6;color:var(--green)}.archived{background:#e5e7eb;color:#374151}.booked{background:#dbeafe;color:var(--blue)}.to_book{background:#f4ebff;color:var(--purple)}.waiting{background:#fff4e5;color:#b54708}.enquiry{background:#f4ebff;color:var(--purple)}.in_progress{background:#e0f2fe;color:#0369a1}.dormant{background:#f2f4f7;color:#475467}.active-badge{background:#ecfdf3;color:var(--green)}.draft{background:#f2f4f7;color:#475467}.sent{background:#dbeafe;color:var(--blue)}.accepted,.paid{background:#dcfae6;color:var(--green)}.declined,.void{background:#fee4e2;color:var(--red)}.overdue{background:#fef0c7;color:var(--amber)}
 .empty{padding:20px;text-align:center;border:1px dashed #d0d5dd;border-radius:12px;color:var(--muted);background:#fafafa}.notice{border-radius:12px;padding:12px 14px;margin-bottom:13px;background:#fffaeb;border:1px solid #fedf89;color:#7a2e0e}.notice strong{display:block;margin-bottom:3px}.error{background:#fef3f2;border-color:#fecdca;color:#912018}.success{background:#ecfdf3;border-color:#abefc6;color:#05603a}
-.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:30;pointer-events:none}.modal.on{display:flex;pointer-events:auto}.sheet{background:#fff;width:min(760px,100%);max-height:94vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px;border-radius:22px 22px 0 0;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:14px}.head h2{margin:0;color:var(--navy)}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}
@@ -100,7 +100,9 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     #authView{padding-top:70px}.app-nav{border-radius:0!important}
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
     .today-primary .item{padding:8px}.today-primary .item-actions{display:none}
-    .sheet{max-height:calc(100dvh - 12px);border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+    .modal{top:calc(var(--header-height) + var(--mobile-nav-height));bottom:auto;height:var(--modal-available-height);align-items:stretch;padding-top:max(8px,env(safe-area-inset-top))}
+    .sheet{height:100%;max-height:100%;border-radius:16px 16px 0 0;padding:0 15px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
+    .sheet>.head{position:sticky;top:0;z-index:4;background:#fff;padding:15px 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
     input,select,textarea{font-size:16px!important}.modal{align-items:flex-end}.primary-job-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
 </style>
@@ -272,12 +274,19 @@ let sb=null,user=null,customers=[],jobs=[],documents=[],tasks=[],stockItems=[],j
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
-  if(header)document.documentElement.style.setProperty('--header-height',header.getBoundingClientRect().height+'px');
-  if(nav)document.documentElement.style.setProperty('--mobile-nav-height',nav.getBoundingClientRect().height+'px');
+  const headerHeight=header?.getBoundingClientRect().height||0,navHeight=nav?.getBoundingClientRect().height||0;
+  const viewport=window.visualViewport,viewportHeight=viewport?.height||window.innerHeight;
+  if(header)document.documentElement.style.setProperty('--header-height',headerHeight+'px');
+  if(nav)document.documentElement.style.setProperty('--mobile-nav-height',navHeight+'px');
+  document.documentElement.style.setProperty('--visual-viewport-height',viewportHeight+'px');
+  document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-headerHeight-navHeight)+'px');
 }
 new ResizeObserver(syncFixedChromeHeights).observe(document.querySelector('header'));
 new ResizeObserver(syncFixedChromeHeights).observe($('mobileNavShell'));
 addEventListener('orientationchange',()=>setTimeout(syncFixedChromeHeights,100));
+addEventListener('resize',syncFixedChromeHeights);
+window.visualViewport?.addEventListener('resize',syncFixedChromeHeights);
+window.visualViewport?.addEventListener('scroll',syncFixedChromeHeights);
 syncFixedChromeHeights();
 
 function localDate(date=new Date()){
@@ -592,12 +601,16 @@ function show(html){
 function prepareFormInputs(root=document){
   root.querySelectorAll('input').forEach(input=>{
     const id=(input.id||'').toLowerCase(),ph=(input.placeholder||'').toLowerCase();
-    if(/email/.test(id+ph)){input.type='email';input.autocomplete='email';input.autocapitalize='none'}
-    else if(/phone|mobile/.test(id+ph)){input.type='tel';input.inputMode='tel';input.autocomplete='tel'}
-    else if(/price|amount|cost|hours|quantity|qty/.test(id+ph)){input.inputMode='decimal'}
-    else if(/postcode/.test(id+ph)){input.autocapitalize='characters';input.autocomplete='postal-code'}
-    else if(/name|address|title|boiler|town|work/.test(id+ph)){input.autocapitalize='words'}
+    const key=id+' '+ph;
+    if(/email/.test(key)){input.type='email';input.inputMode='email';input.autocomplete='email';input.autocapitalize='none'}
+    else if(/phone|mobile/.test(key)){input.type='tel';input.inputMode='tel';input.autocomplete='tel'}
+    else if(/price|amount|hours|quantity|qty|unit|sell|vat/.test(key)){input.type='number';input.inputMode='decimal';input.step='any'}
+    else if(/postcode/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='characters';input.autocomplete='postal-code'}
+    else if(/name|address|title|boiler|town|work|merchant|item/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words'}
+    if(/^(cname|ename|inlinename)$/.test(id)){input.type='text';input.inputMode='text';input.autocapitalize='words';input.autocomplete='name';input.setAttribute('autocorrect','on');input.spellcheck=true}
+    if(/address/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words';if(!input.autocomplete)input.autocomplete='street-address'}
   });
+  root.querySelectorAll('textarea').forEach(area=>{area.autocapitalize='sentences';area.setAttribute('autocorrect','on');area.spellcheck=true});
 }
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|address|title|boiler|town|work needed/.test(key)&&!(/email|postcode/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
@@ -703,13 +716,13 @@ async function changeCustomerStatus(id,status){
 }
 function openNewCustomer(){
   show(`<div class="head"><h2>New customer</h2><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="field"><label>Name</label><input id="cName"></div>
-  <div class="field"><label>Address</label><input id="cAddress"></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="cPostcode"></div><div class="field"><label>Phone</label><input id="cPhone" inputmode="tel"></div></div>
-  <div class="field"><label>Email</label><input id="cEmail" type="email"></div>
+  <div class="field"><label>Name</label><input id="cName" type="text" inputmode="text" autocapitalize="words" autocomplete="name" autocorrect="on" spellcheck="true"></div>
+  <div class="field"><label>Address</label><input id="cAddress" type="text" inputmode="text" autocapitalize="words" autocomplete="street-address"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="cPostcode" type="text" inputmode="text" autocapitalize="characters" autocomplete="postal-code"></div><div class="field"><label>Phone</label><input id="cPhone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+  <div class="field"><label>Email</label><input id="cEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none"></div>
   <div class="field"><label>Last service date (optional)</label><input id="cServiceDate" type="date"></div>
   <div class="field"><label>Boiler make/model (optional)</label><input id="cBoiler"></div>
-  <div class="field"><label>Notes</label><textarea id="cNotes"></textarea></div>
+  <div class="field"><label>Notes</label><textarea id="cNotes" autocapitalize="sentences" autocorrect="on" spellcheck="true"></textarea></div>
   <button class="gold" style="width:100%" onclick="saveNewCustomer()">Save customer</button>`);enableAddressAutocompleteSoon('cAddress','cPostcode');
 }
 async function saveNewCustomer(){
@@ -722,10 +735,10 @@ async function saveNewCustomer(){
 function editCustomer(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
   show(`<div class="head"><h2>Edit customer</h2><button class="light" onclick="openCustomer('${id}')">Back</button></div>
-  <div class="field"><label>Name</label><input id="eName" value="${esc(c.name)}"></div>
-  <div class="field"><label>Address</label><input id="eAddress" value="${esc(c.address)}"></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="ePostcode" value="${esc(c.postcode)}"></div><div class="field"><label>Phone</label><input id="ePhone" value="${esc(c.phone)}"></div></div>
-  <div class="field"><label>Email</label><input id="eEmail" type="email" value="${esc(c.email)}"></div>
+  <div class="field"><label>Name</label><input id="eName" type="text" inputmode="text" autocapitalize="words" autocomplete="name" autocorrect="on" spellcheck="true" value="${esc(c.name)}"></div>
+  <div class="field"><label>Address</label><input id="eAddress" type="text" inputmode="text" autocapitalize="words" autocomplete="street-address" value="${esc(c.address)}"></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="ePostcode" type="text" inputmode="text" autocapitalize="characters" autocomplete="postal-code" value="${esc(c.postcode)}"></div><div class="field"><label>Phone</label><input id="ePhone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(c.phone)}"></div></div>
+  <div class="field"><label>Email</label><input id="eEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" value="${esc(c.email)}"></div>
   <div class="field"><label>Boiler make/model</label><input id="eBoiler" value="${esc(c.boiler_make_model)}"></div>
   <div class="field"><label>Notes</label><textarea id="eNotes">${esc(c.notes)}</textarea></div>
   <div class="field"><label>Status</label><select id="eStatus"><option value="active">Active</option><option value="booked">Booked</option><option value="dormant">Dormant</option><option value="archived">Archived</option></select></div>
@@ -807,7 +820,7 @@ function openNewJob(customerId=''){
   <div id="waitingReasonField" class="field hidden"><label>Waiting for</label><select id="jWaitingReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div>
   <div class="field"><label>Address</label><input id="jAddress" autocomplete="street-address" autocapitalize="words" list="knownAddresses" value="${esc(customer?.address||'')}" placeholder="Start typing a saved customer address"><datalist id="knownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc([c.address,c.postcode].filter(Boolean).join(', '))}">`).join('')}</datalist></div>
   <div class="field"><label>Postcode</label><input id="jPostcode" autocomplete="postal-code" autocapitalize="characters" value="${esc(customer?.postcode||'')}"></div>
-  <details class="secondary-panel"><summary>More details</summary><div class="field"><label>Agreed price ex VAT (optional)</label><input id="jPrice" inputmode="decimal" placeholder="0.00"></div><div class="field"><label>How will this job be charged?</label><select id="jBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
+  <details class="secondary-panel"><summary>More details</summary><div class="field"><label>Agreed price ex VAT (optional)</label><input id="jPrice" type="number" inputmode="decimal" step="any" placeholder="0.00"></div><div class="field"><label>How will this job be charged?</label><select id="jBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
   <div class="field"><label>Lead source</label><select id="jLeadSource"><option value="">Not recorded</option><option value="google_lsa">Google LSA</option><option value="google_ads">Google Ads</option><option value="organic_search">Organic search</option><option value="google_business">Google Business Profile</option><option value="existing_customer">Existing customer</option><option value="recommendation">Recommendation</option><option value="friend_family">Friend / family</option><option value="builder_trade">Builder / other trade</option><option value="other">Other</option></select></div>
   <div class="field"><label>Notes (optional)</label><textarea id="jDescription" autocapitalize="sentences"></textarea></div></details>
   <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Book work</button>`);
@@ -819,7 +832,7 @@ function renderJobCustomerSearch(){
   if(!box)return;if(q.length<1){box.innerHTML='';creator?.classList.add('hidden');return}
   const matches=customers.filter(c=>customerSearchText(c).includes(q)).slice(0,10);
   box.innerHTML=matches.map(c=>`<button type="button" class="customer-pick" onclick="selectJobCustomer('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('');
-  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=`<strong>No customer found</strong><div class="meta">Create them here without leaving Book Work.</div><div class="field"><label>Name</label><input id="inlineName" autocomplete="name" autocapitalize="words" value="${esc(($('jCustomerSearch')?.value||'').trim())}"></div><div class="row"><div class="field"><label>Phone</label><input id="inlinePhone" type="tel" inputmode="tel" autocomplete="tel"></div><div class="field"><label>Postcode</label><input id="inlinePostcode" autocomplete="postal-code" autocapitalize="characters"></div></div><div class="field"><label>Address</label><input id="inlineAddress" autocomplete="street-address" autocapitalize="words"></div><button type="button" class="navy" style="width:100%" onclick="createCustomerInsideJob()">Create and select customer</button>`;enableAddressAutocompleteSoon('inlineAddress','inlinePostcode')}else creator?.classList.add('hidden');
+  if(!matches.length&&creator){creator.classList.remove('hidden');creator.innerHTML=`<strong>No customer found</strong><div class="meta">Create them here without leaving Book Work.</div><div class="field"><label>Name</label><input id="inlineName" type="text" inputmode="text" autocomplete="name" autocapitalize="words" autocorrect="on" spellcheck="true" value="${esc(($('jCustomerSearch')?.value||'').trim())}"></div><div class="row"><div class="field"><label>Phone</label><input id="inlinePhone" type="tel" inputmode="tel" autocomplete="tel"></div><div class="field"><label>Postcode</label><input id="inlinePostcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters"></div></div><div class="field"><label>Address</label><input id="inlineAddress" type="text" inputmode="text" autocomplete="street-address" autocapitalize="words"></div><button type="button" class="navy" style="width:100%" onclick="createCustomerInsideJob()">Create and select customer</button>`;enableAddressAutocompleteSoon('inlineAddress','inlinePostcode');prepareFormInputs(creator)}else creator?.classList.add('hidden');
 }
 async function createCustomerInsideJob(){
   const name=$('inlineName')?.value.trim();if(!name)return alert('Enter the customer name.');
@@ -942,7 +955,7 @@ function editJob(id){
   <div class="row"><div class="field"><label>Status</label><select id="ejStatus"><option value="enquiry">Enquiry</option><option value="quoted">Quoted</option><option value="to_book">To book</option><option value="waiting">Waiting</option><option value="booked">Booked</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div class="field"><label>Job type</label><input id="ejType" value="${esc(j.job_type)}"></div></div>
   <div class="row"><div class="field"><label>Booked date</label><input id="ejDate" type="date" value="${esc(j.scheduled_date)}"></div><div class="field"><label>Time</label><input id="ejTime" type="time" value="${esc(displayTime(j.scheduled_time))}"></div></div>
   <div class="field"><label>Address</label><input id="ejAddress" value="${esc(j.address)}"></div>
-  <div class="row"><div class="field"><label>Postcode</label><input id="ejPostcode" value="${esc(j.postcode)}"></div><div class="field"><label>Agreed price ex VAT</label><input id="ejPrice" inputmode="decimal" value="${j.agreed_price??j.quoted_amount??''}"></div></div><div class="field"><label>Billing method</label><select id="ejBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
+  <div class="row"><div class="field"><label>Postcode</label><input id="ejPostcode" type="text" inputmode="text" autocapitalize="characters" autocomplete="postal-code" value="${esc(j.postcode)}"></div><div class="field"><label>Agreed price ex VAT</label><input id="ejPrice" type="number" inputmode="decimal" step="any" value="${j.agreed_price??j.quoted_amount??''}"></div></div><div class="field"><label>Billing method</label><select id="ejBilling"><option value="time_materials">Time and materials</option><option value="quoted">Quoted / fixed price</option><option value="day_rate">Day rate</option><option value="fixed_plus_extras">Fixed price plus extras</option></select></div>
   <div class="field"><label>Lead source</label><select id="ejLeadSource"><option value="">Not recorded</option><option value="google_lsa">Google LSA</option><option value="google_ads">Google Ads</option><option value="organic_search">Organic search</option><option value="google_business">Google Business Profile</option><option value="existing_customer">Existing customer</option><option value="recommendation">Recommendation</option><option value="friend_family">Friend / family</option><option value="builder_trade">Builder / other trade</option><option value="other">Other</option></select></div>
   <div class="field"><label>Invoice number</label><input id="ejInvoice" value="${esc(j.invoice_number)}"></div>
   <div class="field"><label>Job details / notes</label><textarea id="ejDescription">${esc(j.description)}</textarea></div>
@@ -964,7 +977,7 @@ async function deleteJob(id){if(!confirm('Permanently delete this job? Only use 
 function openAddVisit(jobId){
   if(!workLogsReady)return alert('Run the v0.5 Foundation database update first.');
   show(`<div class="head"><h2>Record job visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div>
-  <div class="row"><div class="field"><label>Date</label><input id="vDate" type="date" value="${today()}"></div><div class="field"><label>Total hours</label><input id="vHours" inputmode="decimal" placeholder="e.g. 3.5"></div></div>
+  <div class="row"><div class="field"><label>Date</label><input id="vDate" type="date" value="${today()}"></div><div class="field"><label>Total hours</label><input id="vHours" type="number" inputmode="decimal" step="any" placeholder="e.g. 3.5"></div></div>
   <div class="row"><div class="field"><label>Start time (optional)</label><input id="vStart" type="time"></div><div class="field"><label>Finish time (optional)</label><input id="vEnd" type="time"></div></div>
   <div class="field"><label>What was done?</label><textarea id="vNotes" placeholder="Work completed, diagnosis, progress and anything needed next time"></textarea></div>
   <div class="checkline"><input id="vReturn" type="checkbox" onchange="void(0)"><label for="vReturn">More work / another visit required</label></div>
@@ -985,7 +998,7 @@ function openAddCost(jobId){
   show(`<div class="head"><h2>Add material or cost</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div>
   <div class="row"><div class="field"><label>Date</label><input id="costDate" type="date" value="${today()}"></div><div class="field"><label>Type</label><select id="costCategory"><option value="materials">Materials</option><option value="subcontractor">Subcontractor</option><option value="parking">Parking</option><option value="waste">Waste disposal</option><option value="delivery">Delivery</option><option value="other">Other</option></select></div></div>
   <div class="field"><label>Description</label><input id="costDescription" placeholder="e.g. Grundfos pump"></div>
-  <div class="row-3"><div class="field"><label>Quantity</label><input id="costQty" inputmode="decimal" value="1"></div><div class="field"><label>Your unit cost £</label><input id="costUnit" inputmode="decimal"></div><div class="field"><label>Charge per unit £</label><input id="costSell" inputmode="decimal"></div></div>
+  <div class="row-3"><div class="field"><label>Quantity</label><input id="costQty" type="number" inputmode="decimal" step="any" value="1"></div><div class="field"><label>Your unit cost £</label><input id="costUnit" type="number" inputmode="decimal" step="any"></div><div class="field"><label>Charge per unit £</label><input id="costSell" type="number" inputmode="decimal" step="any"></div></div>
   <div class="checkline"><input id="costCharge" type="checkbox"><label for="costCharge">Charge this item to the customer / treat as an extra</label></div>
   <div class="field" style="margin-top:10px"><label>Private note</label><textarea id="costNotes"></textarea></div><button id="saveCostBtn" class="gold" style="width:100%" onclick="saveJobCost('${jobId}')">Save cost</button>`)
 }
@@ -1004,7 +1017,7 @@ function openNewDocument(type='quote',jobId='',customerId=''){
   <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(defaultTitle)}" placeholder="e.g. Replace boiler"></div>
   <div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${today()}"></div><div class="field"><label>${type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${due}"></div></div>
   <div class="section-title"><h3>Line items</h3><button class="light" onclick="addDocumentLine()">+ Add line</button></div><div id="dLines"></div>
-  <div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" inputmode="decimal" value="20" oninput="updateDocumentTotals()"></div><div></div></div>
+  <div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" type="number" inputmode="decimal" step="any" value="20" oninput="updateDocumentTotals()"></div><div></div></div>
   <div id="dTotals" class="totals"></div>
   <div class="field"><label>Customer-facing notes</label><textarea id="dNotes" placeholder="Optional terms, exclusions or payment note"></textarea></div>
   <button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${type}')">Save ${documentTypeLabel(type).toLowerCase()}</button>`);
@@ -1014,7 +1027,7 @@ function refreshDocumentJobs(){const customerId=$('dCustomer').value;$('dJob').i
 function fillDocumentFromJob(){const job=jobs.find(j=>j.id===$('dJob').value);if(!job)return;if(job.customer_id){$('dCustomer').value=job.customer_id}if(!$('dTitle').value)$('dTitle').value=job.title||'';const first=document.querySelector('#dLines .line-row');if(first&&!first.querySelector('.line-desc').value)first.querySelector('.line-desc').value=job.title||'';if(first&&!first.querySelector('.line-price').value&&job.quoted_amount!=null)first.querySelector('.line-price').value=job.quoted_amount;updateDocumentTotals()}
 function addDocumentLine(description='',quantity=1,unitPrice=''){
   const holder=$('dLines');if(!holder)return;const id=++lineCounter;
-  holder.insertAdjacentHTML('beforeend',`<div class="line-row" data-line="${id}"><div class="field"><label>Description</label><input class="line-desc" value="${esc(description)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Qty</label><input class="line-qty" inputmode="decimal" value="${esc(quantity)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Unit £ ex VAT</label><input class="line-price" inputmode="decimal" value="${esc(unitPrice)}" oninput="updateDocumentTotals()"></div><button class="danger" title="Remove line" onclick="this.closest('.line-row').remove();updateDocumentTotals()">×</button></div>`)
+  holder.insertAdjacentHTML('beforeend',`<div class="line-row" data-line="${id}"><div class="field"><label>Description</label><input class="line-desc" type="text" inputmode="text" autocapitalize="sentences" value="${esc(description)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Qty</label><input class="line-qty" type="number" inputmode="decimal" step="any" value="${esc(quantity)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Unit £ ex VAT</label><input class="line-price" type="number" inputmode="decimal" step="any" value="${esc(unitPrice)}" oninput="updateDocumentTotals()"></div><button class="danger" title="Remove line" onclick="this.closest('.line-row').remove();updateDocumentTotals()">×</button></div>`)
 }
 function collectDocumentLines(){return [...document.querySelectorAll('#dLines .line-row')].map(row=>({description:row.querySelector('.line-desc').value.trim(),quantity:Number(row.querySelector('.line-qty').value||0),unit_price:Number(row.querySelector('.line-price').value||0)})).filter(line=>line.description||line.unit_price)}
 function updateDocumentTotals(){const lines=collectDocumentLines(),vatRate=Number($('dVat')?.value||0),fig=calculateFigures(lines,vatRate);if($('dTotals'))$('dTotals').innerHTML=`<div class="total-line"><span>Subtotal</span><b>${money(fig.subtotal)}</b></div><div class="total-line"><span>VAT (${vatRate||0}%)</span><b>${money(fig.vat)}</b></div><div class="total-line grand"><span>Total</span><span>${money(fig.total)}</span></div>`}
