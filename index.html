@@ -306,8 +306,9 @@ function ensureActiveFieldVisible(behavior='auto'){
   if(!delta)return;
   if(scrollContainer)scrollContainer.scrollBy({top:delta,behavior:workflowScroller?'auto':behavior});
 }
-let workflowViewportSettleTimer=0;
+let workflowViewportSettleTimer=0,modalViewportSettleTimer=0;
 function workflowIsActive(){return document.body.classList.contains('workflow-active')}
+function modalIsActive(){return $('modal')?.classList.contains('on')}
 function settleWorkflowViewport(){
   if(!workflowIsActive())return;
   const viewport=window.visualViewport,layoutHeight=document.documentElement.clientHeight||window.innerHeight;
@@ -320,8 +321,25 @@ function scheduleWorkflowViewportSettle(delay=220){
   clearTimeout(workflowViewportSettleTimer);
   workflowViewportSettleTimer=setTimeout(()=>{workflowViewportSettleTimer=0;settleWorkflowViewport()},delay);
 }
-function handleViewportChange(){if(workflowIsActive()){scheduleWorkflowViewportSettle();return}syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
-function handleViewportScroll(){if(workflowIsActive())return;syncFixedChromeHeights();requestAnimationFrame(()=>ensureActiveFieldVisible('auto'))}
+function settleModalViewport(){
+  if(!modalIsActive()||workflowIsActive())return;
+  syncFixedChromeHeights();
+  ensureActiveFieldVisible('auto');
+}
+function scheduleModalViewportSettle(delay=280){
+  clearTimeout(modalViewportSettleTimer);
+  modalViewportSettleTimer=setTimeout(()=>{modalViewportSettleTimer=0;settleModalViewport()},delay);
+}
+function handleViewportChange(){
+  if(workflowIsActive()){scheduleWorkflowViewportSettle();return}
+  if(modalIsActive()){scheduleModalViewportSettle();return}
+  syncFixedChromeHeights();
+}
+function handleViewportScroll(){
+  if(workflowIsActive())return;
+  if(modalIsActive()){scheduleModalViewportSettle();return}
+  syncFixedChromeHeights();
+}
 addEventListener('resize',handleViewportChange);
 window.visualViewport?.addEventListener('resize',handleViewportChange);
 window.visualViewport?.addEventListener('scroll',handleViewportScroll);
@@ -339,6 +357,22 @@ function esc(value){return String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;'
 function money(value){if(value===null||value===undefined||value==='')return '';const n=Number(value);return Number.isFinite(n)?new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(n):''}
 function displayDate(value){if(!value)return 'Not set';return new Date(`${value}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
 function displayTime(value){return value?String(value).slice(0,5):''}
+function normaliseQuarterHour(value){
+  const match=String(value||'').match(/^(\d{1,2}):(\d{2})/);if(!match)return '';
+  const hours=Number(match[1]),minutes=Number(match[2]);if(hours>23||minutes>59)return '';
+  const total=Math.min(23*60+45,Math.round((hours*60+minutes)/15)*15);
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+function snapTimeInput(input){
+  if(!(input instanceof HTMLInputElement)||input.type!=='time'||input.step!=='900'||!input.value)return input?.value||'';
+  const snapped=normaliseQuarterHour(input.value);if(snapped)input.value=snapped;return input.value;
+}
+function quarterHourInputValue(id){
+  const input=$(id);if(!input?.value)return '';
+  // Preserve an existing stored time when the edit form is saved without touching it.
+  if(input.defaultValue&&input.value===input.defaultValue)return input.value;
+  return snapTimeInput(input);
+}
 function authMessage(text){authMsg.textContent=text}
 function setAuthBusy(busy){signInBtn.disabled=busy;signUpBtn.disabled=busy;signInBtn.textContent=busy?'Connecting…':'Sign in'}
 function friendlyError(error){
@@ -517,32 +551,65 @@ function resolveJobAddress(job){
   }
   return fallback.full;
 }
-function mapAddress(job){return resolveJobAddress(job)}
 function appleMapsUrl(address){return `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`}
 function addressLookupNote(input,message=''){
   if(!input)return;let note=$(input.id+'AddressNote');
   if(!note){note=document.createElement('div');note.id=input.id+'AddressNote';note.className='address-lookup-note';input.insertAdjacentElement('afterend',note)}
   note.textContent=message;
 }
+function getAddressFailureDetails(first,second,third){
+  // v3.1.6 supplies (request, status, message), while its public docs describe
+  // (status, message). Accept both so the console always records the real API error.
+  return third!==undefined?{request:first,status:second,message:third}:{request:null,status:first,message:second};
+}
+function getAddressFailureNote(details,selection=false){
+  if(selection)return 'That address could not be loaded — please enter it manually.';
+  return 'Address lookup unavailable — please enter the address manually.';
+}
+let getAddressProxyFetchInstalled=false;
+function getAddressLocalProxyUrl(request){
+  try{
+    const source=request instanceof Request?request.url:String(request||''),url=new URL(source,location.href);
+    if(url.origin!=='https://api.getaddress.io')return '';
+    const autocompletePrefix='/autocomplete/',getPrefix='/get/';
+    if(url.pathname.startsWith(autocompletePrefix)){
+      const query=decodeURIComponent(url.pathname.slice(autocompletePrefix.length));
+      return `/api/getaddress-autocomplete?query=${encodeURIComponent(query)}`;
+    }
+    if(url.pathname.startsWith(getPrefix)){
+      const id=decodeURIComponent(url.pathname.slice(getPrefix.length));
+      return `/api/getaddress-address?id=${encodeURIComponent(id)}`;
+    }
+  }catch(error){console.error('getAddress proxy URL could not be prepared',{error})}
+  return '';
+}
+function installGetAddressProxyFetch(){
+  if(getAddressProxyFetchInstalled)return;
+  const browserFetch=window.fetch.bind(window);
+  window.fetch=(request,options)=>{
+    const localUrl=getAddressLocalProxyUrl(request);
+    return browserFetch(localUrl||request,options);
+  };
+  getAddressProxyFetchInstalled=true;
+}
 async function enableAddressAutocomplete(inputId,postcodeId=''){
   const input=$(inputId);if(!input||input.dataset.addressReady)return;
   input.type='text';input.inputMode='text';input.autocomplete='street-address';input.autocapitalize='words';input.setAttribute('autocorrect','off');input.spellcheck=false;
-  const token=cfg?.getAddressDomainToken;
-  if(!token){console.error('getAddress autocomplete not initialised: getAddressDomainToken is missing from config.js');addressLookupNote(input,'Address lookup unavailable — please enter the address manually.');return}
-  if(!window.getAddress?.autocomplete){console.error('getAddress autocomplete v3.1.6 did not load');addressLookupNote(input,'Address lookup unavailable — please enter the address manually.');return}
+  if(!window.getAddress?.autocomplete){console.error('getAddress autocomplete not initialised',{reason:'getAddress autocomplete v3.1.6 did not load',inputId,hostname:location.hostname,configLoaded:!!cfg});addressLookupNote(input,'Address lookup unavailable — please enter the address manually.');return}
   input.dataset.addressReady='1';
-  try{await window.getAddress.autocomplete(inputId,token,{
+  try{installGetAddressProxyFetch();await window.getAddress.autocomplete(inputId,'',{
     suggestion_count:6,minimum_characters:2,show_postcode:true,full_screen_on_mobile:false,full_length:true,enable_repositioning:false,
     list_style:'position:relative;inset:auto;z-index:9999;max-height:280px;overflow-y:auto;width:100%;margin-top:5px;',
     selected:(result)=>{
-      const postcode=normalisePostcode(result?.postcode),parts=addressParts((result?.formatted_address||[]).filter(Boolean).join(', '),postcode);
+      const postcode=normalisePostcode(result?.postcode),formatted=(result?.formatted_address||[result?.line_1,result?.line_2,result?.line_3,result?.line_4,result?.town_or_city,result?.county]).filter(Boolean),parts=addressParts(formatted.join(', '),postcode);
       input.value=parts.address;input.dataset.selectedPostcode=postcode;
       if(postcodeId&&$(postcodeId)){$(postcodeId).value=postcode;$(postcodeId).dispatchEvent(new Event('input',{bubbles:true}));$(postcodeId).dispatchEvent(new Event('change',{bubbles:true}))}
       input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));
       addressLookupNote(input,'');
     },
-    suggested_failed:(status,message)=>{console.error('getAddress suggestions failed',{status,message,inputId,hostname:location.hostname});addressLookupNote(input,'Address lookup unavailable — please enter the address manually.')},
-    selected_failed:(status,message)=>{console.error('getAddress address selection failed',{status,message,inputId,hostname:location.hostname});addressLookupNote(input,'That address could not be loaded — please enter it manually.')}
+    suggested:()=>addressLookupNote(input,''),
+    suggested_failed:(first,second,third)=>{const details=getAddressFailureDetails(first,second,third);console.error('getAddress suggestions failed',{...details,inputId,hostname:location.hostname});addressLookupNote(input,getAddressFailureNote(details))},
+    selected_failed:(first,second,third)=>{const details=getAddressFailureDetails(first,second,third);console.error('getAddress address selection failed',{...details,inputId,hostname:location.hostname});addressLookupNote(input,getAddressFailureNote(details,true))}
   });}catch(error){console.error('getAddress autocomplete initialisation failed',{error,inputId,hostname:location.hostname});input.dataset.addressReady='';addressLookupNote(input,'Address lookup unavailable — please enter the address manually.')}
 }
 function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>enableAddressAutocomplete(inputId,postcodeId),40)}
@@ -550,19 +617,19 @@ function telUrl(value){return `tel:${String(value||'').replace(/[^+0-9]/g,'')}`}
 function ukMobileDigits(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0044'))digits=digits.slice(2);if(digits.startsWith('0'))digits='44'+digits.slice(1);return digits}
 function whatsappUrl(value,text=''){const digits=ukMobileDigits(value);if(!/^447\d{9}$/.test(digits))return '';return `https://wa.me/${digits}${text?`?text=${encodeURIComponent(text)}`:''}`}
 function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
-function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=mapAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappUrl(c.phone)?`<a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
+function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappUrl(c.phone)?`<a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function queueJobCard(job){
   const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),when=job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet';
-  return `<div class="item job-compact queue-card" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+  return `<div class="item job-compact queue-card" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function jobCard(job){
   if(['to_book','waiting'].includes(job.status))return queueJobCard(job);
   const when=job.scheduled_date?`${displayDate(job.scheduled_date)}${job.scheduled_time?` at ${displayTime(job.scheduled_time)}`:''}`:'Not booked yet';
   const price=money(job.quoted_amount);
-  return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(mapAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+  return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function dashboardJobCard(job,mode='today'){
-  const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount),address=mapAddress(job),openOnly=mode==='tomorrow';
+  const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount),address=resolveJobAddress(job),openOnly=mode==='tomorrow';
   const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}${workLogsReady&&job.status!=='completed'?`<button class="light" onclick="event.stopPropagation();openAddVisit('${job.id}')">${visitsForJob(job.id).length?'Record visit':'Start visit'}</button>`:''}</div>`;
   return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
@@ -705,7 +772,7 @@ function show(html,sheetClass=''){
   sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
-  prepareFormInputs(sheet);
+  prepareFormInputs(sheet);syncFixedChromeHeights();
 }
 function showWorkflow(html){
   if($('modal')?.classList.contains('on'))closeModal();
@@ -733,25 +800,31 @@ function prepareFormInputs(root=document){
     else if(/name|address|title|boiler|town|work|merchant|item/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words'}
     if(/^(cname|ename|inlinename)$/.test(id)){input.type='text';input.inputMode='text';input.autocapitalize='words';input.autocomplete='name';input.setAttribute('autocorrect','on');input.spellcheck=true}
     if(/address/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words';input.autocomplete='street-address';input.setAttribute('autocorrect','off');input.spellcheck=false}
+    if(input.type==='time')input.step='900';
   });
   root.querySelectorAll('textarea').forEach(area=>{area.autocapitalize='sentences';area.setAttribute('autocorrect','on');area.spellcheck=true});
 }
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|title|boiler|town|work needed/.test(key)&&!(/email|postcode|address/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
+document.addEventListener('change',event=>{if(event.target instanceof HTMLInputElement&&event.target.type==='time'&&event.target.step==='900')snapTimeInput(event.target)});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
+  clearTimeout(modalViewportSettleTimer);modalViewportSettleTimer=0;
   modal.classList.remove('on');modal.setAttribute('aria-hidden','true');unlockBackgroundPage();
   if(sheet){sheet.innerHTML='';sheet.className='sheet'}
 }
 let lockedPageScrollY=0;
 function lockBackgroundPage(){if(document.body.classList.contains('modal-open'))return;lockedPageScrollY=window.scrollY;document.body.style.top=`-${lockedPageScrollY}px`;document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open');requestAnimationFrame(()=>window.scrollTo(0,0))}
 function unlockBackgroundPage(){if(!document.body.classList.contains('modal-open'))return;document.documentElement.classList.remove('modal-open');document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockedPageScrollY)}
-addEventListener('scroll',()=>{if(document.body.classList.contains('modal-open')&&!workflowIsActive()&&window.scrollY!==0)window.scrollTo(0,0)},{passive:true});
 function setModalBusy(busy){const modal=$('modal');if(modal)modal.dataset.busy=busy?'1':'0'}
 function closeModalAndShowPage(page){closeModal();showPage(page)}
 function closeModalAndBook(){closeModal();openNewJob()}
 $('modal').addEventListener('click',event=>{if(event.target===$('modal')&&!event.defaultPrevented&&event.currentTarget.dataset.busy!=='1')closeModal()});
-document.addEventListener('focusin',event=>{if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;if(event.target.closest('.workflow-scroll')){scheduleWorkflowViewportSettle(320);return}requestAnimationFrame(()=>requestAnimationFrame(()=>ensureActiveFieldVisible('smooth')))});
+document.addEventListener('focusin',event=>{
+  if(!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))return;
+  if(event.target.closest('.workflow-scroll')){scheduleWorkflowViewportSettle(320);return}
+  if(event.target.closest('.sheet')){scheduleModalViewportSettle(320);return}
+});
 
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="navy" onclick="openNewCustomer()">New Customer</button><button class="light" onclick="openQuickDiaryEntry()">Quick Diary Entry</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button></div>`)
@@ -775,7 +848,7 @@ function openBookService(id){
 }
 async function saveBookedService(customerId){
   const c=customers.find(x=>x.id===customerId),date=$('bsDate')?.value;if(!c||!date)return alert('Choose the service date.');
-  const payload={owner_id:user.id,customer_id:customerId,title:'Boiler Service',job_type:'Boiler service',status:'booked',billing_method:'time_materials',scheduled_date:date,scheduled_time:$('bsTime')?.value||null,address:c.address||'',postcode:c.postcode||'',description:$('bsNotes')?.value.trim()||'',waiting_reason:null,follow_up_date:null,lead_source:'existing_customer'};
+  const payload={owner_id:user.id,customer_id:customerId,title:'Boiler Service',job_type:'Boiler service',status:'booked',billing_method:'time_materials',scheduled_date:date,scheduled_time:quarterHourInputValue('bsTime')||null,address:c.address||'',postcode:c.postcode||'',description:$('bsNotes')?.value.trim()||'',waiting_reason:null,follow_up_date:null,lead_source:'existing_customer'};
   const btn=$('bookServiceBtn');if(btn){btn.disabled=true;btn.textContent='Booking…'}
   const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error){if(btn){btn.disabled=false;btn.textContent='Book service'}return alert(error.message)}
   await sb.from('customers').update({status:'booked',service_reminder_status:'booked',updated_at:new Date().toISOString()}).eq('id',customerId);
@@ -834,6 +907,7 @@ function openCustomer(id){
     <div class="detail"><b>Notes</b><span>${esc(c.notes||'No notes')}</span></div>
   </div>
   <div class="quick-grid">
+    ${customerAddress(c)?`<a class="btn navy" href="${appleMapsUrl(customerAddress(c))}" target="_blank" rel="noopener">Navigate</a>`:''}
     <button class="navy" onclick="completeService('${id}')">Complete service</button>
     <button class="gold" onclick="openBookService('${id}')">Book service</button>
     <button class="gold" onclick="openNewJob('${id}')">Book work</button>
@@ -1007,7 +1081,7 @@ async function saveNewJob(){
   const title=$('jTitle').value.trim();if(!title)return alert('Enter a short job title.');
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';setModalBusy(true);
   const price=$('jPrice').value.trim(),stage=$('jStage')?.value||'booked';
-  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?($('jTime').value||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null,lead_source:$('jLeadSource')?.value||null};
+  const payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?(quarterHourInputValue('jTime')||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null,lead_source:$('jLeadSource')?.value||null};
   if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';setModalBusy(false);renderAll();closeWorkflow();showPage('dashboard');return}
   try{
     const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)throw error;
@@ -1026,7 +1100,7 @@ function openQuickDiaryEntry(){
 }
 async function saveQuickDiaryEntry(){
   const title=$('quickTitle').value.trim();if(!title)return alert('Enter a short title.');const resolved=addressParts($('quickAddress').value,$('quickPostcode').value||$('quickAddress').dataset.selectedPostcode);
-  const payload={owner_id:user.id,customer_id:null,title,job_type:inferJobType(title),status:'booked',scheduled_date:$('quickDate').value||today(),scheduled_time:$('quickTime').value||null,address:resolved.address,postcode:resolved.postcode,description:$('quickNotes').value.trim(),quoted_amount:null},button=$('saveQuickDiaryBtn');if(button){button.disabled=true;button.textContent='Saving…'}
+  const payload={owner_id:user.id,customer_id:null,title,job_type:inferJobType(title),status:'booked',scheduled_date:$('quickDate').value||today(),scheduled_time:quarterHourInputValue('quickTime')||null,address:resolved.address,postcode:resolved.postcode,description:$('quickNotes').value.trim(),quoted_amount:null},button=$('saveQuickDiaryBtn');if(button){button.disabled=true;button.textContent='Saving…'}
   if(!isOnline()){const id=tempId();jobs.push({...payload,id,created_at:new Date().toISOString()});queueOperation('jobs','insert',payload,id);renderAll();closeWorkflow();showPage('dashboard');return}
   try{const {error}=await sb.from('jobs').insert(payload);if(error)throw error;await loadAll();closeWorkflow();showPage('dashboard')}catch(error){console.error('Quick diary entry failed',error);alert(friendlyError(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Add to diary'}}
 }
@@ -1048,7 +1122,7 @@ function isServiceJob(job){return String(job?.job_type||'').trim().toLowerCase()
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
-  const fig=jobFigures(j),address=mapAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'';
+  const fig=jobFigures(j),address=resolveJobAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'';
   const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:''}${v.return_required?' · Return required':''}</div></div></div>`).join('');
   const costRows=fig.costs.map(c=>`<tr><td>${esc(displayDate(c.cost_date))}</td><td>${esc(c.description)}</td><td class="num">${esc(money(Number(c.quantity||1)*Number(c.unit_cost||0)))}</td><td><button class="light" onclick="openEditJobCost('${c.id}','${id}')">Edit</button></td></tr>`).join('');
   show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')} · ${esc(jobStatusLabel(j.status))}</div></div><button class="light" onclick="closeModal()">Close</button></div>
@@ -1140,7 +1214,7 @@ async function createCustomerInsideJobEdit(){
 async function saveJobEdit(id){
   if(!requireOnline())return;
   const price=$('ejPrice').value.trim();
-  const payload={customer_id:selectedEditJobCustomerId||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:$('ejTime').value||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),agreed_price:price===''?null:Number(price),billing_method:$('ejBilling')?.value||'time_materials',invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),lead_source:$('ejLeadSource')?.value||null,updated_at:new Date().toISOString()};
+  const payload={customer_id:selectedEditJobCustomerId||null,title:$('ejTitle').value.trim(),job_type:$('ejType').value.trim()||null,status:$('ejStatus').value,scheduled_date:$('ejDate').value||null,scheduled_time:quarterHourInputValue('ejTime')||null,address:$('ejAddress').value.trim(),postcode:$('ejPostcode').value.trim().toUpperCase(),quoted_amount:price===''?null:Number(price),agreed_price:price===''?null:Number(price),billing_method:$('ejBilling')?.value||'time_materials',invoice_number:$('ejInvoice').value.trim(),description:$('ejDescription').value.trim(),lead_source:$('ejLeadSource')?.value||null,updated_at:new Date().toISOString()};
   const completingService=isServiceJob(jobs.find(j=>j.id===id))&&payload.status==='completed'&&jobs.find(j=>j.id===id)?.status!=='completed';
   if(completingService)payload.status=jobs.find(j=>j.id===id).status;else if(payload.status==='completed')payload.completed_at=new Date().toISOString();
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
@@ -1160,14 +1234,14 @@ function openAddVisit(jobId){
   <button id="saveVisitBtn" class="gold" style="width:100%" onclick="saveVisit('${jobId}')">Save visit</button>`)
 }
 async function saveVisit(jobId){
-  const date=$('vDate').value;if(!date)return alert('Choose the visit date.');let hours=Number($('vHours').value||0);const start=$('vStart').value,end=$('vEnd').value;if(!hours&&start&&end){const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);hours=Math.max(0,((eh*60+em)-(sh*60+sm))/60)}const returnRequired=$('vReturn').checked,returnDate=$('vReturnDate').value||null,returnTime=$('vReturnTime').value||null;const visitPayload={owner_id:user.id,job_id:jobId,visit_date:date,start_time:start||null,end_time:end||null,hours,notes:$('vNotes').value.trim(),return_required:returnRequired,next_visit_date:returnDate};const update={status:returnRequired?(returnDate?'booked':'waiting'):'in_progress',updated_at:new Date().toISOString(),scheduled_date:returnDate||null,scheduled_time:returnDate?returnTime:null,waiting_reason:returnRequired&&!returnDate?'customer':null};
+  const date=$('vDate').value;if(!date)return alert('Choose the visit date.');let hours=Number($('vHours').value||0);const start=quarterHourInputValue('vStart'),end=quarterHourInputValue('vEnd');if(!hours&&start&&end){const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);hours=Math.max(0,((eh*60+em)-(sh*60+sm))/60)}const returnRequired=$('vReturn').checked,returnDate=$('vReturnDate').value||null,returnTime=quarterHourInputValue('vReturnTime')||null;const visitPayload={owner_id:user.id,job_id:jobId,visit_date:date,start_time:start||null,end_time:end||null,hours,notes:$('vNotes').value.trim(),return_required:returnRequired,next_visit_date:returnDate};const update={status:returnRequired?(returnDate?'booked':'waiting'):'in_progress',updated_at:new Date().toISOString(),scheduled_date:returnDate||null,scheduled_time:returnDate?returnTime:null,waiting_reason:returnRequired&&!returnDate?'customer':null};
   if(!isOnline()){const id=tempId();jobVisits.push({...visitPayload,id,created_at:new Date().toISOString()});const job=jobs.find(j=>j.id===jobId);if(job)Object.assign(job,update);queueOperation('job_visits','insert',visitPayload,id);queueOperation('jobs','update',update,'',{id:jobId});renderAll();closeModal();showSyncNotice('Visit saved on this phone — waiting for signal');return}
   const btn=$('saveVisitBtn');btn.disabled=true;btn.textContent='Saving…';const {error}=await sb.from('job_visits').insert(visitPayload);if(error){btn.disabled=false;btn.textContent='Save visit';return alert(error.message)}await sb.from('jobs').update(update).eq('id',jobId);await loadAll();openJob(jobId)
 }
 function openScheduleReturn(jobId,mode='return'){
   const job=jobs.find(j=>j.id===jobId),booking=mode==='book',heading=booking?'Book into diary':'Schedule return visit';show(`<div class="head"><h2>${heading}</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="row"><div class="field"><label>${booking?'Date':'Return date'}</label><input id="returnDate" type="date" value="${addDays(today(),1)}"></div><div class="field"><label>Time</label><input id="returnTime" type="time" step="900"></div></div><div class="field"><label>What needs doing?</label><textarea id="returnNotes">${esc(job?.description||'')}</textarea></div><button class="gold" style="width:100%" onclick="saveReturnVisit('${jobId}')">${booking?'Book job':'Schedule return visit'}</button>`)
 }
-async function saveReturnVisit(jobId){if(!requireOnline())return;const date=$('returnDate').value;if(!date)return alert('Choose a return date.');const job=jobs.find(j=>j.id===jobId);const notes=$('returnNotes').value.trim();const {error}=await sb.from('jobs').update({scheduled_date:date,scheduled_time:$('returnTime').value||null,status:'booked',waiting_reason:null,follow_up_date:null,description:notes||job?.description||'',updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
+async function saveReturnVisit(jobId){if(!requireOnline())return;const date=$('returnDate').value;if(!date)return alert('Choose a return date.');const job=jobs.find(j=>j.id===jobId);const notes=$('returnNotes').value.trim();const {error}=await sb.from('jobs').update({scheduled_date:date,scheduled_time:quarterHourInputValue('returnTime')||null,status:'booked',waiting_reason:null,follow_up_date:null,description:notes||job?.description||'',updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openJob(jobId)}
 function openAddCost(jobId){
   if(!workLogsReady)return alert('Run the v0.5 Foundation database update first.');
   show(`<div class="head"><h2>Add material or cost</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div>
