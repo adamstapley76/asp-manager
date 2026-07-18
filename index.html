@@ -800,12 +800,13 @@ function prepareFormInputs(root=document){
   standardiseTimePickers(root);
   root.querySelectorAll('textarea').forEach(area=>{area.autocapitalize='sentences';area.setAttribute('autocorrect','on');area.spellcheck=true});
 }
-function timePickerOptions(selected=''){const value=normaliseQuarterHour(selected);let options='<option value="">Select time</option>';for(let minutes=0;minutes<1440;minutes+=15){const time=`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;options+=`<option value="${time}"${time===value?' selected':''}>${time}</option>`}return options}
-function standardiseTimePickers(root=document){root.querySelectorAll('input[type="time"]').forEach(input=>{const picker=document.createElement('select');for(const attribute of [...input.attributes]){if(attribute.name!=='type'&&attribute.name!=='step'&&attribute.name!=='value')picker.setAttribute(attribute.name,attribute.value)}picker.className=input.className;picker.setAttribute('aria-label',input.getAttribute('aria-label')||'Time in 15 minute increments');picker.innerHTML=timePickerOptions(input.value);input.replaceWith(picker)})}
+function bookingTimePicker(input){return ['bsTime','jTime','quickTime','ejTime','vReturnTime','returnTime'].includes(input?.id)}
+function timePickerOptions(selected='',bookingOnly=false){const value=normaliseQuarterHour(selected),first=bookingOnly?7*60:0,last=bookingOnly?18*60:23*60+45;let options='<option value="">Select time</option>';for(let minutes=first;minutes<=last;minutes+=15){const time=`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;options+=`<option value="${time}"${time===value?' selected':''}>${time}</option>`}return options}
+function standardiseTimePickers(root=document){root.querySelectorAll('input[type="time"]').forEach(input=>{const picker=document.createElement('select');for(const attribute of [...input.attributes]){if(attribute.name!=='type'&&attribute.name!=='step'&&attribute.name!=='value')picker.setAttribute(attribute.name,attribute.value)}picker.className=input.className;picker.setAttribute('aria-label',input.getAttribute('aria-label')||(bookingTimePicker(input)?'Booking time from 07:00 to 18:00':'Time in 15 minute increments'));picker.innerHTML=timePickerOptions(input.value,bookingTimePicker(input));input.replaceWith(picker)})}
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
 // Customer names are stored exactly as entered; only postcodes are normalised.
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
-document.addEventListener('change',event=>{if(event.target instanceof HTMLSelectElement&&event.target.getAttribute('aria-label')==='Time in 15 minute increments')snapTimeInput(event.target)});
+document.addEventListener('change',event=>{if(event.target instanceof HTMLSelectElement&&/time/i.test(event.target.getAttribute('aria-label')||''))snapTimeInput(event.target)});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
   clearTimeout(modalViewportSettleTimer);modalViewportSettleTimer=0;
