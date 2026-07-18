@@ -87,3 +87,4 @@ Do not create a new Supabase project. Existing customers and jobs are preserved.
 
 ## Fresh installation
 Run `supabase_setup_v0.2.sql` first, then `supabase_setup_v0.3.sql`.
+
