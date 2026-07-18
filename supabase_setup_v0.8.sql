@@ -1,12 +1,7 @@
 -- ASP Manager v0.8 - QuickBooks Online connection and invoice sync
--- Tokens are intentionally stored in a private schema. They are never exposed
--- to the browser or the public Supabase API.
+-- Tokens remain server-only: RLS is enabled and browser roles have no access.
 
-create schema if not exists integrations;
-revoke all on schema integrations from public;
-grant usage on schema integrations to service_role;
-
-create table if not exists integrations.quickbooks_connections (
+create table if not exists public.quickbooks_connections (
   owner_id uuid primary key references auth.users(id) on delete cascade,
   realm_id text not null,
   access_token text not null,
@@ -20,21 +15,21 @@ create table if not exists integrations.quickbooks_connections (
   last_sync_error text
 );
 
-create table if not exists integrations.quickbooks_oauth_states (
+create table if not exists public.quickbooks_oauth_states (
   state_hash text primary key,
   owner_id uuid not null references auth.users(id) on delete cascade,
   expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
 
-alter table integrations.quickbooks_connections enable row level security;
-alter table integrations.quickbooks_oauth_states enable row level security;
+alter table public.quickbooks_connections enable row level security;
+alter table public.quickbooks_oauth_states enable row level security;
 
 create index if not exists quickbooks_oauth_states_expiry_idx
-  on integrations.quickbooks_oauth_states (expires_at);
+  on public.quickbooks_oauth_states (expires_at);
 
-revoke all on all tables in schema integrations from public, anon, authenticated;
-grant select, insert, update, delete on all tables in schema integrations to service_role;
+revoke all on public.quickbooks_connections, public.quickbooks_oauth_states from public, anon, authenticated;
+grant select, insert, update, delete on public.quickbooks_connections, public.quickbooks_oauth_states to service_role;
 
 alter table public.customers
   add column if not exists quickbooks_customer_id text;

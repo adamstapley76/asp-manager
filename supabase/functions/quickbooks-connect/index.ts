@@ -71,7 +71,7 @@ async function refreshConnection(admin: ReturnType<typeof adminClient>, connecti
     access_token_expires_at: new Date(Date.now() + Number(tokens.expires_in || 3600) * 1000).toISOString(),
     refresh_token_expires_at: new Date(Date.now() + Number(tokens.x_refresh_token_expires_in || 8726400) * 1000).toISOString(),
   }
-  const { error } = await admin.schema('integrations').from('quickbooks_connections').update(updated).eq('owner_id', connection.owner_id)
+  const { error } = await admin.from('quickbooks_connections').update(updated).eq('owner_id', connection.owner_id)
   if (error) throw error
   return updated
 }
@@ -144,7 +144,7 @@ async function ensureSalesSetup(admin: ReturnType<typeof adminClient>, connectio
     taxCodeId = text(taxable?.Id)
     if (!taxCodeId) throw new Error('QuickBooks needs an active 20% sales VAT code before invoices can be synced.')
   }
-  await admin.schema('integrations').from('quickbooks_connections').update({ service_item_id: itemId, tax_code_id: taxCodeId }).eq('owner_id', active.owner_id)
+  await admin.from('quickbooks_connections').update({ service_item_id: itemId, tax_code_id: taxCodeId }).eq('owner_id', active.owner_id)
   return { itemId, taxCodeId, connection: active }
 }
 
@@ -154,7 +154,7 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
   if (document.quickbooks_invoice_id) return { invoiceId: document.quickbooks_invoice_id, alreadySynced: true }
   const customer = Array.isArray(document.customers) ? document.customers[0] : document.customers
   if (!customer) throw new Error('Choose a customer before syncing this invoice to QuickBooks.')
-  const { data: connection, error: connectionError } = await admin.schema('integrations').from('quickbooks_connections').select('*').eq('owner_id', ownerId).maybeSingle()
+  const { data: connection, error: connectionError } = await admin.from('quickbooks_connections').select('*').eq('owner_id', ownerId).maybeSingle()
   if (connectionError || !connection) throw new Error('Connect QuickBooks before syncing an invoice.')
   try {
     const linkedCustomer = await ensureCustomer(admin, connection, customer)
@@ -177,12 +177,12 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
     if (!invoiceId) throw new Error('QuickBooks did not return an invoice ID.')
     const now = new Date().toISOString()
     await admin.from('documents').update({ quickbooks_invoice_id: invoiceId, quickbooks_synced_at: now, quickbooks_sync_error: null, updated_at: now }).eq('id', document.id)
-    await admin.schema('integrations').from('quickbooks_connections').update({ last_synced_at: now, last_sync_error: null }).eq('owner_id', ownerId)
+    await admin.from('quickbooks_connections').update({ last_synced_at: now, last_sync_error: null }).eq('owner_id', ownerId)
     return { invoiceId, alreadySynced: false }
   } catch (error) {
     const message = text(error instanceof Error ? error.message : error).slice(0, 1000)
     await admin.from('documents').update({ quickbooks_sync_error: message, updated_at: new Date().toISOString() }).eq('id', document.id)
-    await admin.schema('integrations').from('quickbooks_connections').update({ last_sync_error: message }).eq('owner_id', ownerId)
+    await admin.from('quickbooks_connections').update({ last_sync_error: message }).eq('owner_id', ownerId)
     throw error
   }
 }
@@ -199,13 +199,13 @@ Deno.serve(async (request) => {
     const realmId = text(url.searchParams.get('realmId'))
     if (!code || !state || !realmId) return html('QuickBooks connection not completed', 'No connection approval was received. You can close this page and try again.')
     const hash = await stateHash(state)
-    const { data: savedState } = await admin.schema('integrations').from('quickbooks_oauth_states').select('*').eq('state_hash', hash).maybeSingle()
+    const { data: savedState } = await admin.from('quickbooks_oauth_states').select('*').eq('state_hash', hash).maybeSingle()
     if (!savedState || new Date(savedState.expires_at).getTime() < Date.now()) return html('QuickBooks connection expired', 'Please return to ASP Manager and choose Connect QuickBooks again.')
-    await admin.schema('integrations').from('quickbooks_oauth_states').delete().eq('state_hash', hash)
+    await admin.from('quickbooks_oauth_states').delete().eq('state_hash', hash)
     try {
       const tokens = await exchangeCode(code)
       const now = new Date()
-      const { error } = await admin.schema('integrations').from('quickbooks_connections').upsert({ owner_id: savedState.owner_id, realm_id: realmId, access_token: tokens.access_token, refresh_token: tokens.refresh_token, access_token_expires_at: new Date(now.getTime() + Number(tokens.expires_in || 3600) * 1000).toISOString(), refresh_token_expires_at: new Date(now.getTime() + Number(tokens.x_refresh_token_expires_in || 8726400) * 1000).toISOString(), connected_at: now.toISOString(), last_sync_error: null })
+      const { error } = await admin.from('quickbooks_connections').upsert({ owner_id: savedState.owner_id, realm_id: realmId, access_token: tokens.access_token, refresh_token: tokens.refresh_token, access_token_expires_at: new Date(now.getTime() + Number(tokens.expires_in || 3600) * 1000).toISOString(), refresh_token_expires_at: new Date(now.getTime() + Number(tokens.x_refresh_token_expires_in || 8726400) * 1000).toISOString(), connected_at: now.toISOString(), last_sync_error: null })
       if (error) throw error
       return html('QuickBooks connected', 'ASP Manager can now securely sync invoices to your QuickBooks company. Return to the app and open an invoice.', true)
     } catch (error) {
@@ -216,15 +216,15 @@ Deno.serve(async (request) => {
   const user = await authorisedUser(request, admin)
   if (!user) return json({ error: 'Sign in to ASP Manager first.' }, 401)
   if (mode === 'status') {
-    const { data } = await admin.schema('integrations').from('quickbooks_connections').select('realm_id, connected_at, last_synced_at, last_sync_error').eq('owner_id', user.id).maybeSingle()
+    const { data } = await admin.from('quickbooks_connections').select('realm_id, connected_at, last_synced_at, last_sync_error').eq('owner_id', user.id).maybeSingle()
     return json({ connected: !!data, ...data })
   }
   if (mode === 'start') {
     const config = qboConfig()
     if (!config) return json({ error: 'QuickBooks keys have not been added yet.' }, 503)
     const state = randomState()
-    await admin.schema('integrations').from('quickbooks_oauth_states').delete().eq('owner_id', user.id)
-    const { error } = await admin.schema('integrations').from('quickbooks_oauth_states').insert({ state_hash: await stateHash(state), owner_id: user.id, expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() })
+    await admin.from('quickbooks_oauth_states').delete().eq('owner_id', user.id)
+    const { error } = await admin.from('quickbooks_oauth_states').insert({ state_hash: await stateHash(state), owner_id: user.id, expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() })
     if (error) return json({ error: 'Could not start the QuickBooks connection.' }, 500)
     const authorizationUrl = new URL('https://appcenter.intuit.com/connect/oauth2')
     authorizationUrl.search = new URLSearchParams({ client_id: config.clientId, response_type: 'code', scope: 'com.intuit.quickbooks.accounting', redirect_uri: config.redirectUri, state }).toString()
