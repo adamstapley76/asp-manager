@@ -71,8 +71,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
 <style id="testWeekStyles">
   #mobileNavShell{position:sticky;top:0;z-index:40;padding:8px;margin:-14px -14px 9px;border-radius:0 0 14px 14px;background:#fff;box-shadow:0 2px 10px #10182822}
-  .app-nav{display:grid!important;grid-template-columns:repeat(5,1fr);gap:6px;overflow:visible!important;padding:0!important}
-  .app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none!important}
+  .app-nav{display:grid!important;grid-template-columns:repeat(6,1fr);gap:6px;overflow:visible!important;padding:0!important}
+  .app-nav #navDiary,.app-nav #navJobs,.app-nav #navVan{display:none!important}
   .app-nav button{min-height:40px;padding:8px 5px;white-space:nowrap}
   .hero-today{margin-top:0!important}
   .today-primary .section-title .actions{display:none}
@@ -98,6 +98,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .secondary-panel{margin-top:12px}.secondary-panel summary{cursor:pointer;font-weight:800;color:var(--navy);padding:12px;border:1px solid var(--line);border-radius:11px;background:#f8fafc;list-style:none}.secondary-panel summary::-webkit-details-marker{display:none}.secondary-panel[open] summary{margin-bottom:10px}
   .service-callout{background:#fff8df;border:1px solid #f2d487;border-radius:12px;padding:11px;margin:10px 0}
   @media(max-width:760px){
+    .app-nav{grid-template-columns:repeat(5,1fr)}
+    .app-nav #navDocuments{display:none!important}
     header{position:fixed;top:0;left:0;right:0;z-index:40;padding-top:env(safe-area-inset-top)}.header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
     #appView{padding-top:calc(var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:0;z-index:40;margin:0;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
     #authView{padding-top:20px}.app-nav{border-radius:0!important}
