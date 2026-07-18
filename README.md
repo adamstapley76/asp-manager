@@ -7,7 +7,7 @@ The app remains a single-page `index.html` application using `config.js` and the
 - Fixed four-button mobile navigation below the measured blue header, including iPhone safe-area handling.
 - Dashboard order: Today's Jobs, Tomorrow's Jobs, Services Due, Work Queue, Today's List.
 - Customer-first Book Work flow with inline customer creation and secondary fields under More details.
-- getAddress v3.1.6 inline autocomplete through same-origin Vercel Functions; the API key remains server-side.
+- Ideal Postcodes inline autocomplete through same-origin Vercel Functions; the API key remains server-side and saved local addresses are shown first.
 - Dedicated Book Service flow from customer and Services Due records.
 - Idempotent boiler-service completion, annual service dates, reminder reset and clear next-date confirmation.
 - Normalised plausible UK mobile numbers for `wa.me` links and friendly reminder messages.
@@ -62,7 +62,7 @@ The app remains a single-page `index.html` application using `config.js` and the
 
 ## Address lookup configuration
 
-Set `GETADDRESS_API_KEY` as a Vercel environment variable for Preview deployments. Do not add the key to `config.js`, frontend JavaScript or GitHub. The app keeps manual address entry available if the server-side lookup cannot be reached.
+Set `IDEAL_POSTCODES_API_KEY` as a Vercel environment variable for Preview deployments. Do not add the key to `config.js`, frontend JavaScript or GitHub. The app keeps manual address entry available if the server-side lookup cannot be reached.
 
 ## Existing database upgrades
 

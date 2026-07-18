@@ -6,7 +6,6 @@
 <title>ASP Manager · Daily Driver</title>
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.getaddress.io/scripts/getaddress-autocomplete-3.1.6.js"></script>
 <script src="config.js"></script>
 <style>
 :root{
@@ -42,7 +41,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .workflow-view{position:fixed;inset:0;width:100%;height:100dvh;z-index:100;background:#fff;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;touch-action:pan-y}.workflow-view.hidden{display:none!important}.workflow-header{flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:max(12px,env(safe-area-inset-top)) 15px 11px;border-bottom:1px solid var(--line);background:#fff}.workflow-header h2{margin:0;color:var(--navy)}.workflow-scroll{flex:1 1 auto;min-height:0;width:100%;max-width:760px;margin:0 auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:12px 15px calc(40px + env(safe-area-inset-bottom) + var(--workflow-keyboard-inset,0px));scroll-padding-top:12px;scroll-padding-bottom:calc(40px + env(safe-area-inset-bottom) + var(--workflow-keyboard-inset,0px))}body.workflow-active>header,body.workflow-active>#appView{visibility:hidden;pointer-events:none}
 .detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.detail{border:1px solid var(--line);border-radius:11px;padding:10px}.detail b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.detail span{font-size:14px;white-space:pre-wrap}
 .hidden{display:none!important}.login{max-width:430px;margin:60px auto}.login h2{color:var(--navy)}.login-note{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)}
-.address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}.ga-autocomplete-list{position:relative!important;inset:auto!important;z-index:9999!important;width:100%!important;max-height:280px!important;overflow-y:auto!important;margin:5px 0 0!important}
+.address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}.address-suggestions{position:relative;z-index:25;width:100%;max-height:280px;overflow-y:auto;margin:5px 0 0;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 8px 20px #10182822}.address-suggestion{display:block;width:100%;min-height:0;padding:10px 11px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#fff;color:var(--text);text-align:left;font-size:13px;font-weight:650}.address-suggestion:last-child{border-bottom:0}.address-suggestion:hover,.address-suggestion:focus{background:#fff8df;outline:none}.address-suggestion small{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:600}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;flex-wrap:wrap;overflow-x:hidden;margin:10px 0 12px}.filter-row button{white-space:normal;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
 .loading{pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{max-width:100%;overflow-x:hidden}.doc-table{width:100%;table-layout:fixed;border-collapse:collapse}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right}.print-only{display:none}
@@ -67,7 +66,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .sync-pill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 9px;background:#ecfdf3;color:#067647;white-space:nowrap}
   .sync-pill.pending{background:#fffaeb;color:#b54708}.sync-pill.error{background:#fef3f2;color:#b42318}
   .sync-toast{position:fixed;left:12px;right:12px;bottom:12px;z-index:80;padding:11px 13px;border-radius:12px;background:#10263f;color:white;display:none;text-align:center;font-weight:700}.sync-toast.on{display:block}.sync-toast.error{background:#912018}
-  .offline-banner{bottom:55px!important;background:#b54708!important}
   @media(max-width:760px){.app-nav{display:grid!important;grid-template-columns:1fr 1fr 1fr 1fr;position:sticky;top:58px;z-index:15;background:#fff;padding:6px;border-radius:12px;overflow:visible}.app-nav button{padding:8px 5px;font-size:12px;min-height:38px}.app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none}.more-grid{grid-template-columns:1fr 1fr}.job-quick a,.job-quick button{font-size:11px;padding:7px 8px}.card{margin-bottom:9px}}
 </style>
 
@@ -220,7 +218,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div id="backupSection" class="card">
       <div class="section-title"><div><h2>Data protection</h2><div class="meta">Your customer database matters more than the app code.</div></div></div>
       <div class="backup-box"><strong>Download backup to this device</strong><div class="meta" style="margin:5px 0 8px">Exports customers, jobs, documents, tasks/materials, visits and expenses into one dated JSON file.</div><div class="meta" style="margin-bottom:12px">Save or copy this file to iCloud Drive, Google Drive or another secure location.</div><button class="gold" onclick="downloadBackup()">Download backup to this device</button></div>
-      <div class="muted-box" style="margin-top:12px"><b>Offline foundation</b><div class="meta">New customers, booked work, quick entries, materials, visits and job costs save on this device first when there is no signal. They sync automatically when connection returns. Quotes, invoices, payments and complex edits still require an internet connection.</div></div><div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
+      <div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
     </div>
   </section>
 
@@ -273,7 +271,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 </div>
 
 <section id="workflowView" class="workflow-view hidden" aria-hidden="true"><div id="workflowHeader" class="workflow-header"></div><div id="workflowScroll" class="workflow-scroll"></div></section>
-<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div><div id="offlineBanner" class="offline-banner">Offline: new customers, bookings, visits and materials will save on this phone and sync when signal returns.</div>
+<div id="modal" class="modal"><div id="sheet" class="sheet"></div></div><div id="syncToast" class="sync-toast"></div>
 
 <script>
 const cfg=window.ASP_CONFIG;
@@ -365,13 +363,11 @@ function normaliseQuarterHour(value){
   return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
 }
 function snapTimeInput(input){
-  if(!(input instanceof HTMLInputElement)||input.type!=='time'||input.step!=='900'||!input.value)return input?.value||'';
+  if(!(input instanceof HTMLInputElement||input instanceof HTMLSelectElement)||!input.value)return input?.value||'';
   const snapped=normaliseQuarterHour(input.value);if(snapped)input.value=snapped;return input.value;
 }
 function quarterHourInputValue(id){
   const input=$(id);if(!input?.value)return '';
-  // Preserve an existing stored time when the edit form is saved without touching it.
-  if(input.defaultValue&&input.value===input.defaultValue)return input.value;
   return snapTimeInput(input);
 }
 function authMessage(text){authMsg.textContent=text}
@@ -384,7 +380,7 @@ function friendlyError(error){
 }
 
 function isOnline(){return navigator.onLine}
-function updateOfflineState(){const banner=$('offlineBanner');if(banner)banner.classList.toggle('on',!isOnline())}
+function updateOfflineState(){updateSyncPill()}
 window.addEventListener('online',async()=>{updateOfflineState();if(user){await syncOfflineQueue();await loadAll()}});
 window.addEventListener('offline',()=>{updateOfflineState();updateSyncPill()});
 function requireOnline(){return isOnline()}
@@ -396,7 +392,7 @@ function showSyncNotice(message,type=''){const el=$('syncToast');if(!el)return;e
 function updateSyncPill(error=false){const el=$('syncPill');if(!el)return;const count=readOfflineQueue().length;if(error){el.textContent='Sync problem';el.className='sync-pill error'}else if(count){el.textContent=`${count} pending`;el.className='sync-pill pending'}else{el.textContent=isOnline()?'Synced':'Offline';el.className='sync-pill'+(isOnline()?'':' pending')}}
 function queueOperation(table,operation,payload,local_id='',match={}){const q=readOfflineQueue();q.push({id:tempId(),table,operation,payload,local_id,match,created_at:new Date().toISOString()});writeOfflineQueue(q);showSyncNotice('Saved on this phone — waiting for signal');cacheSnapshot()}
 function replaceLocalIdEverywhere(oldId,newId){customers.forEach(c=>{if(c.id===oldId)c.id=newId});jobs.forEach(j=>{if(j.id===oldId)j.id=newId;if(j.customer_id===oldId)j.customer_id=newId});tasks.forEach(t=>{if(t.id===oldId)t.id=newId;if(t.customer_id===oldId)t.customer_id=newId});jobVisits.forEach(v=>{if(v.id===oldId)v.id=newId;if(v.job_id===oldId)v.job_id=newId});jobCosts.forEach(c=>{if(c.id===oldId)c.id=newId;if(c.job_id===oldId)c.job_id=newId})}
-async function syncOfflineQueue(){if(!isOnline()||!user||!sb)return;let q=readOfflineQueue();if(!q.length){updateSyncPill();return}updateSyncPill();const idMap={};try{for(const op of [...q]){let payload=JSON.parse(JSON.stringify(op.payload||{}));for(const k of ['customer_id','job_id'])if(payload[k]&&idMap[payload[k]])payload[k]=idMap[payload[k]];let result;if(op.operation==='insert')result=await sb.from(op.table).insert(payload).select().single();else if(op.operation==='update')result=await sb.from(op.table).update(payload).match(op.match);if(result.error)throw result.error;if(op.operation==='insert'&&op.local_id&&result.data?.id){idMap[op.local_id]=result.data.id;replaceLocalIdEverywhere(op.local_id,result.data.id)}q=q.filter(x=>x.id!==op.id);writeOfflineQueue(q)}showSyncNotice('Offline work synced');await loadAll()}catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}}
+async function syncOfflineQueue(){if(!isOnline()||!user||!sb)return;let q=readOfflineQueue();if(!q.length){updateSyncPill();return}updateSyncPill();const idMap={};try{for(const op of [...q]){let payload=JSON.parse(JSON.stringify(op.payload||{}));for(const k of ['customer_id','job_id'])if(payload[k]&&idMap[payload[k]])payload[k]=idMap[payload[k]];let result;if(op.operation==='insert')result=await sb.from(op.table).insert(payload).select().single();else if(op.operation==='update')result=await sb.from(op.table).update(payload).match(op.match);else if(op.operation==='delete')result=await sb.from(op.table).delete().match(op.match);if(result.error)throw result.error;if(op.operation==='insert'&&op.local_id&&result.data?.id){idMap[op.local_id]=result.data.id;replaceLocalIdEverywhere(op.local_id,result.data.id)}q=q.filter(x=>x.id!==op.id);writeOfflineQueue(q)}showSyncNotice('Offline work synced');await loadAll()}catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}}
 
 function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,documents,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
 function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];documents=cached.documents||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
@@ -564,70 +560,46 @@ function addressLookupNote(input,message=''){
   if(!note){note=document.createElement('div');note.id=input.id+'AddressNote';note.className='address-lookup-note';input.insertAdjacentElement('afterend',note)}
   note.textContent=message;
 }
-function getAddressFailureDetails(first,second,third){
-  // v3.1.6 supplies (request, status, message), while its public docs describe
-  // (status, message). Accept both so the console always records the real API error.
-  return third!==undefined?{request:first,status:second,message:third}:{request:null,status:first,message:second};
+function localAddressSuggestions(query){
+  const needle=String(query||'').trim().toLowerCase();if(needle.length<2)return [];
+  const seen=new Set();return customers.map(customer=>{
+    const address=customerAddress(customer),postcode=normalisePostcode(customer?.postcode),label=[address,postcode].filter(Boolean).join(', '),search=[customer?.name,address,postcode].join(' ').toLowerCase();
+    return {id:`local:${customer.id}`,address:label,postcode,local:true,search};
+  }).filter(item=>item.address&&item.search.includes(needle)&&!seen.has(item.address.toLowerCase())&&seen.add(item.address.toLowerCase())).slice(0,4);
 }
-function getAddressFailureNote(details,selection=false){
-  if(selection)return 'That address could not be loaded — please enter it manually.';
-  return 'Address lookup unavailable — please enter the address manually.';
+function localPostcodeAreas(){return [...new Set(customers.map(customer=>(normalisePostcode(customer?.postcode).match(/^[A-Z]{1,2}/)||[])[0]).filter(Boolean))].slice(0,5)}
+function clearAddressSuggestions(input){const list=$(input?.id+'AddressSuggestions');if(list)list.remove()}
+function applySelectedAddress(input,postcodeId,result){
+  const postcode=normalisePostcode(result?.postcode),formatted=(result?.formatted_address||[result?.line_1,result?.line_2,result?.line_3,result?.line_4,result?.town_or_city,result?.county]).filter(Boolean),parts=addressParts(formatted.join(', ')||result?.address||'',postcode);
+  input.value=parts.address;input.dataset.selectedPostcode=postcode;
+  if(postcodeId&&$(postcodeId)){$(postcodeId).value=postcode;$(postcodeId).dispatchEvent(new Event('input',{bubbles:true}));$(postcodeId).dispatchEvent(new Event('change',{bubbles:true}))}
+  input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));addressLookupNote(input,'');clearAddressSuggestions(input);
 }
-let getAddressProxyFetchInstalled=false;
-function getAddressLocalProxyUrl(request){
-  try{
-    const source=request instanceof Request?request.url:String(request||''),url=new URL(source,location.href);
-    if(url.origin!=='https://api.getaddress.io')return '';
-    const autocompletePrefix='/autocomplete/',getPrefix='/get/';
-    if(url.pathname.startsWith(autocompletePrefix)){
-      const query=decodeURIComponent(url.pathname.slice(autocompletePrefix.length));
-      return `/api/getaddress-autocomplete?query=${encodeURIComponent(query)}`;
-    }
-    if(url.pathname.startsWith(getPrefix)){
-      const id=decodeURIComponent(url.pathname.slice(getPrefix.length));
-      return `/api/getaddress-address?id=${encodeURIComponent(id)}`;
-    }
-  }catch(error){console.error('getAddress proxy URL could not be prepared',{error})}
-  return '';
+function renderAddressSuggestions(input,postcodeId,suggestions){
+  clearAddressSuggestions(input);if(!suggestions.length)return;
+  const list=document.createElement('div');list.id=input.id+'AddressSuggestions';list.className='address-suggestions';list.setAttribute('role','listbox');
+  suggestions.forEach(suggestion=>{const button=document.createElement('button');button.type='button';button.className='address-suggestion';button.innerHTML=`${esc(suggestion.address)}${suggestion.local?'<small>Saved local address</small>':''}`;button.addEventListener('mousedown',event=>event.preventDefault());button.addEventListener('click',async()=>{
+    if(suggestion.local)return applySelectedAddress(input,postcodeId,suggestion);
+    try{const response=await fetch(`/api/ideal-postcodes-address?id=${encodeURIComponent(suggestion.id)}`),payload=await response.json();if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');applySelectedAddress(input,postcodeId,payload)}catch(error){console.error('Ideal Postcodes address selection failed',{error,inputId:input.id});addressLookupNote(input,'That address could not be loaded — please enter it manually.')}
+  });list.append(button)});input.insertAdjacentElement('afterend',list);
 }
-function installGetAddressProxyFetch(){
-  if(getAddressProxyFetchInstalled)return;
-  const browserFetch=window.fetch.bind(window);
-  window.fetch=(request,options)=>{
-    const localUrl=getAddressLocalProxyUrl(request);
-    return browserFetch(localUrl||request,options);
-  };
-  getAddressProxyFetchInstalled=true;
-}
-async function enableAddressAutocomplete(inputId,postcodeId=''){
+async function enableIdealAddressAutocomplete(inputId,postcodeId=''){
   const input=$(inputId);if(!input||input.dataset.addressReady)return;
-  input.type='text';input.inputMode='text';input.autocomplete='street-address';input.autocapitalize='words';input.setAttribute('autocorrect','off');input.spellcheck=false;
-  if(!window.getAddress?.autocomplete){console.error('getAddress autocomplete not initialised',{reason:'getAddress autocomplete v3.1.6 did not load',inputId,hostname:location.hostname,configLoaded:!!cfg});addressLookupNote(input,'Address lookup unavailable — please enter the address manually.');return}
-  input.dataset.addressReady='1';
-  try{installGetAddressProxyFetch();await window.getAddress.autocomplete(inputId,'',{
-    suggestion_count:6,minimum_characters:2,show_postcode:true,full_screen_on_mobile:false,full_length:true,enable_repositioning:false,
-    list_style:'position:relative;inset:auto;z-index:9999;max-height:280px;overflow-y:auto;width:100%;margin-top:5px;',
-    selected:(result)=>{
-      const postcode=normalisePostcode(result?.postcode),formatted=(result?.formatted_address||[result?.line_1,result?.line_2,result?.line_3,result?.line_4,result?.town_or_city,result?.county]).filter(Boolean),parts=addressParts(formatted.join(', '),postcode);
-      input.value=parts.address;input.dataset.selectedPostcode=postcode;
-      if(postcodeId&&$(postcodeId)){$(postcodeId).value=postcode;$(postcodeId).dispatchEvent(new Event('input',{bubbles:true}));$(postcodeId).dispatchEvent(new Event('change',{bubbles:true}))}
-      input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));
-      addressLookupNote(input,'');
-    },
-    suggested:()=>addressLookupNote(input,''),
-    suggested_failed:(first,second,third)=>{const details=getAddressFailureDetails(first,second,third);console.error('getAddress suggestions failed',{...details,inputId,hostname:location.hostname});addressLookupNote(input,getAddressFailureNote(details))},
-    selected_failed:(first,second,third)=>{const details=getAddressFailureDetails(first,second,third);console.error('getAddress address selection failed',{...details,inputId,hostname:location.hostname});addressLookupNote(input,getAddressFailureNote(details,true))}
-  });}catch(error){console.error('getAddress autocomplete initialisation failed',{error,inputId,hostname:location.hostname});input.dataset.addressReady='';addressLookupNote(input,'Address lookup unavailable — please enter the address manually.')}
+  input.type='text';input.inputMode='text';input.autocomplete='street-address';input.autocapitalize='words';input.setAttribute('autocorrect','off');input.spellcheck=false;input.dataset.addressReady='1';
+  let requestNumber=0,timer=0;
+  input.addEventListener('input',()=>{clearTimeout(timer);const query=input.value.trim(),locals=localAddressSuggestions(query);if(query.length<2){clearAddressSuggestions(input);return}timer=setTimeout(async()=>{const current=++requestNumber;if(!isOnline()){renderAddressSuggestions(input,postcodeId,locals);return}try{const response=await fetch(`/api/ideal-postcodes-autocomplete?query=${encodeURIComponent(query)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({top:6,local_postcode_areas:localPostcodeAreas()})}),payload=await response.json();if(current!==requestNumber)return;if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');const localKeys=new Set(locals.map(item=>item.address.toLowerCase()));const remote=(payload?.suggestions||[]).filter(item=>!localKeys.has(String(item.address||'').toLowerCase()));renderAddressSuggestions(input,postcodeId,[...locals,...remote].slice(0,6));addressLookupNote(input,'')}catch(error){if(current!==requestNumber)return;console.error('Ideal Postcodes suggestions failed',{error,inputId});renderAddressSuggestions(input,postcodeId,locals);addressLookupNote(input,locals.length?'':'Address lookup unavailable — please enter the address manually.')}},180)});
+  input.addEventListener('blur',()=>setTimeout(()=>clearAddressSuggestions(input),180));
 }
-function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>enableAddressAutocomplete(inputId,postcodeId),40)}
+function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>enableIdealAddressAutocomplete(inputId,postcodeId),40)}
 function telUrl(value){return `tel:${String(value||'').replace(/[^+0-9]/g,'')}`}
 function ukMobileDigits(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0044'))digits=digits.slice(2);if(digits.startsWith('0'))digits='44'+digits.slice(1);return digits}
 function whatsappUrl(value,text=''){const digits=ukMobileDigits(value);if(!/^447\d{9}$/.test(digits))return '';return `https://wa.me/${digits}${text?`?text=${encodeURIComponent(text)}`:''}`}
 function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappUrl(c.phone)?`<a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
+function returnVisitNeeded(job){return ['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required)}
 function queueJobCard(job){
-  const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),when=job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet';
-  return `<div class="item job-compact queue-card" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+  const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
+  return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function jobCard(job){
   if(['to_book','waiting'].includes(job.status))return queueJobCard(job);
@@ -668,6 +640,7 @@ function renderDashboard(){
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const toBook=openJobs.filter(j=>j.status==='to_book').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   const waiting=openJobs.filter(j=>j.status==='waiting').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  const workQueue=[...toBook,...waiting].sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   if($('toBookK'))$('toBookK').textContent=toBook.length;if($('waitingK'))$('waitingK').textContent=waiting.length;
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
@@ -676,7 +649,7 @@ function renderDashboard(){
   if($('serviceOverdueK'))$('serviceOverdueK').textContent=overdue.length;
   if($('service30K'))$('service30K').textContent=due30.length;
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
-  if($('pipelinePreview'))$('pipelinePreview').innerHTML=[...toBook.slice(0,2),...waiting.slice(0,2)].map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
+  if($('pipelinePreview'))$('pipelinePreview').innerHTML=workQueue.slice(0,4).map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
@@ -823,14 +796,16 @@ function prepareFormInputs(root=document){
     else if(/name|address|title|boiler|town|work|merchant|item/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words'}
     if(/^(cname|ename|inlinename)$/.test(id)){input.type='text';input.inputMode='text';input.autocapitalize='words';input.autocomplete='name';input.setAttribute('autocorrect','on');input.spellcheck=true}
     if(/address/.test(key)){input.type='text';input.inputMode='text';input.autocapitalize='words';input.autocomplete='street-address';input.setAttribute('autocorrect','off');input.spellcheck=false}
-    if(input.type==='time')input.step='900';
   });
+  standardiseTimePickers(root);
   root.querySelectorAll('textarea').forEach(area=>{area.autocapitalize='sentences';area.setAttribute('autocorrect','on');area.spellcheck=true});
 }
+function timePickerOptions(selected=''){const value=normaliseQuarterHour(selected);let options='<option value="">Select time</option>';for(let minutes=0;minutes<1440;minutes+=15){const time=`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;options+=`<option value="${time}"${time===value?' selected':''}>${time}</option>`}return options}
+function standardiseTimePickers(root=document){root.querySelectorAll('input[type="time"]').forEach(input=>{const picker=document.createElement('select');for(const attribute of [...input.attributes]){if(attribute.name!=='type'&&attribute.name!=='step'&&attribute.name!=='value')picker.setAttribute(attribute.name,attribute.value)}picker.className=input.className;picker.setAttribute('aria-label',input.getAttribute('aria-label')||'Time in 15 minute increments');picker.innerHTML=timePickerOptions(input.value);input.replaceWith(picker)})}
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
 // Customer names are stored exactly as entered; only postcodes are normalised.
 document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
-document.addEventListener('change',event=>{if(event.target instanceof HTMLInputElement&&event.target.type==='time'&&event.target.step==='900')snapTimeInput(event.target)});
+document.addEventListener('change',event=>{if(event.target instanceof HTMLSelectElement&&event.target.getAttribute('aria-label')==='Time in 15 minute increments')snapTimeInput(event.target)});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
   clearTimeout(modalViewportSettleTimer);modalViewportSettleTimer=0;
@@ -1143,7 +1118,17 @@ async function startVisit(jobId){
 function finishVisit(jobId){
   const visit=activeVisitForJob(jobId);if(!visit)return startVisit(jobId);
   const finishDate=today(),finishTime=currentQuarterHour(),hours=elapsedVisitHours(visit.visit_date,visit.start_time,finishTime,finishDate);
-  show(`<div class="head"><h2>Finish visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice success"><strong>Started ${esc(displayDate(visit.visit_date))} at ${esc(displayTime(visit.start_time))}</strong>Check the finish time and save. Hours are calculated automatically.</div><div class="row"><div class="field"><label>Finish date</label><input id="finishVisitDate" type="date" value="${finishDate}"></div><div class="field"><label>Finish time</label><input id="finishVisitTime" type="time" step="900" value="${finishTime}" oninput="previewFinishVisitHours('${visit.id}')"></div></div><div class="field"><label>Elapsed hours</label><input id="finishVisitHours" type="number" readonly value="${hours}"></div><div class="field"><label>What was done? (optional)</label><textarea id="finishVisitNotes">${esc(visit.notes||'')}</textarea></div><button class="gold" style="width:100%" onclick="saveFinishedVisit('${visit.id}','${jobId}')">Finish visit</button>`)
+  show(`<div class="head"><h2>Finish visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice success"><strong>Started ${esc(displayDate(visit.visit_date))} at ${esc(displayTime(visit.start_time))}</strong>Check the finish time and save. Hours are calculated automatically.</div><div class="row"><div class="field"><label>Finish date</label><input id="finishVisitDate" type="date" value="${finishDate}"></div><div class="field"><label>Finish time</label><input id="finishVisitTime" type="time" step="900" value="${finishTime}" oninput="previewFinishVisitHours('${visit.id}')"></div></div><div class="field"><label>Elapsed hours</label><input id="finishVisitHours" type="number" readonly value="${hours}"></div><div class="field"><label>What was done? (optional)</label><textarea id="finishVisitNotes">${esc(visit.notes||'')}</textarea></div><div class="actions"><button class="gold" style="flex:1" onclick="saveFinishedVisit('${visit.id}','${jobId}')">Finish visit</button><button class="danger" onclick="cancelStartedVisit('${visit.id}','${jobId}')">Cancel start</button></div>`)
+}
+async function cancelStartedVisit(visitId,jobId){
+  const visit=jobVisits.find(v=>v.id===visitId);if(!visit||visit.end_time)return;if(!confirm('Cancel this started visit? You can start it again when you are ready.'))return;
+  const index=jobVisits.findIndex(v=>v.id===visitId);if(index<0)return;
+  if(!isOnline()){
+    const queued=readOfflineQueue().filter(op=>!(op.table==='job_visits'&&(op.local_id===visitId||op.match?.id===visitId)));
+    if(!String(visitId).startsWith('local-'))queued.push({id:tempId(),table:'job_visits',operation:'delete',payload:{},local_id:'',match:{id:visitId},created_at:new Date().toISOString()});
+    jobVisits.splice(index,1);writeOfflineQueue(queued);cacheSnapshot();renderAll();openJob(jobId);return;
+  }
+  const {error}=await sb.from('job_visits').delete().eq('id',visitId);if(error)return alert(error.message);jobVisits.splice(index,1);renderAll();openJob(jobId);
 }
 function previewFinishVisitHours(visitId){const visit=jobVisits.find(v=>v.id===visitId),date=$('finishVisitDate')?.value||today(),time=quarterHourInputValue('finishVisitTime');if(visit&&time)$('finishVisitHours').value=elapsedVisitHours(visit.visit_date,visit.start_time,time,date)}
 async function saveFinishedVisit(visitId,jobId){
@@ -1393,7 +1378,6 @@ function printDocument(id){
 .visit-card{border-left:4px solid var(--blue)}.cost-card{border-left:4px solid var(--gold)}
 .profit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.profit-box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.profit-box b{display:block;font-size:18px;color:var(--navy)}.profit-box span{font-size:11px;color:var(--muted)}
 .log-table{width:100%;border-collapse:collapse}.log-table th,.log-table td{padding:8px;border-bottom:1px solid var(--line);font-size:12px;text-align:left}.log-table th{color:var(--muted);text-transform:uppercase;font-size:10px}.log-table .num{text-align:right}
-.offline-banner{position:fixed;left:10px;right:10px;bottom:10px;z-index:50;background:#7a2e0e;color:#fff;padding:10px 12px;border-radius:12px;display:none;text-align:center;font-weight:700}.offline-banner.on{display:block}
 @media(max-width:760px){.profit-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head><body><div class="top"><div><div class="brand">Adam Stapley Plumbing</div><div class="meta">Gas engineer & plumber · 25+ years’ experience</div></div><div class="meta" style="text-align:right"><b>${esc(documentTypeLabel(d.type).toUpperCase())}</b><br>${esc(documentNumber(d))}<br>${esc(displayDate(d.issue_date))}</div></div><div class="box"><div><div class="label">Customer</div><b>${esc(c?.name||'')}</b><div>${esc([c?.address,c?.postcode].filter(Boolean).join(', '))}</div><div>${esc(c?.email||'')}</div></div><div><div class="label">Work</div><b>${esc(d.title)}</b><div>${esc(j?.title||'')}</div><div>${d.due_date?`${d.type==='invoice'?'Due':'Valid until'}: ${esc(displayDate(d.due_date))}`:''}</div></div></div><table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div class="line"><span>Subtotal</span><b>${esc(money(d.subtotal))}</b></div><div class="line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${esc(money(d.vat_amount))}</b></div><div class="line grand"><span>Total</span><span>${esc(money(d.total))}</span></div></div>${d.notes?`<div class="notes"><b>Notes</b><br>${esc(d.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="footer">Adam Stapley Plumbing · 07966 858348 · info@adamstapley.co.uk · Gas Safe registration 234795</div><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()
