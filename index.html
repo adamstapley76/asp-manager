@@ -572,7 +572,7 @@ function clearAddressSuggestions(input){const list=$(input?.id+'AddressSuggestio
 function applySelectedAddress(input,postcodeId,result){
   const postcode=normalisePostcode(result?.postcode),formatted=(result?.formatted_address||[result?.line_1,result?.line_2,result?.line_3,result?.line_4,result?.town_or_city,result?.county]).filter(Boolean),parts=addressParts(formatted.join(', ')||result?.address||'',postcode);
   input.value=parts.address;input.dataset.selectedPostcode=postcode;
-  if(postcodeId&&$(postcodeId)){$(postcodeId).value=postcode;$(postcodeId).dispatchEvent(new Event('input',{bubbles:true}));$(postcodeId).dispatchEvent(new Event('change',{bubbles:true}))}
+  if(postcodeId&&$(postcodeId)){$(postcodeId).value=postcode;$(postcodeId).dataset.addressLookupIgnore='1';$(postcodeId).dispatchEvent(new Event('input',{bubbles:true}));$(postcodeId).dispatchEvent(new Event('change',{bubbles:true}))}
   input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));addressLookupNote(input,'');clearAddressSuggestions(input);
 }
 function renderAddressSuggestions(input,postcodeId,suggestions){
@@ -583,6 +583,14 @@ function renderAddressSuggestions(input,postcodeId,suggestions){
     try{const response=await fetch(`/api/ideal-postcodes-address?id=${encodeURIComponent(suggestion.id)}`),payload=await response.json();if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');applySelectedAddress(input,postcodeId,payload)}catch(error){console.error('Ideal Postcodes address selection failed',{error,inputId:input.id});addressLookupNote(input,'That address could not be loaded — please enter it manually.')}
   });list.append(button)});input.insertAdjacentElement('afterend',list);
 }
+function renderPostcodeSuggestions(postcodeInput,addressInput,postcodeId,suggestions){
+  clearAddressSuggestions(postcodeInput);if(!suggestions.length)return;
+  const list=document.createElement('div');list.id=postcodeInput.id+'AddressSuggestions';list.className='address-suggestions';list.setAttribute('role','listbox');
+  suggestions.forEach(suggestion=>{const button=document.createElement('button');button.type='button';button.className='address-suggestion';button.innerHTML=`${esc(suggestion.address)}${suggestion.local?'<small>Saved local address</small>':''}`;button.addEventListener('mousedown',event=>event.preventDefault());button.addEventListener('click',async()=>{
+    if(suggestion.local){applySelectedAddress(addressInput,postcodeId,suggestion);clearAddressSuggestions(postcodeInput);return}
+    try{const response=await fetch(`/api/ideal-postcodes-address?id=${encodeURIComponent(suggestion.id)}`),payload=await response.json();if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');applySelectedAddress(addressInput,postcodeId,payload);clearAddressSuggestions(postcodeInput)}catch(error){console.error('Ideal Postcodes postcode selection failed',{error,inputId:postcodeInput.id});addressLookupNote(postcodeInput,'That address could not be loaded — please enter it manually.')}
+  });list.append(button)});postcodeInput.insertAdjacentElement('afterend',list);
+}
 async function enableIdealAddressAutocomplete(inputId,postcodeId=''){
   const input=$(inputId);if(!input||input.dataset.addressReady)return;
   input.type='text';input.inputMode='text';input.autocomplete='street-address';input.autocapitalize='words';input.setAttribute('autocorrect','off');input.spellcheck=false;input.dataset.addressReady='1';
@@ -590,7 +598,13 @@ async function enableIdealAddressAutocomplete(inputId,postcodeId=''){
   input.addEventListener('input',()=>{clearTimeout(timer);const query=input.value.trim(),locals=localAddressSuggestions(query);if(query.length<2){clearAddressSuggestions(input);return}timer=setTimeout(async()=>{const current=++requestNumber;if(!isOnline()){renderAddressSuggestions(input,postcodeId,locals);return}try{const response=await fetch(`/api/ideal-postcodes-autocomplete?query=${encodeURIComponent(query)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({top:6,local_postcode_areas:localPostcodeAreas()})}),payload=await response.json();if(current!==requestNumber)return;if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');const localKeys=new Set(locals.map(item=>item.address.toLowerCase()));const remote=(payload?.suggestions||[]).filter(item=>!localKeys.has(String(item.address||'').toLowerCase()));renderAddressSuggestions(input,postcodeId,[...locals,...remote].slice(0,6));addressLookupNote(input,'')}catch(error){if(current!==requestNumber)return;console.error('Ideal Postcodes suggestions failed',{error,inputId});renderAddressSuggestions(input,postcodeId,locals);addressLookupNote(input,locals.length?'':'Address lookup unavailable — please enter the address manually.')}},180)});
   input.addEventListener('blur',()=>setTimeout(()=>clearAddressSuggestions(input),180));
 }
-function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>enableIdealAddressAutocomplete(inputId,postcodeId),40)}
+function enableIdealPostcodeLookup(addressId,postcodeId){
+  const addressInput=$(addressId),postcodeInput=$(postcodeId);if(!addressInput||!postcodeInput||postcodeInput.dataset.addressReady)return;
+  postcodeInput.dataset.addressReady='1';let requestNumber=0,timer=0;
+  postcodeInput.addEventListener('input',()=>{if(postcodeInput.dataset.addressLookupIgnore==='1'){delete postcodeInput.dataset.addressLookupIgnore;clearAddressSuggestions(postcodeInput);return}clearTimeout(timer);const query=postcodeInput.value.trim(),locals=localAddressSuggestions(query);if(query.length<2){clearAddressSuggestions(postcodeInput);return}timer=setTimeout(async()=>{const current=++requestNumber;if(!isOnline()){renderPostcodeSuggestions(postcodeInput,addressInput,postcodeId,locals);return}try{const response=await fetch(`/api/ideal-postcodes-autocomplete?query=${encodeURIComponent(query)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({top:6,local_postcode_areas:localPostcodeAreas()})}),payload=await response.json();if(current!==requestNumber)return;if(!response.ok)throw new Error(payload?.Message||'Address lookup failed');const localKeys=new Set(locals.map(item=>item.address.toLowerCase()));const remote=(payload?.suggestions||[]).filter(item=>!localKeys.has(String(item.address||'').toLowerCase()));renderPostcodeSuggestions(postcodeInput,addressInput,postcodeId,[...locals,...remote].slice(0,6));addressLookupNote(postcodeInput,'')}catch(error){if(current!==requestNumber)return;console.error('Ideal Postcodes postcode suggestions failed',{error,inputId:postcodeId});renderPostcodeSuggestions(postcodeInput,addressInput,postcodeId,locals);addressLookupNote(postcodeInput,locals.length?'':'Postcode lookup unavailable — please enter the address manually.')}},180)});
+  postcodeInput.addEventListener('blur',()=>setTimeout(()=>clearAddressSuggestions(postcodeInput),180));
+}
+function enableAddressAutocompleteSoon(inputId,postcodeId=''){setTimeout(()=>{enableIdealAddressAutocomplete(inputId,postcodeId);enableIdealPostcodeLookup(inputId,postcodeId)},40)}
 function telUrl(value){return `tel:${String(value||'').replace(/[^+0-9]/g,'')}`}
 function ukMobileDigits(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('0044'))digits=digits.slice(2);if(digits.startsWith('0'))digits='44'+digits.slice(1);return digits}
 function whatsappUrl(value,text=''){const digits=ukMobileDigits(value);if(!/^447\d{9}$/.test(digits))return '';return `https://wa.me/${digits}${text?`?text=${encodeURIComponent(text)}`:''}`}
