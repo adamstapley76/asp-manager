@@ -71,7 +71,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
 <style id="testWeekStyles">
   #mobileNavShell{position:sticky;top:0;z-index:40;padding:8px;margin:-14px -14px 9px;border-radius:0 0 14px 14px;background:#fff;box-shadow:0 2px 10px #10182822}
-  .app-nav{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;overflow:visible!important;padding:0!important}
+  .app-nav{display:grid!important;grid-template-columns:repeat(5,1fr);gap:6px;overflow:visible!important;padding:0!important}
   .app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none!important}
   .app-nav button{min-height:40px;padding:8px 5px;white-space:nowrap}
   .hero-today{margin-top:0!important}
@@ -135,6 +135,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <button id="navCustomers" class="light" onclick="closeModalAndShowPage('customers')">Customers</button>
       <button class="gold" onclick="closeModalAndBook()">Book</button>
       <button id="navSettings" class="light" onclick="closeModalAndShowPage('settings')">More</button>
+      <button id="navIdea" class="light" onclick="openIdea()">+ Idea</button>
       <button id="navDiary" class="light" onclick="showPage('diary')">Diary</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
       <button id="navDocuments" class="light" onclick="showPage('documents')">Money</button>
@@ -173,12 +174,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card pipeline-card">
-      <div class="section-title"><h2>Work queue</h2></div>
-      <div class="attention-grid">
-        <button class="attention" onclick="showPage('jobs');setJobFilter('to_book')"><b id="toBookK">0</b><span>To book</span></button>
-        <button class="attention" onclick="showPage('jobs');setJobFilter('waiting')"><b id="waitingK">0</b><span>Waiting</span></button>
-      </div>
-      <div id="pipelinePreview" class="list" style="margin-top:12px"></div>
+      <div class="section-title"><div><h2>Work queue</h2><div class="meta">Every job that has not been booked into the diary.</div></div></div>
+      <div id="pipelinePreview" class="list"></div>
     </div>
 
   </section>
@@ -206,6 +203,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="showPage('documents')">Quotes & invoices</button>
         <button class="light" onclick="document.getElementById('backupSection').scrollIntoView({behavior:'smooth'})">Backup</button>
         <button class="light" onclick="showDue('30')">Service Planner</button>
+        <button class="light" onclick="openIdeas()">Work ideas</button>
       </div>
     </div>
     <div id="backupSection" class="card">
@@ -217,8 +215,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageCustomers" class="hidden">
     <div class="card">
-      <div class="section-title"><h2>Customers</h2><div class="actions"><button class="light" onclick="openImport()">Import CSV</button><button class="gold" onclick="openNewCustomer()">+ New customer</button></div></div>
-      <div class="toolbar"><input id="customerSearch" placeholder="Search name, address, postcode, phone or email"><button class="navy" onclick="renderCustomers()">Search</button></div>
+      <div class="section-title"><h2>Customers</h2><button class="gold" onclick="openNewCustomer()">+ New customer</button></div>
+      <div class="toolbar"><input id="customerSearch" placeholder="Search name, address, postcode, phone or email" autocomplete="off"><button class="navy" onclick="renderCustomers()">Search</button></div>
       <div id="customerFilters" class="filter-row">
         <button class="light active" data-filter="all" onclick="setCustomerFilter('all')">All</button>
         <button class="light" data-filter="active" onclick="setCustomerFilter('active')">Active</button>
@@ -531,11 +529,12 @@ function renderCustomers(){
   const holder=$('customerResults');
   if(!holder)return;
   const q=($('customerSearch')?.value||'').trim().toLowerCase();
+  if(!q&&customerFilter==='all'){holder.innerHTML='<div class="empty">Start typing a name, address, postcode, phone number or email to find a customer.</div>';return}
   let list=[...customers];
   if(customerFilter==='active')list=list.filter(c=>['active','not_contacted'].includes(c.status));
   else if(customerFilter!=='all')list=list.filter(c=>c.status===customerFilter);
-  if(q)list=list.filter(c=>customerSearchText(c).includes(q));
-  list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
+  if(q)list=list.filter(c=>customerMatches(c,q));
+  list.sort((a,b)=>customerSearchRank(a,q)-customerSearchRank(b,q)||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
   holder.innerHTML=list.map(customerCard).join('')||'<div class="empty">No customers match this search.</div>';
 }
 function resolveJobAddress(job){
@@ -608,6 +607,10 @@ function queueJobCard(job){
   const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
   return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
+function dashboardQueueJobCard(job){
+  const returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
+  return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+}
 function jobCard(job){
   if(['to_book','waiting'].includes(job.status))return queueJobCard(job);
   const when=job.scheduled_date?`${displayDate(job.scheduled_date)}${job.scheduled_time?` at ${displayTime(job.scheduled_time)}`:''}`:'Not booked yet';
@@ -645,10 +648,7 @@ function renderDashboard(){
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
   const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
-  const toBook=openJobs.filter(j=>j.status==='to_book').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
-  const waiting=openJobs.filter(j=>j.status==='waiting').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
-  const workQueue=[...toBook,...waiting].sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
-  if($('toBookK'))$('toBookK').textContent=toBook.length;if($('waitingK'))$('waitingK').textContent=waiting.length;
+  const workQueue=openJobs.filter(j=>!j.scheduled_date&&!['booked','in_progress'].includes(j.status)).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
   const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
@@ -656,7 +656,7 @@ function renderDashboard(){
   if($('serviceOverdueK'))$('serviceOverdueK').textContent=overdue.length;
   if($('service30K'))$('service30K').textContent=due30.length;
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
-  if($('pipelinePreview'))$('pipelinePreview').innerHTML=workQueue.slice(0,4).map(jobCard).join('')||'<div class="empty">Nothing waiting or still to book.</div>';
+  if($('pipelinePreview'))$('pipelinePreview').innerHTML=workQueue.map(dashboardQueueJobCard).join('')||'<div class="empty">Every open job is booked into the diary.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
@@ -681,7 +681,7 @@ function renderMaterials(){
   const list=materialsToGet();
   holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','dashboard',this)"><span>${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</span></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
 }
-function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date).sort(materialSort)}
+function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date&&['manual','job'].includes(materialSource(t))).sort(materialSort)}
 function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','full',this)"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}<span class="material-category ${materialSource(t)==='job'?'material-source':''}">${esc(materialSource(t)==='job'?'Job material':materialCategory(t))}</span></button><button type="button" class="light material-edit" onclick="openEditMaterial('${t.id}')">Edit</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
 async function addMaterialToGet(title,quantity=1,refresh=true,category='Other',source='manual'){
   const cleanTitle=String(title||'').trim(),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
@@ -721,6 +721,24 @@ async function markMaterialPurchased(id,source='full',control=null){
   catch(error){console.error('Material purchase update failed',error);if(!isTransportError(error)){if(control?.isConnected){control.checked=false;control.disabled=false}return alert(error.message)}Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderAll();if(source==='full')openMaterialsList()}
 }
 async function deleteMaterialItem(id){if(!confirm('Delete this material?'))return;const {error}=await sb.from('tasks').delete().eq('id',id);if(error)return alert(error.message);await loadAll();openMaterialsList()}
+function ideaTasks(){return tasks.filter(task=>!task.completed&&materialSource(task)==='idea').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''))}
+function ideaRelatedJobId(task){return String(task?.notes||'').match(/^Related job:\s*(.+)$/im)?.[1]?.trim()||''}
+function ideaDetails(task){return String(task?.notes||'').match(/^Details:\s*([\s\S]*)$/im)?.[1]?.trim()||''}
+function openIdea(){
+  const availableJobs=jobs.filter(job=>!['completed','cancelled'].includes(job.status)).sort((a,b)=>(a.scheduled_date||'9999').localeCompare(b.scheduled_date||'9999'));
+  show(`<div class="head"><div><h2>Add work idea</h2><div class="meta">A quick place for anything you would normally put in iPhone Notes.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Idea</label><input id="ideaTitle" placeholder="e.g. Call Mrs Smith about boiler quote" autocomplete="off"></div><div class="field"><label>Related current job (optional)</label><select id="ideaJob"><option value="">General work idea</option>${availableJobs.map(job=>`<option value="${job.id}">${esc(`${customerName(job.customer_id)} — ${job.title||job.job_type||'Untitled job'}`)}</option>`).join('')}</select></div><div class="field"><label>Extra detail (optional)</label><textarea id="ideaNotes" placeholder="Anything useful to remember"></textarea></div><button id="saveIdeaBtn" class="gold" style="width:100%" onclick="saveIdea()">Save idea</button>`);setTimeout(()=>$('ideaTitle')?.focus(),50)
+}
+async function saveIdea(){
+  const title=String($('ideaTitle')?.value||'').trim(),jobId=$('ideaJob')?.value||'',detail=String($('ideaNotes')?.value||'').trim(),job=jobs.find(item=>item.id===jobId);if(!title)return alert('Enter the idea.');
+  const payload={owner_id:user.id,customer_id:job?.customer_id||null,title,notes:`Source: idea\nRelated job: ${jobId}\nDetails: ${detail}`,due_date:null,completed:false},button=$('saveIdeaBtn');if(button){button.disabled=true;button.textContent='Saving…'}
+  if(!isOnline()){const record={...payload,id:tempId(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderAll();closeModal();return}
+  try{const {data,error}=await sb.from('tasks').insert(payload).select().single();if(error)throw error;if(data)tasks.push(data);renderAll();closeModal()}catch(error){console.error('Idea save failed',error);if(isTransportError(error)){const record={...payload,id:tempId(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderAll();closeModal();showSyncNotice('Idea saved on this phone — waiting to sync')}else alert(friendlyError(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Save idea'}}
+}
+function openIdeas(){
+  const list=ideaTasks();show(`<div class="head"><div><h2>Work ideas</h2><div class="meta">Your replacement for work notes.</div></div><div class="actions"><button class="gold" onclick="openIdea()">+ Idea</button><button class="light" onclick="closeModal()">Close</button></div></div><div class="list">${list.map(task=>{const job=jobs.find(item=>item.id===ideaRelatedJobId(task));return `<div class="item"><div><h3>${esc(task.title)}</h3>${job?`<div class="meta">${esc(customerName(job.customer_id))} · ${esc(job.title||job.job_type||'Job')}</div>`:''}${ideaDetails(task)?`<div class="meta">${esc(ideaDetails(task))}</div>`:''}</div><div class="item-actions"><button class="light" onclick="completeIdea('${task.id}')">Done</button><button class="danger" onclick="deleteIdea('${task.id}')">Delete</button></div></div>`}).join('')||'<div class="empty">No work ideas yet. Use + Idea at the top whenever something comes to mind.</div>'}</div>`)
+}
+async function completeIdea(id){const task=tasks.find(item=>item.id===id);if(!task)return;const update={completed:true,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()};if(!isOnline()){Object.assign(task,update);queueOperation('tasks','update',update,'',{id});renderAll();openIdeas();return}const {error}=await sb.from('tasks').update(update).eq('id',id);if(error){if(isTransportError(error)){Object.assign(task,update);queueOperation('tasks','update',update,'',{id});renderAll();openIdeas();return}return alert(error.message)}await loadAll();openIdeas()}
+async function deleteIdea(id){if(!confirm('Delete this idea?'))return;const task=tasks.find(item=>item.id===id);if(!task)return;if(!isOnline()){tasks=tasks.filter(item=>item.id!==id);queueOperation('tasks','delete',{},'',{id});renderAll();openIdeas();return}const {error}=await sb.from('tasks').delete().eq('id',id);if(error){if(isTransportError(error)){tasks=tasks.filter(item=>item.id!==id);queueOperation('tasks','delete',{},'',{id});renderAll();openIdeas();return}return alert(error.message)}await loadAll();openIdeas()}
 function setJobFilter(value){jobFilter=value;document.querySelectorAll('#jobFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderJobs()}
 
 function renderStock(){
@@ -1020,7 +1038,10 @@ async function saveService(id){
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
 let selectedJobCustomerId='',selectedEditJobCustomerId='';
 function customerSearchText(c){return [c.name,c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
-function matchingCustomers(query,limit=10){const q=String(query||'').trim().toLowerCase();return q?customers.filter(c=>customerSearchText(c).includes(q)).slice(0,limit):[]}
+function compactSearchText(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function customerMatches(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query);return customerSearchText(customer).includes(normal)||compactSearchText(customer?.postcode).includes(compact)||compactSearchText(customer?.phone).includes(compact)}
+function customerSearchRank(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query),postcode=compactSearchText(customer?.postcode),name=String(customer?.name||'').toLowerCase();if(postcode===compact)return 0;if(postcode.startsWith(compact))return 1;if(name.startsWith(normal))return 2;return 3}
+function matchingCustomers(query,limit=10){const q=String(query||'').trim().toLowerCase();return q?customers.filter(c=>customerMatches(c,q)).sort((a,b)=>customerSearchRank(a,q)-customerSearchRank(b,q)||String(a.name||'').localeCompare(String(b.name||''))).slice(0,limit):[]}
 function customerPickHtml(list,selectFunction){return list.map(c=>`<button type="button" class="customer-pick" onclick="${selectFunction}('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')}
 function inlineCustomerCreatorHtml(prefix,initialName,createFunction,context){
   return `<strong>New customer</strong><div class="meta">Create them here without leaving ${esc(context)}.</div><div class="field"><label>Name</label><input id="${prefix}Name" type="text" inputmode="text" autocomplete="name" autocapitalize="words" autocorrect="on" spellcheck="true" value="${esc(initialName)}"></div><div class="row"><div class="field"><label>Phone</label><input id="${prefix}Phone" type="tel" inputmode="tel" autocomplete="tel"></div><div class="field"><label>Email (optional)</label><input id="${prefix}Email" type="email" inputmode="email" autocomplete="email" autocapitalize="none"></div></div><div class="field"><label>Address</label><input id="${prefix}Address" type="text" inputmode="text" autocomplete="street-address" autocapitalize="words" autocorrect="off" spellcheck="false"></div><div class="field"><label>Postcode</label><input id="${prefix}Postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters"></div><button type="button" class="navy" style="width:100%" onclick="${createFunction}()">Create and select customer</button>`;
