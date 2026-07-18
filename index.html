@@ -45,7 +45,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .address-lookup-note{font-size:11px;color:var(--muted);margin-top:5px}.address-lookup-note:empty{display:none}.ga-autocomplete-list{position:relative!important;inset:auto!important;z-index:9999!important;width:100%!important;max-height:280px!important;overflow-y:auto!important;margin:5px 0 0!important}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}.filter-row{display:flex;gap:7px;flex-wrap:wrap;overflow-x:hidden;margin:10px 0 12px}.filter-row button{white-space:normal;padding:9px 12px;min-height:38px}.filter-row button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .price{font-weight:800;color:var(--navy)}.split{display:grid;grid-template-columns:1fr 1fr;gap:13px}.muted-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}.muted-box h3{margin:0 0 8px;color:var(--navy)}
-.loading{opacity:.58;pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{max-width:100%;overflow-x:hidden}.doc-table{width:100%;table-layout:fixed;border-collapse:collapse}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right}.print-only{display:none}
+.loading{pointer-events:none}.line-row{display:grid;grid-template-columns:minmax(0,1fr) 86px 125px 42px;gap:8px;align-items:end;margin-bottom:8px}.line-row .field{margin:0}.totals{margin-left:auto;width:min(340px,100%);display:grid;gap:6px}.total-line{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--line)}.total-line.grand{font-size:18px;font-weight:850;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;margin-top:4px;padding-top:10px}.doc-lines{max-width:100%;overflow-x:hidden}.doc-table{width:100%;table-layout:fixed;border-collapse:collapse}.doc-table th,.doc-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}.doc-table th{color:var(--muted);font-size:11px;text-transform:uppercase}.doc-table .num{text-align:right}.print-only{display:none}
 .today-card{border-left:5px solid var(--gold)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.quick-grid button,.quick-grid a{width:100%}.day-head{position:sticky;top:71px;z-index:5;background:var(--bg);padding:8px 0;font-weight:850;color:var(--navy)}.day-group{margin-bottom:18px}.job-quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.job-quick a,.job-quick button{min-height:36px;padding:8px 10px;font-size:12px}.stock-low{border-left:4px solid #f79009}.stock-zero{border-left:4px solid var(--red)}.checkline{display:flex;align-items:center;gap:9px}.checkline input{width:auto}.backup-box{background:#eef4ff;border:1px solid #b2ccff;border-radius:13px;padding:13px}
 .hero-today{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:0}.hero-today h1{margin:0;font-size:25px}.hero-today .meta{color:#d0d5dd}.attention-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.attention{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}.attention b{display:block;font-size:21px;color:var(--navy)}.attention span{font-size:11px;color:var(--muted)}.customer-search-results{display:grid;gap:7px;max-height:250px;overflow:auto;margin-top:7px}.customer-pick{width:100%;text-align:left;background:#fff;border:1px solid var(--line);padding:10px;border-radius:10px;display:block}.customer-pick strong{display:block;color:var(--navy)}.selected-customer{background:#ecfdf3;border:1px solid #abefc6;border-radius:11px;padding:10px;margin-top:8px}.new-menu{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.new-menu button{min-height:58px;font-size:14px}
 @media(max-width:760px){
@@ -55,7 +55,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 .hero-today{padding:12px 16px}.hero-today h1{font-size:20px;margin:0}.hero-today .section-title{margin:0}.today-primary{border:2px solid rgba(201,162,39,.35);box-shadow:0 8px 24px rgba(16,38,63,.08)}
 .compact-attention .attention-grid{grid-template-columns:repeat(3,1fr);gap:6px}.compact-attention .attention{padding:8px;min-height:58px}.compact-attention .attention b{font-size:19px}.compact-attention .attention span{font-size:11px}
 .inline-create{border:1px dashed #c9a227;background:#fffaf0;border-radius:12px;padding:12px;margin-top:10px}.inline-create.hidden{display:none}.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.choice{padding:11px;border:1px solid var(--line);background:white;border-radius:11px;text-align:left;font-weight:750}.choice.active{border-color:var(--gold);background:#fff8df}.materials-card{border-left:5px solid #667085}
-.materials-preview{display:grid;gap:2px}.material-compact-row{display:flex;align-items:center;gap:9px;min-height:34px;padding:5px 2px;border-bottom:1px solid #eef0f2;font-size:14px;font-weight:650}.material-compact-row:last-child{border-bottom:0}.material-check{width:18px;height:18px;padding:0;margin:0;border:1.5px solid #98a2b3;border-radius:4px;flex:0 0 auto;accent-color:var(--gold);pointer-events:auto}.material-full-list{display:grid;gap:3px}.material-full-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}.material-full-row .material-name{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex:1;min-width:0;min-height:40px;padding:6px 2px;background:transparent;color:var(--text);font-weight:700;text-align:left}.material-full-row .material-edit{min-height:34px;padding:6px 9px;font-size:12px}.contact-menu{position:relative}.contact-menu summary{list-style:none;cursor:pointer}.contact-menu summary::-webkit-details-marker{display:none}.contact-menu[open] .contact-options{display:flex}.contact-options{display:none;gap:6px;flex-wrap:wrap;margin-top:7px}.queue-card,.dashboard-job.clickable{cursor:pointer}.queue-card:active,.dashboard-job.clickable:active{background:#f8fafc}.job-time{display:block;font-size:17px;font-weight:850;color:var(--navy);line-height:1.15;margin-bottom:3px}
+.materials-preview{display:grid;gap:2px}.material-compact-row{display:flex;align-items:center;gap:9px;min-height:34px;padding:5px 2px;border-bottom:1px solid #eef0f2;font-size:14px;font-weight:650}.material-compact-row:last-child{border-bottom:0}.material-check{width:18px;height:18px;padding:0;margin:0;border:1.5px solid #98a2b3;border-radius:4px;flex:0 0 auto;accent-color:var(--gold);pointer-events:auto}.material-full-list{display:grid;gap:3px}.material-full-row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}.material-full-row .material-name{display:flex;align-items:center;justify-content:flex-start;gap:9px;flex:1;min-width:0;min-height:40px;padding:6px 2px;background:transparent;color:var(--text);font-weight:700;text-align:left}.material-full-row .material-edit{min-height:34px;padding:6px 9px;font-size:12px}.material-category{font-size:10px;font-weight:800;color:var(--muted);background:#f2f4f7;border-radius:999px;padding:3px 6px;white-space:nowrap}.material-source{color:var(--blue);background:#eff8ff}.material-quick-add{display:grid;grid-template-columns:1fr auto;gap:7px;margin:9px 0 4px}.material-quick-add button{min-height:40px;padding:8px 12px}.contact-menu{position:relative}.contact-menu summary{list-style:none;cursor:pointer}.contact-menu summary::-webkit-details-marker{display:none}.contact-menu[open] .contact-options{display:flex}.contact-options{display:none;gap:6px;flex-wrap:wrap;margin-top:7px}.queue-card,.dashboard-job.clickable{cursor:pointer}.queue-card:active,.dashboard-job.clickable:active{background:#f8fafc}.job-time{display:block;font-size:20px;font-weight:900;color:var(--navy);line-height:1.1;margin-bottom:4px;letter-spacing:-.02em}
 @media(max-width:650px){.hero-today{padding:10px 12px}.hero-today .meta{font-size:12px}.compact-attention .attention-grid{grid-template-columns:repeat(3,1fr)}.compact-attention .attention{padding:7px 4px}.compact-attention .attention span{font-size:10px}.quick-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 
@@ -162,7 +162,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card tomorrow-card compact-section">
-      <div class="section-title"><div><h2>Tomorrow's jobs</h2><div class="meta" id="tomorrowLabel"></div></div><button class="light" onclick="showPage('diary')">Diary</button></div>
+      <div class="section-title"><div><h2 id="upcomingJobsTitle">Tomorrow's jobs</h2><div class="meta" id="tomorrowLabel"></div></div></div>
       <div id="tomorrowJobs" class="list"></div>
     </div>
 
@@ -176,7 +176,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card materials-card compact-section">
-      <div class="section-title"><h2>Materials To Get</h2><button class="light" onclick="openMaterialsList()">View All</button></div>
+      <div class="section-title"><h2>Materials To Get</h2><button class="light" onclick="openMaterialsList()">Manage</button></div>
+      <div class="material-quick-add"><input id="dashboardMaterialTitle" type="text" placeholder="Add an item" aria-label="Add material"><button class="gold" onclick="quickAddDashboardMaterial()">Add</button></div>
       <div id="materialsList" class="materials-preview"></div>
     </div>
 
@@ -447,7 +448,11 @@ function loadAll(){
 async function performLoadAll(){
   updateOfflineState();updateSyncPill();
   if(!isOnline()){loadCachedSnapshot();appView.classList.remove('loading');return}
-  appView.classList.add('loading');
+  // Paint the last successful snapshot first, then refresh without interrupting work.
+  // This makes returning to the app feel instant even on an unreliable connection.
+  const preservedScroll=window.scrollY;
+  const hasCachedSnapshot=loadCachedSnapshot();
+  if(!hasCachedSnapshot)appView.classList.add('loading');
   try{
     const customerResult=await sb.from('customers').select('*').order('name',{ascending:true});
     if(customerResult.error){if(loadCachedSnapshot())return;throw customerResult.error}
@@ -470,6 +475,7 @@ async function performLoadAll(){
     const notice=$('setupNotice');
     if(notice){if(missing.length){notice.innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;notice.classList.remove('hidden')}else notice.classList.add('hidden')}
     renderAll();cacheSnapshot();updateSyncPill();
+    if(hasCachedSnapshot)requestAnimationFrame(()=>window.scrollTo(0,preservedScroll));
   }catch(error){
     console.error('ASP Manager load failed',error);
     const usedCache=loadCachedSnapshot();
@@ -509,7 +515,8 @@ function dueBadge(customer){
   const d=daysUntil(customer.next_due);
   return `<button type="button" class="badge ${d<0?'over':d<=30?'due':'future'} service-date-button" onclick="openServiceDateOptions('${customer.id}')">${d<0?`${Math.abs(d)} days overdue`:d===0?'Due today':`Due in ${d} days`}</button>`;
 }
-function customerName(id){return customers.find(c=>c.id===id)?.name||'No customer linked'}
+function displayCustomerName(value){const name=String(value||'').trim();return name.length>2&&name===name.toUpperCase()?name.toLowerCase().replace(/\b\w/g,letter=>letter.toUpperCase()):name}
+function customerName(id){return displayCustomerName(customers.find(c=>c.id===id)?.name)||'No customer linked'}
 function normalisePostcode(value){return String(value||'').trim().toUpperCase().replace(/\s+/g,' ')}
 function addressParts(address,postcode=''){
   let line=String(address||'').trim().replace(/\s*,\s*/g,', '),resolvedPostcode=normalisePostcode(postcode);
@@ -630,7 +637,7 @@ function jobCard(job){
 }
 function dashboardJobCard(job,mode='today'){
   const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount),address=resolveJobAddress(job),openOnly=mode==='tomorrow';
-  const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}${workLogsReady&&job.status!=='completed'?`<button class="light" onclick="event.stopPropagation();openAddVisit('${job.id}')">${visitsForJob(job.id).length?'Record visit':'Start visit'}</button>`:''}</div>`;
+  const activeVisit=activeVisitForJob(job.id),todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}${workLogsReady&&job.status!=='completed'?`<button class="light" onclick="event.stopPropagation();${activeVisit?`finishVisit('${job.id}')`:`startVisit('${job.id}')`}">${activeVisit?'Finish visit':'Start visit'}</button>`:''}</div>`;
   return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function documentCard(document){
@@ -638,15 +645,25 @@ function documentCard(document){
   return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span></div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button></div></div>`;
 }
 
+function dashboardUpcomingDate(openJobs){
+  const tomorrow=addDays(today(),1),day=new Date(`${today()}T12:00:00`).getDay();
+  if(day!==5)return tomorrow;
+  const saturday=addDays(today(),1),sunday=addDays(today(),2),monday=addDays(today(),3);
+  if(openJobs.some(j=>j.scheduled_date===saturday))return saturday;
+  if(openJobs.some(j=>j.scheduled_date===sunday))return sunday;
+  return monday;
+}
 function renderDashboard(){
-  const now=new Date(),hour=now.getHours(),tomorrow=addDays(today(),1);
+  const now=new Date(),hour=now.getHours();
   if($('greeting'))$('greeting').textContent=`Good ${hour<12?'morning':hour<18?'afternoon':'evening'} Adam`;
   if($('todayLabel'))$('todayLabel').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-  if($('tomorrowLabel'))$('tomorrowLabel').textContent=new Date(`${tomorrow}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const openJobs=jobs.filter(j=>!['completed','cancelled'].includes(j.status));
+  const upcomingDate=dashboardUpcomingDate(openJobs),isTomorrow=upcomingDate===addDays(today(),1);
+  if($('upcomingJobsTitle'))$('upcomingJobsTitle').textContent=isTomorrow?"Tomorrow's jobs":`${new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long'})}'s jobs`;
+  if($('tomorrowLabel'))$('tomorrowLabel').textContent=new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
   const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
-  const tomorrowList=openJobs.filter(j=>j.scheduled_date===tomorrow&&!['waiting','to_book'].includes(j.status)).sort(byTime);
+  const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const toBook=openJobs.filter(j=>j.status==='to_book').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   const waiting=openJobs.filter(j=>j.status==='waiting').sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   if($('toBookK'))$('toBookK').textContent=toBook.length;if($('waitingK'))$('waitingK').textContent=waiting.length;
@@ -672,25 +689,28 @@ function renderDiary(){
 }
 function normaliseMaterialName(value){return String(value||'').trim().toLowerCase().replace(/\s+/g,' ')}
 function materialQuantity(task){const match=String(task?.notes||'').match(/^Quantity:\s*([0-9.]+)/i);return Math.max(.01,Number(match?.[1]||1))}
-function materialQuantityNote(quantity){return `Quantity: ${Number(quantity||1)}`}
+function materialCategory(task){return String(task?.notes||'').match(/^Category:\s*(.+)$/im)?.[1]?.trim()||'Other'}
+function materialSource(task){return String(task?.notes||'').match(/^Source:\s*(.+)$/im)?.[1]?.trim()||'manual'}
+function materialQuantityNote(quantity,category='Other',source='manual'){return `Quantity: ${Number(quantity||1)}\nCategory: ${category}\nSource: ${source}`}
+function materialSort(a,b){return (materialSource(b)==='job')- (materialSource(a)==='job') || materialCategory(a).localeCompare(materialCategory(b)) || String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'})}
 function renderMaterials(){
   const holder=$('materialsList');if(!holder)return;
   if(!extrasReady){holder.innerHTML='<div class="empty">Run the v0.4 SQL setup to enable the buying list.</div>';return}
-  const list=tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}));
-  holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','dashboard',this)"><span>${esc(t.title)}</span></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
+  const list=materialsToGet();
+  holder.innerHTML=list.slice(0,5).map(t=>`<div class="material-compact-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','dashboard',this)"><span>${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</span></div>`).join('')||'<div class="meta">Nothing to buy.</div>';
 }
-function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date).sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),undefined,{sensitivity:'base'}))}
-function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','full',this)"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}</button><button type="button" class="light material-edit" onclick="openEditMaterial('${t.id}')">Edit</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
-async function addMaterialToGet(title,quantity=1,refresh=true){
-  const cleanTitle=smartCaps(String(title||'').trim()),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
+function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date).sort(materialSort)}
+function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','full',this)"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}<span class="material-category ${materialSource(t)==='job'?'material-source':''}">${esc(materialSource(t)==='job'?'Job material':materialCategory(t))}</span></button><button type="button" class="light material-edit" onclick="openEditMaterial('${t.id}')">Edit</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
+async function addMaterialToGet(title,quantity=1,refresh=true,category='Other',source='manual'){
+  const cleanTitle=String(title||'').trim(),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
   const existing=tasks.find(t=>!t.completed&&!t.due_date&&normaliseMaterialName(t.title)===normaliseMaterialName(cleanTitle));
   if(existing){
-    const notes=materialQuantityNote(materialQuantity(existing)+qty),update={notes,updated_at:new Date().toISOString()};
+    const notes=materialQuantityNote(materialQuantity(existing)+qty,source==='job'?category:materialCategory(existing),source==='job'?'job':materialSource(existing)),update={notes,updated_at:new Date().toISOString()};
     if(!isOnline()){existing.notes=notes;queueOperation('tasks','update',update,'',{id:existing.id});renderMaterials();return existing}
     try{const {error}=await sb.from('tasks').update(update).eq('id',existing.id);if(error)throw error;existing.notes=notes}
     catch(error){console.error('Materials To Get update failed',error);if(!isTransportError(error))throw error;existing.notes=notes;queueOperation('tasks','update',update,'',{id:existing.id});renderAll();showSyncNotice('Material saved on this phone — waiting to sync');return existing}
   }else{
-    const payload={owner_id:user.id,title:cleanTitle,due_date:null,customer_id:null,notes:materialQuantityNote(qty),completed:false};
+    const payload={owner_id:user.id,title:cleanTitle,due_date:null,customer_id:null,notes:materialQuantityNote(qty,category,source),completed:false};
     if(!isOnline()){const record={...payload,id:tempId(),created_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderMaterials();return record}
     try{const {data,error}=await sb.from('tasks').insert(payload).select().single();if(error)throw error;if(data)tasks.push(data)}
     catch(error){console.error('Materials To Get insert failed',error);if(!isTransportError(error))throw error;const record={...payload,id:tempId(),created_at:new Date().toISOString()};tasks.push(record);queueOperation('tasks','insert',payload,record.id);renderAll();showSyncNotice('Material saved on this phone — waiting to sync');return record}
@@ -699,15 +719,16 @@ async function addMaterialToGet(title,quantity=1,refresh=true){
 }
 function isTransportError(error){return /failed to fetch|networkerror|load failed|network request failed/i.test(error?.message||String(error||''))}
 async function saveMaterialItem(){
-  const title=$('materialTitle')?.value.trim(),quantity=Number($('materialQty')?.value||1);if(!title)return alert('Enter the material.');
+  const title=$('materialTitle')?.value.trim(),quantity=Number($('materialQty')?.value||1),category=$('materialCategory')?.value||'Other';if(!title)return alert('Enter the material.');
   const button=$('saveMaterialBtn');if(button){button.disabled=true;button.textContent='Adding…'}
-  try{await addMaterialToGet(title,quantity,true);if($('materialTitle'))$('materialTitle').value='';if($('materialQty'))$('materialQty').value='';renderFullMaterials();$('materialTitle')?.focus()}catch(error){console.error('Materials To Get could not save',error);alert(error?.message||String(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Add item'}}
+  try{await addMaterialToGet(title,quantity,true,category);if($('materialTitle'))$('materialTitle').value='';if($('materialQty'))$('materialQty').value='';renderFullMaterials();$('materialTitle')?.focus()}catch(error){console.error('Materials To Get could not save',error);alert(error?.message||String(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Add item'}}
 }
+async function quickAddDashboardMaterial(){const input=$('dashboardMaterialTitle'),title=input?.value.trim();if(!title)return input?.focus();try{await addMaterialToGet(title,1,true);input.value=''}catch(error){alert(error.message||String(error))}}
 function openMaterialActions(id){const item=tasks.find(t=>t.id===id);if(!item)return;show(`<div class="head"><div><h2>${esc(item.title)}</h2>${materialQuantity(item)>1?`<div class="meta">Quantity ${esc(materialQuantity(item))}</div>`:''}</div><button class="light" onclick="openMaterialsList()">Back</button></div><div class="actions"><button class="gold" onclick="markMaterialPurchased('${id}')">Mark Purchased</button><button class="danger" onclick="deleteMaterialItem('${id}')">Delete</button></div>`)}
-function openEditMaterial(id){const item=tasks.find(t=>t.id===id);if(!item)return;show(`<div class="head"><h2>Edit material</h2><button class="light" onclick="openMaterialsList()">Back</button></div><div class="field"><label>Item name</label><input id="editMaterialTitle" type="text" inputmode="text" autocapitalize="words" value="${esc(item.title)}"></div><div class="field"><label>Quantity</label><input id="editMaterialQty" type="number" inputmode="decimal" step="any" min="0.01" value="${esc(materialQuantity(item))}"></div><button id="saveMaterialEditBtn" class="gold" style="width:100%" onclick="saveMaterialEdit('${id}')">Save changes</button>`)}
+function openEditMaterial(id){const item=tasks.find(t=>t.id===id);if(!item)return;show(`<div class="head"><h2>Edit material</h2><button class="light" onclick="openMaterialsList()">Back</button></div><div class="field"><label>Item name</label><input id="editMaterialTitle" type="text" inputmode="text" autocapitalize="words" value="${esc(item.title)}"></div><div class="row"><div class="field"><label>Quantity</label><input id="editMaterialQty" type="number" inputmode="decimal" step="any" min="0.01" value="${esc(materialQuantity(item))}"></div><div class="field"><label>Category</label><select id="editMaterialCategory"><option>Boiler</option><option>Plumbing</option><option>Building</option><option>Van Stock</option><option>Other</option></select></div></div><button id="saveMaterialEditBtn" class="gold" style="width:100%" onclick="saveMaterialEdit('${id}')">Save changes</button>`);$('editMaterialCategory').value=materialCategory(item)}
 async function saveMaterialEdit(id){
-  const item=tasks.find(t=>t.id===id),title=smartCaps($('editMaterialTitle')?.value||''),quantity=Math.max(.01,Number($('editMaterialQty')?.value||1));if(!item||!title)return alert('Enter the material name.');
-  const update={title,notes:materialQuantityNote(quantity),updated_at:new Date().toISOString()},button=$('saveMaterialEditBtn');if(button){button.disabled=true;button.textContent='Saving…'}
+  const item=tasks.find(t=>t.id===id),title=String($('editMaterialTitle')?.value||'').trim(),quantity=Math.max(.01,Number($('editMaterialQty')?.value||1)),category=$('editMaterialCategory')?.value||'Other';if(!item||!title)return alert('Enter the material name.');
+  const update={title,notes:materialQuantityNote(quantity,category,materialSource(item)),updated_at:new Date().toISOString()},button=$('saveMaterialEditBtn');if(button){button.disabled=true;button.textContent='Saving…'}
   if(!isOnline()){Object.assign(item,update);queueOperation('tasks','update',update,'',{id});renderAll();openMaterialsList();return}
   try{const {data,error}=await sb.from('tasks').update(update).eq('id',id).select('id,title,notes').single();if(error)throw error;Object.assign(item,data);await loadAll();openMaterialsList()}catch(error){console.error('Material edit failed',error);alert(error.message||String(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Save changes'}}
 }
@@ -805,7 +826,8 @@ function prepareFormInputs(root=document){
   root.querySelectorAll('textarea').forEach(area=>{area.autocapitalize='sentences';area.setAttribute('autocorrect','on');area.spellcheck=true});
 }
 function smartCaps(value){return String(value||'').trim().replace(/\b([a-z])/g,m=>m.toUpperCase())}
-document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/name|title|boiler|town|work needed/.test(key)&&!(/email|postcode|address/.test(key)))input.value=smartCaps(input.value);if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
+// Customer names are stored exactly as entered; only postcodes are normalised.
+document.addEventListener('focusout',e=>{const input=e.target;if(!(input instanceof HTMLInputElement))return;const key=((input.id||'')+' '+(input.placeholder||'')).toLowerCase();if(/postcode/.test(key))input.value=String(input.value||'').toUpperCase()});
 document.addEventListener('change',event=>{if(event.target instanceof HTMLInputElement&&event.target.type==='time'&&event.target.step==='900')snapTimeInput(event.target)});
 function closeModal(){
   const modal=$('modal'),sheet=$('sheet');if(!modal)return;
@@ -829,7 +851,7 @@ document.addEventListener('focusin',event=>{
 function openNewMenu(){
   show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="navy" onclick="openNewCustomer()">New Customer</button><button class="light" onclick="openQuickDiaryEntry()">Quick Diary Entry</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button></div>`)
 }
-function openMaterialsList(){show(`<div class="head"><div><h2>Materials To Get</h2><div class="meta">Quick buying list</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="row material-add-row"><div class="field"><label for="materialTitle">Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" autocomplete="off" placeholder="e.g. White silicone"></div><div class="field"><label for="materialQty">Quantity (optional)</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div><button id="saveMaterialBtn" class="gold" style="width:100%;margin-bottom:12px" onclick="saveMaterialItem()">Add item</button><div id="fullMaterialsList" class="material-full-list"></div>`);renderFullMaterials()}
+function openMaterialsList(){show(`<div class="head"><div><h2>Materials To Get</h2><div class="meta">Your permanent shopping list. Job materials stay at the top.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="row material-add-row"><div class="field"><label for="materialTitle">Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" autocomplete="off" placeholder="e.g. White silicone"></div><div class="field"><label for="materialQty">Quantity</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div><div class="field"><label for="materialCategory">Category</label><select id="materialCategory"><option>Boiler</option><option>Plumbing</option><option>Building</option><option>Van Stock</option><option selected>Other</option></select></div><button id="saveMaterialBtn" class="gold" style="width:100%;margin-bottom:12px" onclick="saveMaterialItem()">Add item</button><div id="fullMaterialsList" class="material-full-list"></div>`);renderFullMaterials()}
 function openServicePicker(){
   show(`<div class="head"><h2>Book boiler service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
 }
@@ -1106,6 +1128,30 @@ async function saveQuickDiaryEntry(){
 }
 
 function visitsForJob(id){return jobVisits.filter(v=>v.job_id===id).sort((a,b)=>(b.visit_date||'').localeCompare(a.visit_date||'')||(b.created_at||'').localeCompare(a.created_at||''))}
+function activeVisitForJob(id){return visitsForJob(id).find(v=>v.start_time&&!v.end_time)}
+function currentQuarterHour(){const now=new Date();return normaliseQuarterHour(`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`)}
+function elapsedVisitHours(date,start,end,finishDate=date){if(!start||!end)return 0;const startAt=new Date(`${date}T${start}:00`),endAt=new Date(`${finishDate||date}T${end}:00`);if(endAt<startAt)endAt.setDate(endAt.getDate()+1);return Math.round(((endAt-startAt)/3600000)*100)/100}
+async function startVisit(jobId){
+  if(!workLogsReady)return alert('Run the v0.5 Foundation database update first.');
+  if(activeVisitForJob(jobId))return finishVisit(jobId);
+  const payload={owner_id:user.id,job_id:jobId,visit_date:today(),start_time:currentQuarterHour(),end_time:null,hours:0,notes:'',return_required:false,next_visit_date:null},update={status:'in_progress',updated_at:new Date().toISOString()};
+  if(!isOnline()){const id=tempId();jobVisits.push({...payload,id,created_at:new Date().toISOString()});const job=jobs.find(j=>j.id===jobId);if(job)Object.assign(job,update);queueOperation('job_visits','insert',payload,id);queueOperation('jobs','update',update,'',{id:jobId});renderAll();showSyncNotice('Visit started on this phone — waiting for signal');return}
+  const {data,error}=await sb.from('job_visits').insert(payload).select().single();if(error)return alert(error.message);if(data)jobVisits.push(data);await sb.from('jobs').update(update).eq('id',jobId);renderAll();openJob(jobId)
+}
+function finishVisit(jobId){
+  const visit=activeVisitForJob(jobId);if(!visit)return startVisit(jobId);
+  const finishDate=today(),finishTime=currentQuarterHour(),hours=elapsedVisitHours(visit.visit_date,visit.start_time,finishTime,finishDate);
+  show(`<div class="head"><h2>Finish visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice success"><strong>Started ${esc(displayDate(visit.visit_date))} at ${esc(displayTime(visit.start_time))}</strong>Check the finish time and save. Hours are calculated automatically.</div><div class="row"><div class="field"><label>Finish date</label><input id="finishVisitDate" type="date" value="${finishDate}"></div><div class="field"><label>Finish time</label><input id="finishVisitTime" type="time" step="900" value="${finishTime}" oninput="previewFinishVisitHours('${visit.id}')"></div></div><div class="field"><label>Elapsed hours</label><input id="finishVisitHours" type="number" readonly value="${hours}"></div><div class="field"><label>What was done? (optional)</label><textarea id="finishVisitNotes">${esc(visit.notes||'')}</textarea></div><button class="gold" style="width:100%" onclick="saveFinishedVisit('${visit.id}','${jobId}')">Finish visit</button>`)
+}
+function previewFinishVisitHours(visitId){const visit=jobVisits.find(v=>v.id===visitId),date=$('finishVisitDate')?.value||today(),time=quarterHourInputValue('finishVisitTime');if(visit&&time)$('finishVisitHours').value=elapsedVisitHours(visit.visit_date,visit.start_time,time,date)}
+async function saveFinishedVisit(visitId,jobId){
+  const visit=jobVisits.find(v=>v.id===visitId),finishDate=$('finishVisitDate').value,finish=quarterHourInputValue('finishVisitTime');if(!visit||!finish)return alert('Choose a finish time.');
+  const update={end_time:finish,hours:elapsedVisitHours(visit.visit_date,visit.start_time,finish,finishDate),notes:$('finishVisitNotes').value.trim(),updated_at:new Date().toISOString()};
+  if(!isOnline()){Object.assign(visit,update);queueOperation('job_visits','update',update,'',{id:visitId});renderAll();openJob(jobId);return}
+  const {data,error}=await sb.from('job_visits').update(update).eq('id',visitId).select().single();if(error)return alert(error.message);Object.assign(visit,data||update);renderAll();openJob(jobId)
+}
+function openEditVisit(visitId,jobId){const visit=jobVisits.find(v=>v.id===visitId);if(!visit)return;show(`<div class="head"><h2>Edit visit</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="row"><div class="field"><label>Date</label><input id="editVisitDate" type="date" value="${esc(visit.visit_date||today())}"></div><div class="field"><label>Hours</label><input id="editVisitHours" type="number" inputmode="decimal" step="0.25" value="${esc(visit.hours||0)}"></div></div><div class="row"><div class="field"><label>Start time</label><input id="editVisitStart" type="time" step="900" value="${esc(displayTime(visit.start_time))}"></div><div class="field"><label>Finish time</label><input id="editVisitEnd" type="time" step="900" value="${esc(displayTime(visit.end_time))}"></div></div><div class="field"><label>Notes</label><textarea id="editVisitNotes">${esc(visit.notes||'')}</textarea></div><button class="gold" style="width:100%" onclick="saveVisitEdit('${visitId}','${jobId}')">Save changes</button>`) }
+async function saveVisitEdit(visitId,jobId){const visit=jobVisits.find(v=>v.id===visitId),date=$('editVisitDate').value,start=quarterHourInputValue('editVisitStart'),end=quarterHourInputValue('editVisitEnd');if(!visit||!date)return alert('Choose a visit date.');const update={visit_date:date,start_time:start||null,end_time:end||null,hours:start&&end?elapsedVisitHours(date,start,end,date):Number($('editVisitHours').value||0),notes:$('editVisitNotes').value.trim(),updated_at:new Date().toISOString()};if(!isOnline()){Object.assign(visit,update);queueOperation('job_visits','update',update,'',{id:visitId});renderAll();openJob(jobId);return}const {data,error}=await sb.from('job_visits').update(update).eq('id',visitId).select().single();if(error)return alert(error.message);Object.assign(visit,data||update);renderAll();openJob(jobId)}
 function costsForJob(id){return jobCosts.filter(c=>c.job_id===id).sort((a,b)=>(b.cost_date||'').localeCompare(a.cost_date||'')||(b.created_at||'').localeCompare(a.created_at||''))}
 function jobFigures(job){
   const visits=visitsForJob(job.id),costs=costsForJob(job.id);
@@ -1123,7 +1169,7 @@ function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
   const fig=jobFigures(j),address=resolveJobAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'';
-  const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:''}${v.return_required?' · Return required':''}</div></div></div>`).join('');
+  const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}${v.end_time?`–${esc(displayTime(v.end_time))}`:''}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:v.start_time?'Visit in progress':''}${v.return_required?' · Return required':''}</div></div><div class="item-actions"><button class="light" onclick="openEditVisit('${v.id}','${id}')">Edit</button></div></div>`).join('');
   const costRows=fig.costs.map(c=>`<tr><td>${esc(displayDate(c.cost_date))}</td><td>${esc(c.description)}</td><td class="num">${esc(money(Number(c.quantity||1)*Number(c.unit_cost||0)))}</td><td><button class="light" onclick="openEditJobCost('${c.id}','${id}')">Edit</button></td></tr>`).join('');
   show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')} · ${esc(jobStatusLabel(j.status))}</div></div><button class="light" onclick="closeModal()">Close</button></div>
   ${isServiceJob(j)?'<div class="service-callout"><b>Boiler service</b><div class="meta">Completing this job will roll the customer service record forward one year.</div></div>':''}
@@ -1133,13 +1179,13 @@ function openJob(id){
     ${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>`:''}
-    ${workLogsReady&&j.status!=='completed'?`<button class="navy" onclick="openAddVisit('${id}')">${fig.visits.length?'Record visit':'Start visit'}</button>`:''}
+    ${workLogsReady&&j.status!=='completed'?`<button class="navy" onclick="${activeVisitForJob(id)?`finishVisit('${id}')`:`startVisit('${id}')`}">${activeVisitForJob(id)?'Finish visit':'Start visit'}</button>`:''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':'Complete job'}</button>`:''}
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
   <details class="secondary-panel"><summary>More job details</summary>
     ${workLogsReady?`<div class="profit-grid"><div class="profit-box"><b>${fig.visits.length}</b><span>Visits</span></div><div class="profit-box"><b>${fig.hours.toFixed(1)}</b><span>Hours</span></div><div class="profit-box"><b>${money(fig.directCosts)}</b><span>Costs</span></div><div class="profit-box"><b>${money(fig.gross)}</b><span>Gross before labour</span></div></div>
-    <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Visits & returns</h3><div class="actions"><button class="gold" onclick="openAddVisit('${id}')">Record visit</button><button class="light" onclick="openScheduleReturn('${id}')">Schedule return visit</button></div></div><div class="list">${visitRows||'<div class="meta">No visits recorded yet.</div>'}</div></div>
+    <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Visits & returns</h3><div class="actions"><button class="gold" onclick="${activeVisitForJob(id)?`finishVisit('${id}')`:`startVisit('${id}')`}">${activeVisitForJob(id)?'Finish visit':'Start visit'}</button><button class="light" onclick="openAddVisit('${id}')">Add manual visit</button><button class="light" onclick="openScheduleReturn('${id}')">Schedule return visit</button></div></div><div class="list">${visitRows||'<div class="meta">No visits recorded yet.</div>'}</div></div>
     <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Materials and expenses</h3><button class="gold" onclick="openAddCost('${id}')">Add expense</button></div>${costRows?`<table class="log-table"><tbody>${costRows}</tbody></table>`:'<div class="meta">No materials or expenses recorded yet.</div>'}</div>`:''}
     <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Documents are unavailable.</div>'}</div></div>
     <div class="actions" style="margin-top:12px">${j.status!=='waiting'?`<button class="light" onclick="openPutOnWaiting('${id}')">Put on waiting</button>`:''}${j.status!=='to_book'?`<button class="light" onclick="moveJobToBook('${id}')">Move to To book</button>`:''}${!['booked','in_progress','completed'].includes(j.status)?`<button class="light" onclick="openScheduleReturn('${id}','book')">Book into diary</button>`:''}${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}<button class="danger" onclick="deleteJob('${id}')">Delete job</button></div>
@@ -1249,7 +1295,7 @@ function openAddCost(jobId){
   <div class="field"><label>Description</label><input id="costDescription" placeholder="e.g. Grundfos pump"></div>
   <div class="row-3"><div class="field"><label>Quantity</label><input id="costQty" type="number" inputmode="decimal" step="any" value="1"></div><div class="field"><label>Your unit cost £</label><input id="costUnit" type="number" inputmode="decimal" step="any"></div><div class="field"><label>Charge per unit £</label><input id="costSell" type="number" inputmode="decimal" step="any"></div></div>
   <div class="checkline"><input id="costCharge" type="checkbox"><label for="costCharge">Charge this item to the customer / treat as an extra</label></div>
-  <div class="checkline" style="margin-top:10px"><input id="costAddToMaterials" type="checkbox"><label for="costAddToMaterials">Add to Materials To Get</label></div>
+  <div class="meta" style="margin-top:10px">Materials added to this job are added to Materials To Get automatically.</div>
   <div class="field" style="margin-top:10px"><label>Private note</label><textarea id="costNotes"></textarea></div><button id="saveCostBtn" class="gold" style="width:100%" onclick="saveJobCost('${jobId}')">Save cost</button>`)
 }
 function openEditJobCost(costId,jobId){
@@ -1264,11 +1310,11 @@ async function saveJobCostEdit(costId,jobId){
 }
 async function saveJobCost(jobId){
   const description=$('costDescription').value.trim();if(!description)return alert('Enter what the cost was for.');
-  const quantity=Number($('costQty').value||1),addToMaterials=$('costAddToMaterials').checked;
+  const quantity=Number($('costQty').value||1),addToMaterials=$('costCategory').value==='materials';
   const payload={owner_id:user.id,job_id:jobId,cost_date:$('costDate').value||today(),category:$('costCategory').value,description,quantity,unit_cost:Number($('costUnit').value||0),charge_to_customer:$('costCharge').checked,sell_price:Number($('costSell').value||0),notes:$('costNotes').value.trim()};
-  if(!isOnline()){const id=tempId();jobCosts.push({...payload,id,created_at:new Date().toISOString()});queueOperation('job_costs','insert',payload,id);if(addToMaterials)await addMaterialToGet(description,quantity,false);renderAll();closeModal();showSyncNotice('Cost and buying list saved on this phone — waiting for signal');return}
+  if(!isOnline()){const id=tempId();jobCosts.push({...payload,id,created_at:new Date().toISOString()});queueOperation('job_costs','insert',payload,id);if(addToMaterials)await addMaterialToGet(description,quantity,false,'Other','job');renderAll();closeModal();showSyncNotice('Cost and buying list saved on this phone — waiting for signal');return}
   const btn=$('saveCostBtn');btn.disabled=true;btn.textContent='Saving…';
-  try{const {error}=await sb.from('job_costs').insert(payload);if(error)throw error;if(addToMaterials)await addMaterialToGet(description,quantity,false);await loadAll();openJob(jobId)}
+  try{const {error}=await sb.from('job_costs').insert(payload);if(error)throw error;if(addToMaterials)await addMaterialToGet(description,quantity,false,'Other','job');await loadAll();openJob(jobId)}
   catch(error){alert(friendlyError(error))}
   finally{if(btn?.isConnected){btn.disabled=false;btn.textContent='Save cost'}}
 }
