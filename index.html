@@ -176,7 +176,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card pipeline-card">
-      <div class="section-title"><div><h2>Work queue</h2><div class="meta">Every job that has not been booked into the diary.</div></div></div>
+      <div class="section-title"><div><h2>Work queue</h2><div id="workQueueMeta" class="meta">Every job that has not been booked into the diary.</div></div></div>
       <div id="pipelinePreview" class="list"></div>
     </div>
 
@@ -531,13 +531,14 @@ function renderCustomers(){
   const holder=$('customerResults');
   if(!holder)return;
   const q=($('customerSearch')?.value||'').trim().toLowerCase();
-  if(!q&&customerFilter==='all'){holder.innerHTML='<div class="empty">Start typing a name, address, postcode, phone number or email to find a customer.</div>';return}
   let list=[...customers];
   if(customerFilter==='active')list=list.filter(c=>['active','not_contacted'].includes(c.status));
   else if(customerFilter!=='all')list=list.filter(c=>c.status===customerFilter);
   if(q)list=list.filter(c=>customerMatches(c,q));
   list.sort((a,b)=>customerSearchRank(a,q)-customerSearchRank(b,q)||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
-  holder.innerHTML=list.map(customerCard).join('')||'<div class="empty">No customers match this search.</div>';
+  const showingRecent=!q&&customerFilter==='all';
+  if(showingRecent)list=list.sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')).slice(0,50);
+  holder.innerHTML=`${showingRecent?'<div class="meta" style="margin:4px 0 10px">Recent customers — search by name, address or postcode to narrow this down.</div>':''}${list.map(customerCard).join('')||'<div class="empty">No customers match this search.</div>'}`;
 }
 function resolveJobAddress(job){
   const own=addressParts(job?.address,job?.postcode),customer=customers.find(x=>x.id===job?.customer_id),fallback=addressParts(customer?.address,customer?.postcode);
@@ -608,6 +609,7 @@ function whatsappBusinessButton(value,text='',className='btn light',before=''){c
 function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job),active=!['completed','lost','cancelled'].includes(job.status);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappBusinessButton(c.phone)}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${active?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function returnVisitNeeded(job){return ['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required)}
+function workQueueJobs(){return jobs.filter(job=>!['completed','lost','cancelled'].includes(job.status)&&!job.scheduled_date).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''))}
 function queueJobCard(job){
   const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':job.status==='to_book'?'Quote accepted — ready to schedule':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
   return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?whatsappBusinessButton(phone,'','btn light','event.stopPropagation();'):''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
@@ -653,7 +655,7 @@ function renderDashboard(){
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
   const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
-  const workQueue=openJobs.filter(j=>!j.scheduled_date&&!['booked','in_progress'].includes(j.status)).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  const workQueue=workQueueJobs();
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
   const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
@@ -661,6 +663,7 @@ function renderDashboard(){
   if($('serviceOverdueK'))$('serviceOverdueK').textContent=overdue.length;
   if($('service30K'))$('service30K').textContent=due30.length;
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
+  if($('workQueueMeta'))$('workQueueMeta').textContent=workQueue.length?`${workQueue.length} job${workQueue.length===1?'':'s'} waiting to be booked into the diary.`:'Every open job is booked into the diary.';
   if($('pipelinePreview'))$('pipelinePreview').innerHTML=workQueue.map(dashboardQueueJobCard).join('')||'<div class="empty">Every open job is booked into the diary.</div>';
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
@@ -1049,10 +1052,10 @@ async function saveService(id){
 
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
 let selectedJobCustomerId='',selectedEditJobCustomerId='';
-function customerSearchText(c){return [c.name,c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
+function customerSearchText(c){return [c.name,customerAddress(c),c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
 function compactSearchText(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
-function customerMatches(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query);return customerSearchText(customer).includes(normal)||compactSearchText(customer?.postcode).includes(compact)||compactSearchText(customer?.phone).includes(compact)}
-function customerSearchRank(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query),postcode=compactSearchText(customer?.postcode),name=String(customer?.name||'').toLowerCase();if(postcode===compact)return 0;if(postcode.startsWith(compact))return 1;if(name.startsWith(normal))return 2;return 3}
+function customerMatches(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query),search=customerSearchText(customer);return search.includes(normal)||compactSearchText(search).includes(compact)}
+function customerSearchRank(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query),postcode=compactSearchText(addressParts(customer?.address,customer?.postcode).postcode),name=String(customer?.name||'').toLowerCase();if(!normal)return 3;if(postcode===compact)return 0;if(postcode.startsWith(compact))return 1;if(name.startsWith(normal))return 2;return 3}
 function matchingCustomers(query,limit=10){const q=String(query||'').trim().toLowerCase();return q?customers.filter(c=>customerMatches(c,q)).sort((a,b)=>customerSearchRank(a,q)-customerSearchRank(b,q)||String(a.name||'').localeCompare(String(b.name||''))).slice(0,limit):[]}
 function customerPickHtml(list,selectFunction){return list.map(c=>`<button type="button" class="customer-pick" onclick="${selectFunction}('${c.id}')"><strong>${esc(c.name||'Unnamed')}</strong><span class="meta">${esc([c.address,c.postcode,c.phone].filter(Boolean).join(' · '))}</span></button>`).join('')}
 function inlineCustomerCreatorHtml(prefix,initialName,createFunction,context){
