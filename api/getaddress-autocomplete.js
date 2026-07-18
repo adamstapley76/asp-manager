@@ -1,4 +1,4 @@
-const IDEAL_POSTCODES_BASE_URL = 'https://api.ideal-postcodes.co.uk/v1';
+const IDEAL_POSTCODES_COMPATIBILITY_URL = 'https://ga.ideal-postcodes.co.uk';
 const REQUEST_TIMEOUT_MS = 8000;
 
 function allowSameOrigin(request) {
@@ -15,20 +15,23 @@ function allowSameOrigin(request) {
 function safeAutocompleteOptions(body) {
   const source = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
   return {
-    top: Math.min(6, Math.max(1, Number.parseInt(source.top, 10) || 6))
+    all: source.all !== false,
+    top: Math.min(6, Math.max(1, Number.parseInt(source.top, 10) || 6)),
+    template: typeof source.template === 'string' ? source.template.slice(0, 1000) : '',
+    showPostcode: typeof source.show_postcode === 'boolean' ? source.show_postcode : undefined
   };
 }
 
 function safeResponseBodyForLog(text, apiKey, successPayload) {
   if (successPayload) {
     return JSON.stringify({
-      suggestions: Array.isArray(successPayload?.result?.hits) ? successPayload.result.hits.length : 0
+      suggestions: Array.isArray(successPayload?.suggestions) ? successPayload.suggestions.length : 0
     });
   }
   let safe = String(text || '[empty response]').slice(0, 2000);
   if (apiKey) safe = safe.split(apiKey).join('[redacted]');
   return safe
-    .replace(/([?&]api_key=)[^&\s"']+/gi, '$1[redacted]')
+    .replace(/([?&]api[-_]key=)[^&\s"']+/gi, '$1[redacted]')
     .replace(/((?:api[-_ ]?key|token)["']?\s*[:=]\s*["']?)[^"'\s,}&]+/gi, '$1[redacted]');
 }
 
@@ -40,7 +43,7 @@ module.exports = async function getAddressAutocomplete(request, response) {
   }
   if (!allowSameOrigin(request)) return response.status(403).json({ Message: 'Origin not allowed' });
 
-  const rawApiKey = String(process.env.IDEAL_POSTCODES_API_KEY || '');
+  const rawApiKey = String(process.env.IDEAL_POSTCODES_API_KEY || process.env.GETADDRESS_API_KEY || '');
   const apiKey = rawApiKey.trim();
   console.info('Ideal Postcodes autocomplete proxy key diagnostics', {
     keyPresent: rawApiKey.length > 0,
@@ -48,7 +51,7 @@ module.exports = async function getAddressAutocomplete(request, response) {
     keyHadLeadingOrTrailingWhitespace: rawApiKey !== apiKey
   });
   if (!apiKey) {
-    console.error('Ideal Postcodes autocomplete proxy is missing IDEAL_POSTCODES_API_KEY');
+    console.error('Ideal Postcodes autocomplete proxy is missing an API key');
     return response.status(503).json({ Message: 'Address lookup is not configured' });
   }
 
@@ -58,10 +61,14 @@ module.exports = async function getAddressAutocomplete(request, response) {
   }
 
   const options = safeAutocompleteOptions(request.body);
-  const upstreamUrl = new URL(`${IDEAL_POSTCODES_BASE_URL}/autocomplete/addresses`);
-  upstreamUrl.searchParams.set('query', query);
-  upstreamUrl.searchParams.set('api_key', apiKey);
-  upstreamUrl.searchParams.set('limit', String(options.top));
+  // The compatibility endpoint deliberately preserves the response contract
+  // expected by the existing getAddress browser component.
+  const upstreamUrl = new URL(`${IDEAL_POSTCODES_COMPATIBILITY_URL}/autocomplete/${encodeURIComponent(query)}`);
+  upstreamUrl.searchParams.set('api-key', apiKey);
+  upstreamUrl.searchParams.set('top', String(options.top));
+  upstreamUrl.searchParams.set('all', String(options.all));
+  if(options.template)upstreamUrl.searchParams.set('template',options.template);
+  if(options.showPostcode!==undefined)upstreamUrl.searchParams.set('show-postcode',String(options.showPostcode));
 
   console.info('Ideal Postcodes autocomplete proxy request', {
     upstreamHostname: upstreamUrl.hostname,
@@ -88,21 +95,14 @@ module.exports = async function getAddressAutocomplete(request, response) {
       return response.status(upstream.status).json({ Message: payload.message || payload.Message || 'Address lookup failed' });
     }
 
-    const hits = payload?.result?.hits;
-    if (!Array.isArray(hits)) {
+    if (!Array.isArray(payload?.suggestions)) {
       console.error('Ideal Postcodes autocomplete upstream returned an invalid response');
       return response.status(502).json({ Message: 'Address lookup returned an invalid response' });
     }
 
-    const suggestions = hits.map((hit) => ({
-      id: String(hit.id || ''),
-      address: String(hit.suggestion || ''),
-      url: hit.id ? `/get/${encodeURIComponent(hit.id)}` : ''
-    })).filter((item) => item.id && item.address);
-
-    return response.status(200).json({ suggestions });
+    return response.status(200).json({ suggestions: payload.suggestions });
   } catch (error) {
-    const message = String(error?.message || 'Unknown error').replace(/api_key=[^&\s]+/gi, 'api_key=[redacted]');
+    const message = String(error?.message || 'Unknown error').replace(/api[-_]key=[^&\s]+/gi, 'api-key=[redacted]');
     console.error('Ideal Postcodes autocomplete proxy request failed', { name: error?.name, message });
     return response.status(502).json({ Message: 'Address lookup request failed' });
   }

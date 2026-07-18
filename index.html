@@ -646,12 +646,14 @@ function documentCard(document){
 }
 
 function dashboardUpcomingDate(openJobs){
-  const tomorrow=addDays(today(),1),day=new Date(`${today()}T12:00:00`).getDay();
-  if(day!==5)return tomorrow;
-  const saturday=addDays(today(),1),sunday=addDays(today(),2),monday=addDays(today(),3);
-  if(openJobs.some(j=>j.scheduled_date===saturday))return saturday;
-  if(openJobs.some(j=>j.scheduled_date===sunday))return sunday;
-  return monday;
+  const day=new Date(`${today()}T12:00:00`).getDay();
+  // At the weekend, keep booked weekend work visible. Otherwise move straight
+  // to Monday rather than showing an empty Sunday card.
+  const dates=day===5?[addDays(today(),1),addDays(today(),2),addDays(today(),3)]
+    :day===6?[addDays(today(),1),addDays(today(),2)]
+    :day===0?[addDays(today(),1)]
+    :[addDays(today(),1)];
+  return dates.find(date=>openJobs.some(job=>job.scheduled_date===date))||dates[dates.length-1];
 }
 function renderDashboard(){
   const now=new Date(),hour=now.getHours();
