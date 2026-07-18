@@ -487,7 +487,7 @@ function showPage(page){
 
 function customerStatusLabel(status){return ({active:'Active',not_contacted:'Active',booked:'Booked',dormant:'Dormant',archived:'Archived'})[status]||status||'Active'}
 function customerStatusClass(status){if(status==='archived')return 'archived';if(status==='dormant')return 'dormant';if(status==='booked')return 'booked';return 'active-badge'}
-function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',to_book:'To book',waiting:'Waiting',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
+function jobStatusLabel(status){return ({enquiry:'Enquiry',quoted:'Quoted',to_book:'Ready to schedule',waiting:'Waiting',booked:'Booked',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'})[status]||status}
 function documentStatusLabel(status){return ({draft:'Draft',sent:'Sent',accepted:'Accepted',declined:'Declined',paid:'Paid',overdue:'Overdue',void:'Void'})[status]||status||'Draft'}
 function documentTypeLabel(type){return type==='invoice'?'Invoice':'Quote'}
 function documentStatusOptions(type,selected='draft'){const values=type==='invoice'?[['draft','Draft'],['sent','Sent'],['paid','Paid'],['overdue','Overdue'],['void','Void']]:[['draft','Draft'],['sent','Sent'],['accepted','Accepted'],['declined','Declined'],['void','Void']];return values.map(([value,label])=>`<option value="${value}" ${value===selected?'selected':''}>${label}</option>`).join('')}
@@ -604,11 +604,11 @@ function serviceReminderText(customer){const first=String(customer?.name||'').tr
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappUrl(c.phone)?`<a class="btn light" href="${whatsappUrl(c.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${job.status!=='completed'?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function returnVisitNeeded(job){return ['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required)}
 function queueJobCard(job){
-  const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
+  const customer=customers.find(c=>c.id===job.customer_id),phone=customer?.phone||'',wa=whatsappUrl(phone),returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':job.status==='to_book'?'Quote accepted — ready to schedule':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
   return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div><div class="job-quick"><button class="light" onclick="event.stopPropagation();openJob('${job.id}')">Open</button>${phone?`<a class="btn light" href="${telUrl(phone)}" onclick="event.stopPropagation()">Call</a>`:''}${wa?`<a class="btn light" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>`:''}<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book into diary</button></div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function dashboardQueueJobCard(job){
-  const returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
+  const returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':job.status==='to_book'?'Quote accepted — ready to schedule':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
   return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}<span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function jobCard(job){
@@ -648,7 +648,7 @@ function renderDashboard(){
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
   const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
-  const workQueue=openJobs.filter(j=>!j.scheduled_date&&!['booked','in_progress'].includes(j.status)).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  const workQueue=openJobs.filter(j=>!j.scheduled_date&&!['booked','in_progress'].includes(j.status)).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
   const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
@@ -760,7 +760,7 @@ function renderJobs(){
   const openStatuses=['enquiry','quoted','to_book','waiting','booked','in_progress'];
   const counts={open:jobs.filter(j=>openStatuses.includes(j.status)).length,all:jobs.length};
   ['booked','to_book','waiting','quoted','completed'].forEach(status=>counts[status]=jobs.filter(j=>j.status===status).length);
-  const filterLabels={open:'Open',booked:'Booked',to_book:'To book',waiting:'Waiting',quoted:'Quoted',completed:'Completed',all:'All'};
+  const filterLabels={open:'Open',booked:'Booked',to_book:'Ready to schedule',waiting:'Waiting',quoted:'Quoted',completed:'Completed',all:'All'};
   document.querySelectorAll('#jobFilters button').forEach(button=>{const value=button.dataset.filter;button.textContent=`${filterLabels[value]||value} (${counts[value]??0})`});
   let list=[...jobs];
   if(jobFilter==='open')list=list.filter(j=>openStatuses.includes(j.status));
@@ -1368,7 +1368,12 @@ async function saveDocument(type,id=''){
   const button=$('saveDocumentBtn');button.disabled=true;button.textContent='Saving…';let result;
   if(id)result=await sb.from('documents').update(payload).eq('id',id).select().single();else result=await sb.from('documents').insert(payload).select().single();
   button.disabled=false;button.textContent=`Save ${documentTypeLabel(type).toLowerCase()}`;if(result.error)return alert(result.error.message);
-  if(payload.job_id&&type==='quote')await sb.from('jobs').update({quoted_amount:fig.subtotal,status:payload.status==='accepted'?'booked':'quoted',updated_at:new Date().toISOString()}).eq('id',payload.job_id);
+  if(payload.job_id&&type==='quote'){
+    const linkedJob=jobs.find(job=>job.id===payload.job_id),jobUpdate={quoted_amount:fig.subtotal,updated_at:new Date().toISOString()};
+    if(payload.status==='accepted'&&!['booked','in_progress','completed'].includes(linkedJob?.status)){Object.assign(jobUpdate,{status:'to_book',scheduled_date:null,scheduled_time:null,waiting_reason:null})}
+    else if(payload.status!=='accepted'&&!['booked','in_progress','completed'].includes(linkedJob?.status)){jobUpdate.status='quoted'}
+    await sb.from('jobs').update(jobUpdate).eq('id',payload.job_id);
+  }
   if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
   await loadAll();openDocument(result.data.id)
 }
@@ -1380,7 +1385,7 @@ function openDocument(id){
   <div class="doc-lines"><table class="doc-table"><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>
   <div class="totals" style="margin-top:12px"><div class="total-line"><span>Subtotal</span><b>${money(d.subtotal)}</b></div><div class="total-line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${money(d.vat_amount)}</b></div><div class="total-line grand"><span>Total</span><span>${money(d.total)}</span></div></div>
   ${d.notes?`<div class="muted-box" style="margin-top:12px"><h3>Notes</h3><div class="meta">${esc(d.notes)}</div></div>`:''}
-  <div class="actions" style="margin-top:14px"><button class="gold" onclick="editDocument('${id}')">Edit</button><button class="navy" onclick="printDocument('${id}')">Print / PDF</button>${d.status!=='sent'?`<button class="light" onclick="setDocumentStatus('${id}','sent')">Mark sent</button>`:''}${d.type==='quote'&&d.status!=='accepted'?`<button class="light" onclick="setDocumentStatus('${id}','accepted')">Accepted</button>`:''}${d.type==='invoice'&&d.status!=='paid'?`<button class="light" onclick="setDocumentStatus('${id}','paid')">Paid</button>`:''}${d.type==='quote'?`<button class="light" onclick="convertQuoteToInvoice('${id}')">Convert to invoice</button>`:''}${d.customer_id?`<button class="light" onclick="openCustomer('${d.customer_id}')">Customer</button>`:''}${d.job_id?`<button class="light" onclick="openJob('${d.job_id}')">Job</button>`:''}<button class="danger" onclick="deleteDocument('${id}')">Delete mistake</button></div>`)
+  <div class="actions" style="margin-top:14px"><button class="gold" onclick="editDocument('${id}')">Edit</button><button class="navy" onclick="printDocument('${id}')">Print / PDF</button>${d.status!=='sent'?`<button class="light" onclick="setDocumentStatus('${id}','sent')">Mark sent</button>`:''}${d.type==='quote'&&d.status!=='accepted'?`<button class="light" onclick="setDocumentStatus('${id}','accepted')">Accept quote</button>`:''}${d.type==='invoice'&&d.status!=='paid'?`<button class="light" onclick="setDocumentStatus('${id}','paid')">Paid</button>`:''}${d.type==='quote'?`<button class="light" onclick="convertQuoteToInvoice('${id}')">Convert to invoice</button>`:''}${d.customer_id?`<button class="light" onclick="openCustomer('${d.customer_id}')">Customer</button>`:''}${d.job_id?`<button class="light" onclick="openJob('${d.job_id}')">Job</button>`:''}<button class="danger" onclick="deleteDocument('${id}')">Delete mistake</button></div>`)
 }
 function editDocument(id){
   const d=documents.find(x=>x.id===id);if(!d)return;lineCounter=0;
@@ -1392,8 +1397,26 @@ function editDocument(id){
   <div class="field"><label>Customer-facing notes</label><textarea id="dNotes">${esc(d.notes)}</textarea></div><button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${d.type}','${id}')">Save ${documentTypeLabel(d.type).toLowerCase()}</button>`);
   const lines=Array.isArray(d.line_items)&&d.line_items.length?d.line_items:[{description:'',quantity:1,unit_price:''}];lines.forEach(line=>addDocumentLine(line.description,line.quantity,line.unit_price));updateDocumentTotals()
 }
-async function setDocumentStatus(id,status){const d=documents.find(x=>x.id===id);const {error}=await sb.from('documents').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);if(d?.job_id&&d.type==='quote'&&status==='accepted')await sb.from('jobs').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',d.job_id);await loadAll();openDocument(id)}
-async function convertQuoteToInvoice(id){const q=documents.find(x=>x.id===id);if(!q||q.type!=='quote')return;if(!confirm('Create an invoice from this quote?'))return;const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title:q.title,issue_date:today(),due_date:addDays(today(),14),line_items:q.line_items,subtotal:q.subtotal,vat_rate:q.vat_rate,vat_amount:q.vat_amount,total:q.total,notes:q.notes};const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(q.job_id)await sb.from('jobs').update({invoice_number:payload.document_number,status:'booked',updated_at:new Date().toISOString()}).eq('id',q.job_id);await loadAll();openDocument(data.id)}
+async function moveAcceptedQuoteJobToQueue(jobId){
+  const job=jobs.find(item=>item.id===jobId);
+  if(!job||['booked','in_progress','completed'].includes(job.status))return;
+  const {error}=await sb.from('jobs').update({status:'to_book',scheduled_date:null,scheduled_time:null,waiting_reason:null,updated_at:new Date().toISOString()}).eq('id',jobId);
+  if(error)throw error;
+}
+async function setDocumentStatus(id,status){
+  const d=documents.find(x=>x.id===id),{error}=await sb.from('documents').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return alert(error.message);
+  try{if(d?.job_id&&d.type==='quote'&&status==='accepted')await moveAcceptedQuoteJobToQueue(d.job_id)}catch(jobError){return alert(`Quote accepted, but the linked job could not be moved to the work queue: ${jobError.message}`)}
+  await loadAll();openDocument(id)
+}
+async function convertQuoteToInvoice(id){
+  const q=documents.find(x=>x.id===id);if(!q||q.type!=='quote')return;if(!confirm('Create an invoice from this quote?'))return;
+  const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title:q.title,issue_date:today(),due_date:addDays(today(),14),line_items:q.line_items,subtotal:q.subtotal,vat_rate:q.vat_rate,vat_amount:q.vat_amount,total:q.total,notes:q.notes};
+  const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);
+  const {error:quoteError}=await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(quoteError)return alert(quoteError.message);
+  if(q.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',q.job_id);if(jobError)return alert(jobError.message);try{await moveAcceptedQuoteJobToQueue(q.job_id)}catch(queueError){return alert(`Invoice created, but the linked job could not be moved to the work queue: ${queueError.message}`)}}
+  await loadAll();openDocument(data.id)
+}
 async function deleteDocument(id){if(!confirm('Permanently delete this document? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('documents').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
 function printDocument(id){
   const d=documents.find(x=>x.id===id);if(!d)return;const c=documentCustomer(d),j=documentJob(d),lines=Array.isArray(d.line_items)?d.line_items:[],w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print this document.');
