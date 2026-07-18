@@ -12,6 +12,15 @@ function allowSameOrigin(request) {
   }
 }
 
+function safeResponseBodyForLog(text, apiKey, successPayload) {
+  if (successPayload) return JSON.stringify({ addressResolved: Boolean(successPayload.postcode || successPayload.formatted_address) });
+  let safe = String(text || '[empty response]').slice(0, 2000);
+  if (apiKey) safe = safe.split(apiKey).join('[redacted]');
+  return safe
+    .replace(/([?&]api-key=)[^&\s"']+/gi, '$1[redacted]')
+    .replace(/((?:api[-_ ]?key|token)["']?\s*[:=]\s*["']?)[^"'\s,}&]+/gi, '$1[redacted]');
+}
+
 module.exports = async function getAddressAddress(request, response) {
   response.setHeader('Cache-Control', 'no-store');
   if (request.method !== 'GET') {
@@ -20,7 +29,13 @@ module.exports = async function getAddressAddress(request, response) {
   }
   if (!allowSameOrigin(request)) return response.status(403).json({ Message: 'Origin not allowed' });
 
-  const apiKey = String(process.env.GETADDRESS_API_KEY || '').trim();
+  const rawApiKey = String(process.env.GETADDRESS_API_KEY || '');
+  const apiKey = rawApiKey.trim();
+  console.info('getAddress address proxy key diagnostics', {
+    keyPresent: rawApiKey.length > 0,
+    keyLength: rawApiKey.length,
+    keyHadLeadingOrTrailingWhitespace: rawApiKey !== apiKey
+  });
   if (!apiKey) {
     console.error('getAddress address proxy is missing GETADDRESS_API_KEY');
     return response.status(503).json({ Message: 'Address lookup is not configured' });
@@ -31,15 +46,25 @@ module.exports = async function getAddressAddress(request, response) {
 
   const upstreamUrl = new URL(`${GETADDRESS_BASE_URL}/get/${encodeURIComponent(id)}`);
   upstreamUrl.searchParams.set('api-key', apiKey);
+  console.info('getAddress address proxy request', {
+    upstreamHostname: upstreamUrl.hostname,
+    upstreamPathname: upstreamUrl.pathname,
+    upstreamMethod: 'GET'
+  });
   try {
     const upstream = await fetch(upstreamUrl, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     });
-    const payload = await upstream.json().catch(() => ({}));
+    const responseText = await upstream.text();
+    let payload = {};
+    try { payload = responseText ? JSON.parse(responseText) : {}; } catch { payload = {}; }
+    console.info('getAddress address proxy response', {
+      status: upstream.status,
+      body: safeResponseBodyForLog(responseText, apiKey, upstream.ok ? payload : null)
+    });
     if (!upstream.ok) {
-      console.error('getAddress address upstream failed', { status: upstream.status, message: payload.Message || payload.message || 'No message' });
       return response.status(upstream.status).json({ Message: payload.Message || payload.message || 'Address lookup failed' });
     }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
