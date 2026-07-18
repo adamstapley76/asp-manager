@@ -228,7 +228,7 @@ Deno.serve(async (request) => {
     if (error) return json({ error: 'Could not start the QuickBooks connection.' }, 500)
     const authorizationUrl = new URL('https://appcenter.intuit.com/connect/oauth2')
     authorizationUrl.search = new URLSearchParams({ client_id: config.clientId, response_type: 'code', scope: 'com.intuit.quickbooks.accounting', redirect_uri: config.redirectUri, state }).toString()
-    return json({ authorization_url: authorizationUrl.toString() })
+    return json({ authorization_url: authorizationUrl.toString(), client_id_suffix: config.clientId.slice(-6), redirect_uri: config.redirectUri })
   }
   if (mode === 'sync-invoice' && request.method === 'POST') {
     const payload = await request.json().catch(() => ({}))
