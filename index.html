@@ -12,7 +12,7 @@
   --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
   --text:#1f2937;--muted:#667085;--line:#e4e7ec;--red:#b42318;--amber:#b54708;
   --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff;
-  --header-height:58px;--mobile-nav-height:52px;--visual-viewport-top:0px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
+  --header-height:0px;--mobile-nav-height:52px;--visual-viewport-top:0px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
 *{box-sizing:border-box;min-width:0}
 html{scroll-behavior:smooth;width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
@@ -70,7 +70,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 </style>
 
 <style id="testWeekStyles">
-  #mobileNavShell{padding:8px;margin-bottom:9px;border-radius:0 0 14px 14px}
+  #mobileNavShell{position:sticky;top:0;z-index:40;padding:8px;margin:-14px -14px 9px;border-radius:0 0 14px 14px;background:#fff;box-shadow:0 2px 10px #10182822}
   .app-nav{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;overflow:visible!important;padding:0!important}
   .app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none!important}
   .app-nav button{min-height:40px;padding:8px 5px;white-space:nowrap}
@@ -99,8 +99,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .service-callout{background:#fff8df;border:1px solid #f2d487;border-radius:12px;padding:11px;margin:10px 0}
   @media(max-width:760px){
     header{position:fixed;top:0;left:0;right:0;z-index:40;padding-top:env(safe-area-inset-top)}.header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
-    #appView{padding-top:calc(var(--header-height) + var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:var(--header-height);z-index:39;margin:0;padding:6px 10px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
-    #authView{padding-top:70px}.app-nav{border-radius:0!important}
+    #appView{padding-top:calc(var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:0;z-index:40;margin:0;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
+    #authView{padding-top:20px}.app-nav{border-radius:0!important}
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
     .today-primary .item{padding:8px}
     .modal{top:var(--modal-top,0);height:var(--modal-available-height,100dvh);align-items:stretch;padding:0;background:#fff}
@@ -113,13 +113,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 </style>
 </head>
 <body>
-<header>
-  <div class="header-inner">
-    <div><div class="brand">ASP Manager</div><div class="sub">Adam Stapley Plumbing · v0.7 Daily Driver</div></div>
-    <div id="userArea" class="user-area hidden"><span id="userEmail" class="user-email"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
-  </div>
-</header>
-
 <div id="authView" class="wrap hidden">
   <div class="card login">
     <form id="loginForm" autocomplete="on" onsubmit="event.preventDefault();signIn()">
@@ -291,7 +284,7 @@ function syncFixedChromeHeights(){
   document.documentElement.style.setProperty('--modal-top',((viewport?.offsetTop||0)+(isMobile?headerHeight+navHeight:0))+'px');
   document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-(isMobile?headerHeight+navHeight:0))+'px');
 }
-new ResizeObserver(syncFixedChromeHeights).observe(document.querySelector('header'));
+const appHeader=document.querySelector('header');if(appHeader)new ResizeObserver(syncFixedChromeHeights).observe(appHeader);
 new ResizeObserver(syncFixedChromeHeights).observe($('mobileNavShell'));
 addEventListener('orientationchange',()=>setTimeout(syncFixedChromeHeights,100));
 function ensureActiveFieldVisible(behavior='auto'){
@@ -424,8 +417,8 @@ async function signOut(){if(sb)await sb.auth.signOut()}
 
 function setLoggedIn(sessionUser){
   user=sessionUser||null;
-  authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);$('userArea').classList.toggle('hidden',!user);
-  $('userEmail').textContent=user?.email||'';
+  authView.classList.toggle('hidden',!!user);appView.classList.toggle('hidden',!user);$('userArea')?.classList.toggle('hidden',!user);
+  if($('userEmail'))$('userEmail').textContent=user?.email||'';
 }
 if(sb)sb.auth.onAuthStateChange((_,session)=>{
   setLoggedIn(session?.user);
