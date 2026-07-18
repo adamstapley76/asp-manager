@@ -66,7 +66,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .sync-pill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 9px;background:#ecfdf3;color:#067647;white-space:nowrap}
   .sync-pill.pending{background:#fffaeb;color:#b54708}.sync-pill.error{background:#fef3f2;color:#b42318}
   .sync-toast{position:fixed;left:12px;right:12px;bottom:12px;z-index:80;padding:11px 13px;border-radius:12px;background:#10263f;color:white;display:none;text-align:center;font-weight:700}.sync-toast.on{display:block}.sync-toast.error{background:#912018}
-  @media(max-width:760px){.app-nav{display:grid!important;grid-template-columns:1fr 1fr 1fr 1fr;position:sticky;top:58px;z-index:15;background:#fff;padding:6px;border-radius:12px;overflow:visible}.app-nav button{padding:8px 5px;font-size:12px;min-height:38px}.app-nav #navDiary,.app-nav #navJobs,.app-nav #navDocuments,.app-nav #navVan{display:none}.more-grid{grid-template-columns:1fr 1fr}.job-quick a,.job-quick button{font-size:11px;padding:7px 8px}.card{margin-bottom:9px}}
+  @media(max-width:760px){.app-nav{display:grid!important;grid-template-columns:repeat(5,1fr);position:sticky;top:58px;z-index:15;background:#fff;padding:6px;border-radius:12px;overflow:visible}.app-nav button{padding:8px 5px;font-size:12px;min-height:38px}.app-nav #navIdea,.app-nav #navDiary,.app-nav #navJobs,.app-nav #navVan{display:none}.more-grid{grid-template-columns:1fr 1fr}.job-quick a,.job-quick button{font-size:11px;padding:7px 8px}.card{margin-bottom:9px}}
 </style>
 
 <style id="testWeekStyles">
@@ -99,7 +99,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   .service-callout{background:#fff8df;border:1px solid #f2d487;border-radius:12px;padding:11px;margin:10px 0}
   @media(max-width:760px){
     .app-nav{grid-template-columns:repeat(5,1fr)}
-    .app-nav #navDocuments{display:none!important}
+    .app-nav #navIdea{display:none!important}
     header{position:fixed;top:0;left:0;right:0;z-index:40;padding-top:env(safe-area-inset-top)}.header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
     #appView{padding-top:calc(var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:0;z-index:40;margin:0;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
     #authView{padding-top:20px}.app-nav{border-radius:0!important}
@@ -140,7 +140,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <button id="navIdea" class="light" onclick="openIdea()">+ Idea</button>
       <button id="navDiary" class="light" onclick="showPage('diary')">Diary</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
-      <button id="navDocuments" class="light" onclick="showPage('documents')">Money</button>
+      <button id="navDocuments" class="light" onclick="showPage('documents')">Quotes</button>
       <button id="navVan" class="light" onclick="showPage('van')">Van</button>
     </nav>
   </div>
