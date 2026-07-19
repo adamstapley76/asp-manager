@@ -161,9 +161,15 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
     const sales = await ensureSalesSetup(admin, linkedCustomer.connection)
     const lines = Array.isArray(document.line_items) ? document.line_items.filter((line: any) => text(line.description) || Number(line.unit_price)) : []
     if (!lines.length) throw new Error('Add at least one invoice line before syncing.')
+    const documentNumber = text(document.document_number)
+    if (!documentNumber) throw new Error('This invoice needs an invoice number before it can sync to QuickBooks.')
+    const existingInvoice = await queryQbo(admin, sales.connection, `select * from Invoice where DocNumber = ${quote(documentNumber)}`)
+    if (existingInvoice.body?.QueryResponse?.Invoice?.[0]?.Id) {
+      throw new Error(`QuickBooks already has invoice number ${documentNumber}. Change the ASP Manager invoice number before syncing; nothing was created.`)
+    }
     const payload = {
       CustomerRef: { value: linkedCustomer.id },
-      DocNumber: text(document.document_number),
+      DocNumber: documentNumber,
       TxnDate: text(document.issue_date),
       DueDate: text(document.due_date) || undefined,
       CustomerMemo: text(document.notes) ? { value: text(document.notes) } : undefined,
@@ -172,7 +178,7 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
         SalesItemLineDetail: { ItemRef: { value: sales.itemId }, Qty: Number(line.quantity || 0), UnitPrice: Number(line.unit_price || 0), TaxCodeRef: { value: sales.taxCodeId } },
       })),
     }
-    const created = await qboRequest(admin, sales.connection, '/invoice?minorversion=75', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+    const created = await qboRequest(admin, existingInvoice.connection, '/invoice?minorversion=75', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
     const invoiceId = text(created.body?.Invoice?.Id)
     if (!invoiceId) throw new Error('QuickBooks did not return an invoice ID.')
     const now = new Date().toISOString()

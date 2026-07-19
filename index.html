@@ -984,12 +984,22 @@ function openNewCustomer(){
   <div class="field"><label>Notes</label><textarea id="cNotes" autocapitalize="sentences" autocorrect="on" spellcheck="true"></textarea></div>
   <button class="gold" style="width:100%" onclick="saveNewCustomer()">Save customer</button>`);enableAddressAutocompleteSoon('cAddress','cPostcode');
 }
+async function createCustomerRecord(payload,local=tempId()){
+  if(!isOnline()){
+    const record={...payload,id:local,created_at:new Date().toISOString()};
+    customers.push(record);queueOperation('customers','insert',payload,local);renderAll();
+    return record;
+  }
+  const {data,error}=await sb.from('customers').insert(payload).select().single();
+  if(error)throw error;
+  await loadAll();
+  return data;
+}
 async function saveNewCustomer(){
   const name=$('cName').value.trim();if(!name)return alert('Enter the customer name.');
   const serviceDate=$('cServiceDate').value;const local=tempId();
   const payload={owner_id:user.id,name,address:$('cAddress').value.trim(),postcode:$('cPostcode').value.trim().toUpperCase(),phone:$('cPhone').value.trim(),email:$('cEmail').value.trim(),boiler_make_model:$('cBoiler').value.trim(),notes:$('cNotes').value.trim(),status:'active',service_count:serviceDate?1:0,last_service:serviceDate||null,next_due:serviceDate?addYear(serviceDate):null};
-  if(!isOnline()){const record={...payload,id:local,created_at:new Date().toISOString()};customers.push(record);queueOperation('customers','insert',payload,local);renderAll();closeModal();openCustomer(local);return}
-  const {data,error}=await sb.from('customers').insert(payload).select().single();if(error)return alert(error.message);await loadAll();closeModal();if(data)openCustomer(data.id)
+  try{const data=await createCustomerRecord(payload,local);closeModal();if(data)openCustomer(data.id)}catch(error){alert(error.message||'Could not save this customer. Please try again.')}
 }
 function editCustomer(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
@@ -1364,7 +1374,7 @@ function openNewDocument(type='quote',jobId='',customerId=''){
   const job=jobs.find(j=>j.id===jobId),resolvedCustomer=customerId||job?.customer_id||'',defaultAmount=job?.quoted_amount??'',defaultTitle=job?.title||'',due=type==='invoice'?addDays(today(),14):addDays(today(),30);
   lineCounter=0;
   show(`<div class="head"><div><h2>New ${documentTypeLabel(type).toLowerCase()}</h2><div class="meta">Linked to a customer and optionally a job.</div></div><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="row"><div class="field"><label>Customer</label><select id="dCustomer" onchange="refreshDocumentJobs()">${customerOptions(resolvedCustomer)}</select></div><div class="field"><label>Linked job</label><select id="dJob" onchange="fillDocumentFromJob()">${jobOptions(jobId,resolvedCustomer)}</select></div></div>
+  <div class="row"><div class="field"><label>Customer</label><div class="row" style="grid-template-columns:1fr auto;gap:8px"><select id="dCustomer" onchange="refreshDocumentJobs()">${customerOptions(resolvedCustomer)}</select><button type="button" class="light" onclick="toggleDocumentCustomerForm()">+ New customer</button></div><div id="documentCustomerForm" class="inline-create hidden" style="margin-top:10px"><div class="section-title" style="margin-top:0"><h3>New customer</h3><button type="button" class="light" onclick="toggleDocumentCustomerForm()">Cancel</button></div><div class="row"><div class="field"><label>Name *</label><input id="documentCustomerName" placeholder="Customer name"></div><div class="field"><label>Phone</label><input id="documentCustomerPhone" type="tel" placeholder="Optional"></div></div><div class="row"><div class="field"><label>Address</label><input id="documentCustomerAddress" placeholder="Optional"></div><div class="field"><label>Postcode</label><input id="documentCustomerPostcode" placeholder="Optional"></div></div><div class="field"><label>Email</label><input id="documentCustomerEmail" type="email" placeholder="Optional"></div><button id="saveDocumentCustomerBtn" type="button" class="primary" onclick="saveDocumentCustomer()">Add customer</button></div></div><div class="field"><label>Linked job</label><select id="dJob" onchange="fillDocumentFromJob()">${jobOptions(jobId,resolvedCustomer)}</select></div></div>
   <div class="row"><div class="field"><label>${documentTypeLabel(type)} number</label><input id="dNumber" value="${esc(nextDocumentNumber(type))}"></div><div class="field"><label>Status</label><select id="dStatus">${documentStatusOptions(type,'draft')}</select></div></div>
   <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(defaultTitle)}" placeholder="e.g. Replace boiler"></div>
   <div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${today()}"></div><div class="field"><label>${type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${due}"></div></div>
@@ -1376,6 +1386,23 @@ function openNewDocument(type='quote',jobId='',customerId=''){
   addDocumentLine(defaultTitle,1,defaultAmount);updateDocumentTotals()
 }
 function refreshDocumentJobs(){const customerId=$('dCustomer').value;$('dJob').innerHTML=jobOptions('',customerId)}
+function toggleDocumentCustomerForm(){
+  const form=$('documentCustomerForm');if(!form)return;
+  form.classList.toggle('hidden');
+  if(!form.classList.contains('hidden'))$('documentCustomerName')?.focus();
+}
+async function saveDocumentCustomer(){
+  const name=$('documentCustomerName')?.value.trim();if(!name)return alert('Add the customer name first.');
+  const button=$('saveDocumentCustomerBtn');if(button){button.disabled=true;button.textContent='Adding…'}
+  const payload={owner_id:user.id,name,address:$('documentCustomerAddress')?.value.trim()||'',postcode:$('documentCustomerPostcode')?.value.trim().toUpperCase()||'',phone:$('documentCustomerPhone')?.value.trim()||'',email:$('documentCustomerEmail')?.value.trim()||'',boiler_make_model:'',notes:'',status:'active',service_count:0,last_service:null,next_due:null};
+  try{
+    const customer=await createCustomerRecord(payload);
+    const select=$('dCustomer');
+    if(select){select.innerHTML=customerOptions(customer.id);select.value=customer.id;refreshDocumentJobs()}
+    $('documentCustomerForm')?.classList.add('hidden');
+  }catch(error){alert(error.message||'Could not add this customer. Please try again.')}
+  finally{if(button){button.disabled=false;button.textContent='Add customer'}}
+}
 function fillDocumentFromJob(){const job=jobs.find(j=>j.id===$('dJob').value);if(!job)return;if(job.customer_id){$('dCustomer').value=job.customer_id}if(!$('dTitle').value)$('dTitle').value=job.title||'';const first=document.querySelector('#dLines .line-row');if(first&&!first.querySelector('.line-desc').value)first.querySelector('.line-desc').value=job.title||'';if(first&&!first.querySelector('.line-price').value&&job.quoted_amount!=null)first.querySelector('.line-price').value=job.quoted_amount;updateDocumentTotals()}
 function addDocumentLine(description='',quantity=1,unitPrice=''){
   const holder=$('dLines');if(!holder)return;const id=++lineCounter;
