@@ -219,6 +219,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openAiReadiness()">AI readiness</button>
         <button class="light" onclick="openArchivedRecords()">Archived records</button>
         <button class="light" onclick="openSystemHealth()">System health</button>
+        <button class="light" onclick="openDevelopmentItemForm()">Report screenshot</button>
         <button class="light" onclick="openDevelopmentLog()">Development</button>
       </div>
     </div>
@@ -1876,7 +1877,7 @@ function openDevelopmentLog(){
 }
 function setDevelopmentView(view){developmentView=view;openDevelopmentLog()}
 function openDevelopmentItemForm(){
-  show(`<div class="head"><div><h2>Add development note</h2><div class="meta">Private to your ASP Manager account.</div></div><button class="light" onclick="openDevelopmentLog()">Back</button></div><div class="field"><label for="developmentTitle">What needs attention?</label><input id="developmentTitle" maxlength="160" placeholder="e.g. Quote screen on iPhone"></div><div class="field"><label for="developmentNotes">Notes</label><textarea id="developmentNotes" rows="5" placeholder="What happened, where it happened, and what you would like changed."></textarea></div><div class="field"><label for="developmentScreenshot">Screenshot (optional)</label><input id="developmentScreenshot" type="file" accept="image/jpeg,image/png,image/webp"><div class="meta">Images are resized before upload to keep the log mobile-friendly.</div></div><button class="gold" style="width:100%" onclick="saveDevelopmentItem()">Save development note</button>`);
+  show(`<div class="head"><div><h2>Report screenshot</h2><div class="meta">Choose the screenshot you have just taken, then add a short note.</div></div><button class="light" onclick="openDevelopmentLog()">Log</button></div><div class="field"><label for="developmentTitle">What needs attention?</label><input id="developmentTitle" maxlength="160" placeholder="e.g. Quote screen on iPhone"></div><div class="field"><label for="developmentNotes">Notes</label><textarea id="developmentNotes" rows="5" placeholder="What happened, where it happened, and what you would like changed."></textarea></div><div class="field"><label for="developmentScreenshot">Screenshot</label><input id="developmentScreenshot" type="file" accept="image/jpeg,image/png,image/webp"><div class="meta">Images are resized before upload to keep the log mobile-friendly.</div></div><div class="notice"><strong>Then tell me</strong><div class="meta">Save the report, then say “check the Development log” in this chat.</div></div><button class="gold" style="width:100%" onclick="saveDevelopmentItem()">Save report</button>`);
   setTimeout(()=>$('developmentTitle')?.focus(),50);
 }
 async function compressDevelopmentScreenshot(file){
