@@ -27,13 +27,11 @@ Deno.serve(async (request) => {
 
   const customer = Array.isArray(document.customers) ? document.customers[0] : document.customers
   if (!document.email_viewed_at) {
-    const now = new Date().toISOString()
-    await admin.from('documents').update({ email_viewed_at: now, updated_at: now }).eq('id', document.id)
     const apiKey = Deno.env.get('RESEND_API_KEY')
     if (apiKey) {
       const { data: owner } = await admin.auth.admin.getUserById(document.owner_id)
       if (owner?.user?.email) {
-        await fetch('https://api.resend.com/emails', {
+        const notification = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -43,6 +41,10 @@ Deno.serve(async (request) => {
             html: `<p><b>${text(customer?.name || 'A customer')}</b> viewed ${text(document.document_number)}.</p><p>Total: £${Number(document.total || 0).toFixed(2)}</p>`,
           }),
         }).catch(() => null)
+        if (notification?.ok) {
+          const now = new Date().toISOString()
+          await admin.from('documents').update({ email_viewed_at: now, updated_at: now }).eq('id', document.id).is('email_viewed_at', null)
+        }
       }
     }
   }

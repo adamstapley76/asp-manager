@@ -52,6 +52,6 @@ Deno.serve(async (request) => {
   if (!response.ok || !text(result?.id)) return new Response(JSON.stringify({ error: text(result?.message) || 'Email provider could not send the message.' }), { status: 400, headers: corsHeaders })
 
   const now = new Date().toISOString()
-  await admin.from('documents').update({ status: document.status === 'draft' ? 'sent' : document.status, sent_at: now, email_sent_at: now, email_sent_to: text(customer.email), email_provider_id: text(result.id), updated_at: now }).eq('id', document.id)
+  await admin.from('documents').update({ status: document.status === 'draft' ? 'sent' : document.status, sent_at: now, email_sent_at: now, email_sent_to: text(customer.email), email_provider_id: text(result.id), email_viewed_at: null, updated_at: now }).eq('id', document.id)
   return new Response(JSON.stringify({ sent: true }), { headers: corsHeaders })
 })
