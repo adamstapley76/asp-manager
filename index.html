@@ -150,6 +150,11 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="openNewMenu()">+ New</button></div>
     </div>
 
+    <div id="acceptedQuotesCard" class="card compact-section hidden">
+      <div class="section-title"><div><h2>Quotes accepted</h2><div class="meta">Customers are ready for the next step.</div></div><button class="light" onclick="showPage('documents');setDocumentFilter('accepted')">View all</button></div>
+      <div id="acceptedQuotesList" class="list"></div>
+    </div>
+
     <div class="card today-card today-primary">
       <div class="section-title"><h2>Today's jobs</h2><button class="light" onclick="openQuickDiaryEntry()">+ Quick</button></div>
       <div id="todayJobs" class="list"></div>
@@ -254,6 +259,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="toolbar"><input id="documentSearch" placeholder="Search customer, number, title or job"><button class="navy" onclick="renderDocuments()">Search</button></div>
       <div id="documentFilters" class="filter-row">
         <button class="light active" data-filter="open" onclick="setDocumentFilter('open')">Open</button>
+        <button class="light" data-filter="accepted" onclick="setDocumentFilter('accepted')">Accepted</button>
         <button class="light" data-filter="quotes" onclick="setDocumentFilter('quotes')">Quotes</button>
         <button class="light" data-filter="invoices" onclick="setDocumentFilter('invoices')">Invoices</button>
         <button class="light" data-filter="paid" onclick="setDocumentFilter('paid')">Paid</button>
@@ -638,8 +644,12 @@ function dashboardJobCard(job,mode='today'){
 }
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
-  const payment=document.type==='invoice'?` · ${esc(invoicePaymentLabel(document))}`:'';
-  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span>${payment}</div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button></div></div>`;
+  const balance=document.type==='invoice'?invoiceBalance(document):0,payment=document.type==='invoice'?` · ${esc(invoicePaymentLabel(document))}`:'';
+  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span>${payment}</div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button>${document.type==='invoice'&&balance>0?`<button class="light" onclick="recordInvoicePayment('${document.id}')">Part payment</button><button class="gold" onclick="markInvoiceFullyPaid('${document.id}')">Fully paid & sync</button>`:''}</div></div>`;
+}
+function acceptedQuoteCard(document){
+  const customer=documentCustomer(document),job=documentJob(document),acceptedDate=document.accepted_at?displayDate(document.accepted_at):'Recently';
+  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||'Accepted quote')}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b> · Accepted ${esc(acceptedDate)} · <span class="price">${esc(money(document.total)||'£0.00')}</span></div><div class="meta">${job?`Ready to book: ${esc(job.title||'Linked job')}`:'Open the quote to link it to a job before booking it into the diary.'}</div></div><div class="item-actions"><button class="light" onclick="openDocument('${document.id}')">Open quote</button><button class="light" onclick="convertQuoteToInvoice('${document.id}')">Create invoice</button><button class="gold" onclick="createQuoteDepositInvoice('${document.id}')">50% deposit</button>${job?`<button class="gold" onclick="openScheduleReturn('${job.id}','book')">Book diary</button>`:''}</div></div>`;
 }
 
 function dashboardUpcomingDate(openJobs){
@@ -664,6 +674,7 @@ function renderDashboard(){
   const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const workQueue=workQueueJobs();
+  const acceptedQuotes=documents.filter(document=>document.type==='quote'&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
   const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
@@ -673,6 +684,8 @@ function renderDashboard(){
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
   if($('workQueueMeta'))$('workQueueMeta').textContent=workQueue.length?`${workQueue.length} job${workQueue.length===1?'':'s'} waiting to be booked into the diary.`:'Every open job is booked into the diary.';
   if($('pipelinePreview'))$('pipelinePreview').innerHTML=workQueue.map(dashboardQueueJobCard).join('')||'<div class="empty">Every open job is booked into the diary.</div>';
+  if($('acceptedQuotesCard'))$('acceptedQuotesCard').classList.toggle('hidden',!acceptedQuotes.length);
+  if($('acceptedQuotesList'))$('acceptedQuotesList').innerHTML=acceptedQuotes.slice(0,3).map(acceptedQuoteCard).join('');
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
@@ -800,7 +813,8 @@ function setDocumentFilter(value){documentFilter=value;document.querySelectorAll
 function renderDocuments(){
   if(!documentsReady){$('documentResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.3.sql</b> in Supabase to enable Quotes & invoices.</div>';return}
   const q=($('documentSearch')?.value||'').trim().toLowerCase();let list=[...documents];
-  if(documentFilter==='open')list=list.filter(d=>!['accepted','declined','paid','void'].includes(d.status));
+  if(documentFilter==='open')list=list.filter(d=>!['declined','paid','void'].includes(d.status));
+  else if(documentFilter==='accepted')list=list.filter(d=>d.type==='quote'&&d.status==='accepted');
   else if(documentFilter==='quotes')list=list.filter(d=>d.type==='quote');
   else if(documentFilter==='invoices')list=list.filter(d=>d.type==='invoice');
   else if(documentFilter==='paid')list=list.filter(d=>d.status==='paid');
@@ -1379,9 +1393,10 @@ function jobOptions(selected='',customerId=''){
 function openNewDocument(type='quote',jobId='',customerId=''){
   if(!documentsReady)return show(`<div class="head"><h2>Quotes & invoices setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.3.sql first.</strong>Open Supabase → SQL Editor → New snippet, paste the file contents and press Run.</div>`);
   const job=jobs.find(j=>j.id===jobId),resolvedCustomer=customerId||job?.customer_id||'',defaultAmount=job?.quoted_amount??'',defaultTitle=job?.title||'',due=type==='invoice'?addDays(today(),14):addDays(today(),30);
+  const customer=customers.find(item=>item.id===resolvedCustomer);
   lineCounter=0;
   show(`<div class="head"><div><h2>New ${documentTypeLabel(type).toLowerCase()}</h2><div class="meta">Linked to a customer and optionally a job.</div></div><button class="light" onclick="closeModal()">Close</button></div>
-  <div class="row"><div class="field"><label>Customer</label><div class="row" style="grid-template-columns:1fr auto;gap:8px"><select id="dCustomer" onchange="refreshDocumentJobs()">${customerOptions(resolvedCustomer)}</select><button type="button" class="light" onclick="toggleDocumentCustomerForm()">+ New customer</button></div><div id="documentCustomerForm" class="inline-create hidden" style="margin-top:10px"><div class="section-title" style="margin-top:0"><h3>New customer</h3><button type="button" class="light" onclick="toggleDocumentCustomerForm()">Cancel</button></div><div class="row"><div class="field"><label>Name *</label><input id="documentCustomerName" placeholder="Customer name"></div><div class="field"><label>Phone</label><input id="documentCustomerPhone" type="tel" placeholder="Optional"></div></div><div class="row"><div class="field"><label>Address</label><input id="documentCustomerAddress" placeholder="Optional"></div><div class="field"><label>Postcode</label><input id="documentCustomerPostcode" placeholder="Optional"></div></div><div class="field"><label>Email</label><input id="documentCustomerEmail" type="email" placeholder="Optional"></div><button id="saveDocumentCustomerBtn" type="button" class="primary" onclick="saveDocumentCustomer()">Add customer</button></div></div><div class="field"><label>Linked job</label><select id="dJob" onchange="fillDocumentFromJob()">${jobOptions(jobId,resolvedCustomer)}</select></div></div>
+  <div class="row"><div class="field"><label>Customer</label><input id="dCustomer" type="hidden" value="${esc(resolvedCustomer)}"><div class="row" style="grid-template-columns:1fr auto;gap:8px"><input id="dCustomerSearch" autocomplete="off" autocapitalize="words" placeholder="Search name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderDocumentCustomerSearch()"><button type="button" class="light" onclick="toggleDocumentCustomerForm()">+ New customer</button></div><div id="dCustomerResults" class="customer-search-results"></div><div id="dSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="documentCustomerForm" class="inline-create hidden" style="margin-top:10px"><div class="section-title" style="margin-top:0"><h3>New customer</h3><button type="button" class="light" onclick="toggleDocumentCustomerForm()">Cancel</button></div><div class="row"><div class="field"><label>Name *</label><input id="documentCustomerName" placeholder="Customer name"></div><div class="field"><label>Phone</label><input id="documentCustomerPhone" type="tel" placeholder="Optional"></div></div><div class="row"><div class="field"><label>Address</label><input id="documentCustomerAddress" placeholder="Optional"></div><div class="field"><label>Postcode</label><input id="documentCustomerPostcode" placeholder="Optional"></div></div><div class="field"><label>Email</label><input id="documentCustomerEmail" type="email" placeholder="Optional"></div><button id="saveDocumentCustomerBtn" type="button" class="primary" onclick="saveDocumentCustomer()">Add customer</button></div></div><div class="field"><label>Linked job</label><select id="dJob" onchange="fillDocumentFromJob()">${jobOptions(jobId,resolvedCustomer)}</select></div></div>
   <div class="row"><div class="field"><label>${documentTypeLabel(type)} number</label><input id="dNumber" value="${esc(nextDocumentNumber(type))}"></div><div class="field"><label>Status</label><select id="dStatus">${documentStatusOptions(type,'draft')}</select></div></div>
   <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(defaultTitle)}" placeholder="e.g. Replace boiler"></div>
   <div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${today()}"></div><div class="field"><label>${type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${due}"></div></div>
@@ -1390,13 +1405,27 @@ function openNewDocument(type='quote',jobId='',customerId=''){
   <div id="dTotals" class="totals"></div>
   <div class="field"><label>Customer-facing notes</label><textarea id="dNotes" placeholder="Optional terms, exclusions or payment note"></textarea></div>
   <button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${type}')">Save ${documentTypeLabel(type).toLowerCase()}</button>`);
-  addDocumentLine(defaultTitle,1,defaultAmount);updateDocumentTotals()
+  addDocumentLine(defaultTitle,1,defaultAmount);if(customer)selectDocumentCustomer(customer.id,false);updateDocumentTotals()
 }
-function refreshDocumentJobs(){const customerId=$('dCustomer').value;$('dJob').innerHTML=jobOptions('',customerId)}
+function renderDocumentCustomerSearch(){
+  const box=$('dCustomerResults'),query=($('dCustomerSearch')?.value||'').trim();if(!box)return;
+  if(!query){box.innerHTML='';return}
+  const matches=matchingCustomers(query);
+  box.innerHTML=customerPickHtml(matches,'selectDocumentCustomer')+`<button type="button" class="customer-pick" onclick="toggleDocumentCustomerForm()"><strong>Create new customer: ${esc(query)}</strong><span class="meta">Add them here without leaving this document.</span></button>`;
+}
+function selectDocumentCustomer(id,updateSearch=true){
+  const customer=customers.find(item=>item.id===id);if(!customer)return;
+  if($('dCustomer'))$('dCustomer').value=id;
+  if(updateSearch&&$('dCustomerSearch'))$('dCustomerSearch').value=customer.name||'';
+  if($('dCustomerResults'))$('dCustomerResults').innerHTML='';
+  if($('dSelectedCustomer')){$('dSelectedCustomer').classList.remove('hidden');$('dSelectedCustomer').innerHTML=`<strong>${esc(customer.name)}</strong><div class="meta">${esc([customer.address,customer.postcode,customer.phone].filter(Boolean).join(' · '))}</div>`}
+  refreshDocumentJobs();
+}
+function refreshDocumentJobs(){const customerId=$('dCustomer')?.value||'',selectedJob=$('dJob')?.value||'';if($('dJob'))$('dJob').innerHTML=jobOptions(selectedJob,customerId)}
 function toggleDocumentCustomerForm(){
   const form=$('documentCustomerForm');if(!form)return;
   form.classList.toggle('hidden');
-  if(!form.classList.contains('hidden'))$('documentCustomerName')?.focus();
+  if(!form.classList.contains('hidden')){if($('documentCustomerName'))$('documentCustomerName').value=($('dCustomerSearch')?.value||'').trim();$('documentCustomerName')?.focus()}
 }
 async function saveDocumentCustomer(){
   const name=$('documentCustomerName')?.value.trim();if(!name)return alert('Add the customer name first.');
@@ -1404,13 +1433,12 @@ async function saveDocumentCustomer(){
   const payload={owner_id:user.id,name,address:$('documentCustomerAddress')?.value.trim()||'',postcode:$('documentCustomerPostcode')?.value.trim().toUpperCase()||'',phone:$('documentCustomerPhone')?.value.trim()||'',email:$('documentCustomerEmail')?.value.trim()||'',boiler_make_model:'',notes:'',status:'active',service_count:0,last_service:null,next_due:null};
   try{
     const customer=await createCustomerRecord(payload);
-    const select=$('dCustomer');
-    if(select){select.innerHTML=customerOptions(customer.id);select.value=customer.id;refreshDocumentJobs()}
+    selectDocumentCustomer(customer.id);
     $('documentCustomerForm')?.classList.add('hidden');
   }catch(error){alert(error.message||'Could not add this customer. Please try again.')}
   finally{if(button){button.disabled=false;button.textContent='Add customer'}}
 }
-function fillDocumentFromJob(){const job=jobs.find(j=>j.id===$('dJob').value);if(!job)return;if(job.customer_id){$('dCustomer').value=job.customer_id}if(!$('dTitle').value)$('dTitle').value=job.title||'';const first=document.querySelector('#dLines .line-row');if(first&&!first.querySelector('.line-desc').value)first.querySelector('.line-desc').value=job.title||'';if(first&&!first.querySelector('.line-price').value&&job.quoted_amount!=null)first.querySelector('.line-price').value=job.quoted_amount;updateDocumentTotals()}
+function fillDocumentFromJob(){const job=jobs.find(j=>j.id===$('dJob').value);if(!job)return;if(job.customer_id){selectDocumentCustomer(job.customer_id)}if(!$('dTitle').value)$('dTitle').value=job.title||'';const first=document.querySelector('#dLines .line-row');if(first&&!first.querySelector('.line-desc').value)first.querySelector('.line-desc').value=job.title||'';if(first&&!first.querySelector('.line-price').value&&job.quoted_amount!=null)first.querySelector('.line-price').value=job.quoted_amount;updateDocumentTotals()}
 function addDocumentLine(description='',quantity=1,unitPrice=''){
   const holder=$('dLines');if(!holder)return;const id=++lineCounter;
   holder.insertAdjacentHTML('beforeend',`<div class="line-row" data-line="${id}"><div class="field"><label>Description</label><input class="line-desc" type="text" inputmode="text" autocapitalize="sentences" value="${esc(description)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Qty</label><input class="line-qty" type="number" inputmode="decimal" step="any" value="${esc(quantity)}" oninput="updateDocumentTotals()"></div><div class="field"><label>Unit £ ex VAT</label><input class="line-price" type="number" inputmode="decimal" step="any" value="${esc(unitPrice)}" oninput="updateDocumentTotals()"></div><button class="danger" title="Remove line" onclick="this.closest('.line-row').remove();updateDocumentTotals()">×</button></div>`)
@@ -1452,7 +1480,7 @@ async function documentEmailRequest(payload){const {data:{session}}=await sb.aut
 async function sendDocument(id){
   const document=documents.find(item=>item.id===id);if(!document)return;
   const customer=documentCustomer(document);if(!customer?.email)return alert('Add the customer’s email address before sending this document.');if(!confirm(`Email ${documentNumber(document)} to ${customer.email}?`))return;
-  try{await documentEmailRequest({document_id:id,view_url:customerDocumentPageUrl});await loadAll();openDocument(id);alert(`${document.type==='quote'?'Quote':'Invoice'} emailed to ${customer.email}. You’ll receive an email when they first open it.`)}catch(error){alert(error.message||error)}
+  try{await documentEmailRequest({document_id:id,view_url:customerDocumentPageUrl});if(document.type==='invoice'&&document.status!=='sent'){const {error}=await sb.from('documents').update({status:'sent',sent_at:document.sent_at||new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);if(error)console.error('Invoice sent status could not be updated',error)}await loadAll();openDocument(id);alert(`${document.type==='quote'?'Quote':'Invoice'} emailed to ${customer.email}. You’ll receive an email when they first open it.`)}catch(error){alert(error.message||error)}
 }
 async function markDocumentSent(id){await setDocumentStatus(id,'sent',true)}
 function recordInvoicePayment(id,full=false){
@@ -1513,18 +1541,23 @@ async function setDocumentStatus(id,status,reopen=true){
 }
 async function convertQuoteToInvoice(id){
   const q=documents.find(x=>x.id===id);if(!q||q.type!=='quote')return;if(!confirm('Create an invoice from this quote?'))return;
-  const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title:q.title,issue_date:today(),due_date:addDays(today(),14),line_items:q.line_items,subtotal:q.subtotal,vat_rate:q.vat_rate,vat_amount:q.vat_amount,total:q.total,notes:q.notes};
+  const deposit=quoteDepositInvoice(q);if(deposit&&deposit.status!=='paid')return alert('This quote has a 50% deposit request. Mark that deposit as fully paid before creating the remaining-balance invoice.');
+  const isBalance=Boolean(deposit),lines=isBalance?quoteInvoiceLines(q,.5):(q.line_items||[]),figures=isBalance?calculateFigures(lines,q.vat_rate):{subtotal:q.subtotal,vat:q.vat_amount,total:q.total},title=isBalance?`Balance due — ${q.title||documentNumber(q)}`:q.title,notes=isBalance?[q.notes,'This is the remaining balance after the 50% deposit.'].filter(Boolean).join('\n\n'):q.notes;
+  const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title,issue_date:today(),due_date:addDays(today(),14),line_items:lines,subtotal:figures.subtotal,vat_rate:q.vat_rate,vat_amount:figures.vat,total:figures.total,notes};
   const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);
   const {error:quoteError}=await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(quoteError)return alert(quoteError.message);
   if(q.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',q.job_id);if(jobError)return alert(jobError.message);try{await moveAcceptedQuoteJobToQueue(q.job_id)}catch(queueError){return alert(`Invoice created, but the linked job could not be moved to the work queue: ${queueError.message}`)}}
   await loadAll();openDocument(data.id)
 }
+function quoteDepositTitle(quote){return `50% deposit — ${quote.title||documentNumber(quote)}`}
+function quoteDepositInvoice(quote){return documents.find(item=>item.type==='invoice'&&item.title===quoteDepositTitle(quote)&&item.customer_id===quote.customer_id&&item.status!=='void')}
+function quoteInvoiceLines(quote,fraction=1){return (Array.isArray(quote.line_items)?quote.line_items:[]).map(line=>({...line,unit_price:Number(((Number(line.unit_price)||0)*fraction).toFixed(2))}))}
 async function createQuoteDepositInvoice(id){
   const quote=documents.find(item=>item.id===id);if(!quote||quote.type!=='quote'||quote.status!=='accepted')return;
-  const title=`50% deposit — ${quote.title||documentNumber(quote)}`,existing=documents.find(item=>item.type==='invoice'&&item.title===title&&item.customer_id===quote.customer_id&&item.status!=='void');
-  if(existing){alert('A deposit request already exists for this quote.');return openDocument(existing.id)}
+  const title=quoteDepositTitle(quote);
+  const existingDeposit=quoteDepositInvoice(quote);if(existingDeposit){alert('A deposit request already exists for this quote.');return openDocument(existingDeposit.id)}
   if(!confirm('Create an editable 50% deposit request? It will be ready for you to send when appropriate.'))return;
-  const lines=(Array.isArray(quote.line_items)?quote.line_items:[]).map(line=>({...line,unit_price:Number(((Number(line.unit_price)||0)*0.5).toFixed(2))})),figures=calculateFigures(lines,quote.vat_rate),depositNote='For larger works, a 50% deposit is requested to help secure materials and availability. Please let me know if you would prefer to discuss arrangements.';
+  const lines=quoteInvoiceLines(quote,.5),figures=calculateFigures(lines,quote.vat_rate),depositNote='For larger works, a 50% deposit is requested to help secure materials and availability. Please let me know if you would prefer to discuss arrangements.';
   const payload={owner_id:user.id,customer_id:quote.customer_id,job_id:quote.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title,issue_date:today(),due_date:addDays(today(),7),line_items:lines,subtotal:figures.subtotal,vat_rate:quote.vat_rate,vat_amount:figures.vat,total:figures.total,notes:[quote.notes,depositNote].filter(Boolean).join('\n\n')};
   const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);if(quote.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',quote.job_id);if(jobError)return alert(`Deposit request created, but the linked job could not be updated: ${jobError.message}`)}await loadAll();openDocument(data.id)
 }
