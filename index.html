@@ -278,7 +278,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],jobsReady=true,documentsReady=true,extrasReady=true,workLogsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -394,8 +394,8 @@ function queueOperation(table,operation,payload,local_id='',match={}){const q=re
 function replaceLocalIdEverywhere(oldId,newId){customers.forEach(c=>{if(c.id===oldId)c.id=newId});jobs.forEach(j=>{if(j.id===oldId)j.id=newId;if(j.customer_id===oldId)j.customer_id=newId});tasks.forEach(t=>{if(t.id===oldId)t.id=newId;if(t.customer_id===oldId)t.customer_id=newId});jobVisits.forEach(v=>{if(v.id===oldId)v.id=newId;if(v.job_id===oldId)v.job_id=newId});jobCosts.forEach(c=>{if(c.id===oldId)c.id=newId;if(c.job_id===oldId)c.job_id=newId})}
 async function syncOfflineQueue(){if(!isOnline()||!user||!sb)return;let q=readOfflineQueue();if(!q.length){updateSyncPill();return}updateSyncPill();const idMap={};try{for(const op of [...q]){let payload=JSON.parse(JSON.stringify(op.payload||{}));for(const k of ['customer_id','job_id'])if(payload[k]&&idMap[payload[k]])payload[k]=idMap[payload[k]];let result;if(op.operation==='insert')result=await sb.from(op.table).insert(payload).select().single();else if(op.operation==='update')result=await sb.from(op.table).update(payload).match(op.match);else if(op.operation==='delete')result=await sb.from(op.table).delete().match(op.match);if(result.error)throw result.error;if(op.operation==='insert'&&op.local_id&&result.data?.id){idMap[op.local_id]=result.data.id;replaceLocalIdEverywhere(op.local_id,result.data.id)}q=q.filter(x=>x.id!==op.id);writeOfflineQueue(q)}showSyncNotice('Offline work synced');await loadAll()}catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}}
 
-function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,documents,documentPayments,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
-function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];documents=cached.documents||[];documentPayments=cached.documentPayments||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
+function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,documents,documentPayments,jobDepositPayments,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
+function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];documents=cached.documents||[];documentPayments=cached.documentPayments||[];jobDepositPayments=cached.jobDepositPayments||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
 function configProblem(){
   if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey)return 'ASP Manager is not connected. Complete config.js first.';
   if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_'))return 'ASP Manager is not connected. Complete config.js first.';
@@ -459,6 +459,8 @@ async function performLoadAll(){
     if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
     const documentPaymentResult=await sb.from('document_payments').select('*').order('paid_on',{ascending:false}).order('created_at',{ascending:false});
     documentPayments=documentPaymentResult.error?[]:documentPaymentResult.data||[];
+    const depositResult=await sb.from('job_deposit_payments').select('*').order('paid_on',{ascending:false}).order('created_at',{ascending:false});
+    if(depositResult.error){jobDepositPayments=[];depositsReady=false}else{jobDepositPayments=depositResult.data||[];depositsReady=true}
     const taskResult=await sb.from('tasks').select('*').order('due_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     const stockResult=await sb.from('stock_items').select('*').order('needed',{ascending:false}).order('name',{ascending:true});
     if(taskResult.error||stockResult.error){tasks=[];stockItems=[];extrasReady=false}else{tasks=taskResult.data||[];stockItems=stockResult.data||[];extrasReady=true}
@@ -468,6 +470,7 @@ async function performLoadAll(){
     const missing=[];
     if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
     if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
+    if(!depositsReady)missing.push('<b>supabase_setup_v1.1.sql</b> for job deposits');
     if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
     if(!workLogsReady)missing.push('<b>the visits/materials SQL</b>');
     const notice=$('setupNotice');
@@ -1232,28 +1235,53 @@ function leadSourceLabel(value){return ({google_lsa:'Google LSA',google_ads:'Goo
 function billingLabel(value){return ({time_materials:'Time and materials',quoted:'Quoted / fixed price',day_rate:'Day rate',fixed_plus_extras:'Fixed price plus extras'})[value]||'Time and materials'}
 function isServiceJob(job){return String(job?.job_type||'').trim().toLowerCase()==='boiler service'}
 function payableInvoicesForJob(jobId){return documents.filter(document=>document.type==='invoice'&&document.job_id===jobId&&document.status!=='void'&&invoiceBalance(document)>0).sort((a,b)=>(a.issue_date||'').localeCompare(b.issue_date||''))}
+function jobDeposits(jobId){return jobDepositPayments.filter(payment=>payment.job_id===jobId)}
+function jobDepositTotal(jobId){return jobDeposits(jobId).reduce((sum,payment)=>sum+Number(payment.amount||0),0)}
+function unappliedJobDeposits(jobId){return jobDeposits(jobId).filter(payment=>!payment.applied_document_id)}
+function depositReceiptUrl(payment){return payment?.receipt_token?`${cfg.supabaseUrl}/functions/v1/deposit-receipt?token=${encodeURIComponent(payment.receipt_token)}`:''}
+function depositReceiptMessage(payment,customer){const first=String(customer?.name||'there').trim().split(/\s+/)[0]||'there',link=depositReceiptUrl(payment);return link?`Hi ${first}, thank you — we have received your deposit of ${money(payment.amount)} for your job. Your receipt is ready to view: ${link}`:''}
 function openJobPayment(jobId){
   const job=jobs.find(item=>item.id===jobId);if(!job)return;
   const invoices=payableInvoicesForJob(jobId),acceptedQuote=documents.find(document=>document.type==='quote'&&document.job_id===jobId&&document.status==='accepted');
+  if(!depositsReady)return alert('Job deposits need the latest database update before they can be recorded.');
+  if(!invoices.length)return recordJobDeposit(jobId);
   if(invoices.length===1)return recordInvoicePayment(invoices[0].id);
   if(invoices.length>1)return show(`<div class="head"><div><h2>Record payment</h2><div class="meta">Choose which invoice the bank payment is for.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="list">${invoices.map(invoice=>`<div class="item"><div><h3>${esc(documentNumber(invoice))} · ${esc(invoice.title||'Invoice')}</h3><div class="meta">${esc(invoicePaymentLabel(invoice))} · ${esc(money(invoiceBalance(invoice)))} remaining</div></div><div class="item-actions"><button class="light" onclick="recordInvoicePayment('${invoice.id}')">Part payment</button><button class="gold" onclick="markInvoiceFullyPaid('${invoice.id}')">Fully paid & sync</button></div></div>`).join('')}</div>`);
-  show(`<div class="head"><div><h2>Record payment</h2><div class="meta">Payments are recorded against an invoice so they can sync correctly to QuickBooks.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>No unpaid invoice is linked to this job yet.</strong>${acceptedQuote?' Create the 50% deposit request first, then record the payment and it will sync to QuickBooks.':' Create an invoice first, then record the payment against it.'}</div><div class="actions" style="margin-top:12px">${acceptedQuote?`<button class="gold" onclick="createQuoteDepositInvoice('${acceptedQuote.id}')">Create 50% deposit request</button>`:''}<button class="light" onclick="openNewDocument('invoice','${jobId}','${job.customer_id||''}')">Create invoice</button></div>`)
 }
+function recordJobDeposit(jobId){
+  const job=jobs.find(item=>item.id===jobId),customer=customers.find(item=>item.id===job?.customer_id);if(!job)return;
+  show(`<div class="head"><div><h2>Record deposit received</h2><div class="meta">${esc(job.title||'Job')} · ${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>No invoice is needed yet.</strong> This deposit will be carried into the final invoice later and deducted from the balance due. It will not sync to QuickBooks until that invoice exists.</div><div class="field"><label>Deposit amount</label><input id="jobDepositAmount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></div><div class="field"><label>Date received</label><input id="jobDepositDate" type="date" value="${today()}"></div><div class="field"><label>Note (optional)</label><input id="jobDepositNote" placeholder="e.g. Boiler materials deposit"></div><button id="saveJobDepositBtn" class="gold" style="width:100%" onclick="saveJobDeposit('${jobId}')">Save deposit & prepare receipt</button>`)
+}
+async function saveJobDeposit(jobId){
+  const job=jobs.find(item=>item.id===jobId),amount=Number($('jobDepositAmount')?.value||0);if(!job||!amount||amount<=0)return alert('Enter the deposit amount received.');
+  const button=$('saveJobDepositBtn');if(button){button.disabled=true;button.textContent='Saving…'}
+  try{const payload={owner_id:user.id,job_id:jobId,amount:Number(amount.toFixed(2)),paid_on:$('jobDepositDate')?.value||today(),method:'bank_transfer',note:$('jobDepositNote')?.value.trim()||null};const {data,error}=await sb.from('job_deposit_payments').insert(payload).select().single();if(error)throw error;await loadAll();const saved=jobDepositPayments.find(payment=>payment.id===data?.id);if(saved)return openDepositReceipt(saved.id);openJob(jobId)}catch(error){alert(error.message||'Could not record this deposit. Please try again.')}finally{if(button?.isConnected){button.disabled=false;button.textContent='Save deposit & prepare receipt'}}
+}
+function openDepositReceipt(id){
+  const payment=jobDepositPayments.find(item=>item.id===id),job=jobs.find(item=>item.id===payment?.job_id),customer=customers.find(item=>item.id===job?.customer_id);if(!payment||!job)return;
+  const link=depositReceiptUrl(payment),message=depositReceiptMessage(payment,customer),sms=ukMobileDigits(customer?.phone);show(`<div class="head"><div><h2>Deposit receipt ready</h2><div class="meta">${esc(job.title||'Job')} · ${esc(displayDate(payment.paid_on))}</div></div><button class="light" onclick="openJob('${job.id}')">Back</button></div><div class="notice success"><strong>${esc(money(payment.amount))} deposit recorded</strong><div class="meta">It will automatically reduce the final invoice when you create it.</div></div><div class="actions" style="margin-top:14px"><button class="gold" onclick="sendDepositReceipt('${payment.id}')">Email receipt</button>${whatsappBusinessUrl(customer?.phone,message)?`<button class="light" onclick="sendDepositReceiptWhatsApp('${payment.id}')">WhatsApp</button>`:''}${/^447\d{9}$/.test(sms)&&message?`<a class="btn light" href="sms:+${sms}?body=${encodeURIComponent(message)}">Text</a>`:''}<a class="btn navy" href="${esc(link)}" target="_blank" rel="noopener">View / print PDF</a></div>`)
+}
+async function sendDepositReceipt(id){
+  const payment=jobDepositPayments.find(item=>item.id===id);if(!payment)return;const job=jobs.find(item=>item.id===payment.job_id),customer=customers.find(item=>item.id===job?.customer_id);if(!customer?.email)return alert('Add the customer’s email address before sending a receipt.');if(!confirm(`Email the deposit receipt to ${customer.email}?`))return;
+  try{const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)throw new Error('Sign in again before sending email.');const response=await fetch(`${cfg.supabaseUrl}/functions/v1/deposit-receipt-email`,{method:'POST',headers:{authorization:`Bearer ${session.access_token}`,'content-type':'application/json'},body:JSON.stringify({deposit_id:id})}),result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'The receipt could not be emailed.');await loadAll();openDepositReceipt(id);alert(`Deposit receipt emailed to ${customer.email}.`)}catch(error){alert(error.message||String(error))}
+}
+function sendDepositReceiptWhatsApp(id){const payment=jobDepositPayments.find(item=>item.id===id),job=jobs.find(item=>item.id===payment?.job_id),customer=customers.find(item=>item.id===job?.customer_id),message=depositReceiptMessage(payment,customer);if(!message||!whatsappBusinessUrl(customer?.phone,message))return alert('Add a UK mobile number to this customer before sending by WhatsApp.');openWhatsAppBusiness(customer.phone,message)}
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
-  const fig=jobFigures(j),address=resolveJobAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'',activeVisit=activeVisitForJob(id);
+  const fig=jobFigures(j),address=resolveJobAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'',activeVisit=activeVisitForJob(id),deposits=jobDeposits(id),depositTotal=jobDepositTotal(id),unappliedDeposits=unappliedJobDeposits(id);
   const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}${v.end_time?`–${esc(displayTime(v.end_time))}`:''}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:v.start_time?'Visit in progress':''}${v.return_required?' · Return required':''}</div></div><div class="item-actions"><button class="light" onclick="${v.start_time&&!v.end_time?`openEditStartedVisit('${v.id}','${id}')`:`openEditVisit('${v.id}','${id}')`}">${v.start_time&&!v.end_time?'Correct start':'Edit'}</button></div></div>`).join('');
   const costRows=fig.costs.map(c=>`<tr><td>${esc(displayDate(c.cost_date))}</td><td>${esc(c.description)}</td><td class="num">${esc(money(Number(c.quantity||1)*Number(c.unit_cost||0)))}</td><td><button class="light" onclick="openEditJobCost('${c.id}','${id}')">Edit</button></td></tr>`).join('');
   show(`<div class="head"><div><h2>${esc(j.title||'Job')}</h2><div class="meta">${esc(customer?.name||'No customer linked')} · ${esc(jobStatusLabel(j.status))}</div></div><button class="light" onclick="closeModal()">Close</button></div>
   ${isServiceJob(j)?'<div class="service-callout"><b>Boiler service</b><div class="meta">Completing this job will roll the customer service record forward one year.</div></div>':''}
   <div class="detail-grid"><div class="detail"><b>Booked for</b><span>${esc(j.scheduled_date?`${displayDate(j.scheduled_date)}${j.scheduled_time?` at ${displayTime(j.scheduled_time)}`:''}`:'Not booked')}</span></div><div class="detail"><b>Address</b><span>${esc(address||'Not recorded')}</span></div><div class="detail"><b>Status</b><span>${esc(jobStatusLabel(j.status))}</span></div><div class="detail"><b>Agreed price</b><span>${esc(price?price+' + VAT':'Not recorded')}</span></div></div>
+  ${deposits.length?`<div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Deposits</h3><b>${esc(money(depositTotal))} received</b></div><div class="meta">${unappliedDeposits.length?`${esc(money(unappliedDeposits.reduce((sum,payment)=>sum+Number(payment.amount||0),0)))} will be deducted from the final invoice.`:'All deposits have been applied to an invoice.'}</div><div class="list" style="margin-top:8px">${deposits.map(payment=>`<div class="item"><div><b>${esc(money(payment.amount))}</b><div class="meta">${esc(displayDate(payment.paid_on))}${payment.note?` · ${esc(payment.note)}`:''}${payment.applied_document_id?' · Applied to invoice':' · Awaiting final invoice'}</div></div><button class="light" onclick="openDepositReceipt('${payment.id}')">Receipt</button></div>`).join('')}</div></div>`:''}
   ${j.description?`<div class="muted-box"><h3>Notes</h3><div class="meta">${esc(j.description)}</div></div>`:''}
   <div class="primary-job-actions">
     ${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
-    ${documentsReady?`<button class="gold" onclick="openJobPayment('${id}')">Record payment</button>`:''}
+    ${documentsReady?`<button class="gold" onclick="${depositsReady?`recordJobDeposit('${id}')`:`openJobPayment('${id}')`}">Record deposit</button><button class="light" onclick="openJobPayment('${id}')">Record invoice payment</button>`:''}
     ${workLogsReady&&j.status!=='completed'?(activeVisit?`<button class="navy" onclick="finishVisit('${id}')">Finish visit</button><button class="light" onclick="openEditStartedVisit('${activeVisit.id}','${id}')">Correct start</button><button class="danger" onclick="cancelStartedVisit('${activeVisit.id}','${id}')">Undo start</button>`:`<button class="navy" onclick="startVisit('${id}')">Start visit</button>`):''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':'Complete job'}</button>`:''}
     <button class="light" onclick="editJob('${id}')">Edit</button>
@@ -1454,6 +1482,16 @@ function addDocumentLine(description='',quantity=1,unitPrice=''){
 }
 function collectDocumentLines(){return [...document.querySelectorAll('#dLines .line-row')].map(row=>({description:row.querySelector('.line-desc').value.trim(),quantity:Number(row.querySelector('.line-qty').value||0),unit_price:Number(row.querySelector('.line-price').value||0)})).filter(line=>line.description||line.unit_price)}
 function updateDocumentTotals(){const lines=collectDocumentLines(),vatRate=Number($('dVat')?.value||0),fig=calculateFigures(lines,vatRate);if($('dTotals'))$('dTotals').innerHTML=`<div class="total-line"><span>Subtotal</span><b>${money(fig.subtotal)}</b></div><div class="total-line"><span>VAT (${vatRate||0}%)</span><b>${money(fig.vat)}</b></div><div class="total-line grand"><span>Total</span><span>${money(fig.total)}</span></div>`}
+async function applyJobDepositsToInvoice(invoice){
+  if(!invoice?.id||!invoice.job_id||!depositsReady||/^50% deposit\b/i.test(invoice.title||''))return 0;
+  const pending=unappliedJobDeposits(invoice.job_id);if(!pending.length)return 0;
+  const total=Number(invoice.total||0),amount=pending.reduce((sum,payment)=>sum+Number(payment.amount||0),0);if(amount>total+0.001)throw new Error(`The job has ${money(amount)} of deposits, which is more than this invoice total. Adjust the invoice or deposits before applying them.`);
+  const rows=pending.map(payment=>({owner_id:user.id,document_id:invoice.id,origin_deposit_id:payment.id,amount:Number(Number(payment.amount).toFixed(2)),paid_on:payment.paid_on,method:payment.method||'bank_transfer',note:[payment.note,'Deposit received before invoice'].filter(Boolean).join(' · ')}));
+  const {error:paymentError}=await sb.from('document_payments').insert(rows);if(paymentError)throw paymentError;
+  const {error:depositError}=await sb.from('job_deposit_payments').update({applied_document_id:invoice.id,updated_at:new Date().toISOString()}).in('id',pending.map(payment=>payment.id));if(depositError)throw depositError;
+  const status=Math.abs(total-amount)<0.01?'paid':'sent',update={status,updated_at:new Date().toISOString()};if(status==='sent')update.sent_at=new Date().toISOString();const {error:invoiceError}=await sb.from('documents').update(update).eq('id',invoice.id);if(invoiceError)throw invoiceError;
+  return pending.length;
+}
 async function saveDocument(type,id=''){
   const lines=collectDocumentLines();if(!lines.length)return alert('Add at least one line item.');const number=$('dNumber').value.trim(),title=$('dTitle').value.trim();if(!number||!title)return alert('Enter the document number and title.');
   const vatRate=Number($('dVat').value||0),fig=calculateFigures(lines,vatRate),payload={owner_id:user.id,customer_id:$('dCustomer').value||null,job_id:$('dJob').value||null,type,document_number:number,status:$('dStatus').value,title,issue_date:$('dIssue').value||today(),due_date:$('dDue').value||null,line_items:lines,subtotal:fig.subtotal,vat_rate:vatRate,vat_amount:fig.vat,total:fig.total,notes:$('dNotes').value.trim(),updated_at:new Date().toISOString()};
@@ -1467,6 +1505,7 @@ async function saveDocument(type,id=''){
     await sb.from('jobs').update(jobUpdate).eq('id',payload.job_id);
   }
   if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
+  if(type==='invoice'&&!id){try{await applyJobDepositsToInvoice(result.data)}catch(error){alert(`Invoice saved, but deposits were not applied: ${error.message||error}`)}}
   await loadAll();openDocument(result.data.id)
 }
 const customerDocumentPageUrl='https://asp-manager-documents-adamstapley.vercel.app/document.html';
@@ -1556,6 +1595,7 @@ async function convertQuoteToInvoice(id){
   const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);
   const {error:quoteError}=await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(quoteError)return alert(quoteError.message);
   if(q.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',q.job_id);if(jobError)return alert(jobError.message);try{await moveAcceptedQuoteJobToQueue(q.job_id)}catch(queueError){return alert(`Invoice created, but the linked job could not be moved to the work queue: ${queueError.message}`)}}
+  try{await applyJobDepositsToInvoice(data)}catch(error){alert(`Invoice created, but deposits were not applied: ${error.message||error}`)}
   await loadAll();openDocument(data.id)
 }
 function quoteDepositTitle(quote){return `50% deposit — ${quote.title||documentNumber(quote)}`}
