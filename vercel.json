@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/r/:token",
+      "destination": "/api/receipt?token=:token"
+    }
+  ]
+}
