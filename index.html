@@ -217,11 +217,13 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openIdeas()">Work ideas</button>
         <button class="light" onclick="openQuickBooks()">QuickBooks</button>
         <button class="light" onclick="openAiReadiness()">AI readiness</button>
+        <button class="light" onclick="openArchivedRecords()">Archived records</button>
+        <button class="light" onclick="openSystemHealth()">System health</button>
       </div>
     </div>
     <div id="backupSection" class="card">
       <div class="section-title"><div><h2>Data protection</h2><div class="meta">Your customer database matters more than the app code.</div></div></div>
-      <div class="backup-box"><strong>Download backup to this device</strong><div class="meta" style="margin:5px 0 8px">Exports customers, jobs, documents, tasks/materials, visits and expenses into one dated JSON file.</div><div class="meta" style="margin-bottom:12px">Save or copy this file to iCloud Drive, Google Drive or another secure location.</div><button class="gold" onclick="downloadBackup()">Download backup to this device</button></div>
+      <div class="backup-box"><strong>Export Business Data</strong><div class="meta" style="margin:5px 0 8px">Exports customers, jobs, documents, payments, materials, visits, costs, service history and available file references into one dated JSON file.</div><div class="meta" style="margin-bottom:12px">Save or copy this file to iCloud Drive, Google Drive or another secure location. This is your manual recovery copy.</div><button class="gold" onclick="downloadBackup()">Export Business Data</button><div id="backupStatus" class="meta" style="margin-top:8px"></div></div>
       <div class="muted-box" style="margin-top:12px"><b>Safe upgrade rule</b><div class="meta">Download a backup before any future database setup script or major structural update. Replacing index.html does not remove your Supabase data.</div></div>
     </div>
   </section>
@@ -396,8 +398,38 @@ function tempId(){return 'local-'+Date.now()+'-'+Math.random().toString(36).slic
 function showSyncNotice(message,type=''){const el=$('syncToast');if(!el)return;el.textContent=message;el.className='sync-toast on'+(type?' '+type:'');clearTimeout(window.__syncToastTimer);window.__syncToastTimer=setTimeout(()=>el.className='sync-toast',3500)}
 function updateSyncPill(error=false){const el=$('syncPill');if(!el)return;const count=readOfflineQueue().length;if(error){el.textContent='Sync problem';el.className='sync-pill error'}else if(count){el.textContent=`${count} pending`;el.className='sync-pill pending'}else{el.textContent=isOnline()?'Synced':'Offline';el.className='sync-pill'+(isOnline()?'':' pending')}}
 function queueOperation(table,operation,payload,local_id='',match={}){const q=readOfflineQueue();q.push({id:tempId(),table,operation,payload,local_id,match,created_at:new Date().toISOString()});writeOfflineQueue(q);showSyncNotice('Saved on this phone — waiting for signal');cacheSnapshot()}
+async function writeAudit(recordType,recordId,action,summary,metadata={}){
+  if(!isOnline()||!sb||!user)return;
+  const {error}=await sb.from('audit_events').insert({owner_id:user.id,record_type:recordType,record_id:recordId||null,action,summary,metadata});
+  // Never block a business action if the review-only hardening migration has not been installed yet.
+  if(error&&!/audit_events/i.test(error.message||''))console.warn('Audit event was not recorded',error);
+}
 function replaceLocalIdEverywhere(oldId,newId){customers.forEach(c=>{if(c.id===oldId)c.id=newId});jobs.forEach(j=>{if(j.id===oldId)j.id=newId;if(j.customer_id===oldId)j.customer_id=newId});tasks.forEach(t=>{if(t.id===oldId)t.id=newId;if(t.customer_id===oldId)t.customer_id=newId});jobVisits.forEach(v=>{if(v.id===oldId)v.id=newId;if(v.job_id===oldId)v.job_id=newId});jobCosts.forEach(c=>{if(c.id===oldId)c.id=newId;if(c.job_id===oldId)c.job_id=newId})}
-async function syncOfflineQueue(){if(!isOnline()||!user||!sb)return;let q=readOfflineQueue();if(!q.length){updateSyncPill();return}updateSyncPill();const idMap={};try{for(const op of [...q]){let payload=JSON.parse(JSON.stringify(op.payload||{}));for(const k of ['customer_id','job_id'])if(payload[k]&&idMap[payload[k]])payload[k]=idMap[payload[k]];let result;if(op.operation==='insert')result=await sb.from(op.table).insert(payload).select().single();else if(op.operation==='update')result=await sb.from(op.table).update(payload).match(op.match);else if(op.operation==='delete')result=await sb.from(op.table).delete().match(op.match);if(result.error)throw result.error;if(op.operation==='insert'&&op.local_id&&result.data?.id){idMap[op.local_id]=result.data.id;replaceLocalIdEverywhere(op.local_id,result.data.id)}q=q.filter(x=>x.id!==op.id);writeOfflineQueue(q)}showSyncNotice('Offline work synced');await loadAll()}catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}}
+let syncOfflinePromise=null;
+function syncOfflineQueue(){
+  if(syncOfflinePromise)return syncOfflinePromise;
+  syncOfflinePromise=performOfflineSync().finally(()=>{syncOfflinePromise=null});
+  return syncOfflinePromise;
+}
+async function performOfflineSync(){
+  if(!isOnline()||!user||!sb)return;
+  let q=readOfflineQueue();if(!q.length){updateSyncPill();return}updateSyncPill();
+  const idMap={};
+  try{
+    for(const op of [...q]){
+      let payload=JSON.parse(JSON.stringify(op.payload||{}));
+      for(const k of ['customer_id','job_id'])if(payload[k]&&idMap[payload[k]])payload[k]=idMap[payload[k]];
+      let result;
+      if(op.operation==='insert')result=await sb.from(op.table).insert(payload).select().single();
+      else if(op.operation==='update')result=await sb.from(op.table).update(payload).match(op.match);
+      else if(op.operation==='delete')result=await sb.from(op.table).delete().match(op.match);
+      if(result.error)throw result.error;
+      if(op.operation==='insert'&&op.local_id&&result.data?.id){idMap[op.local_id]=result.data.id;replaceLocalIdEverywhere(op.local_id,result.data.id)}
+      q=q.filter(x=>x.id!==op.id);writeOfflineQueue(q);
+    }
+    showSyncNotice('Offline work synced');await loadAll();
+  }catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}
+}
 
 function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,documents,documentPayments,jobDepositPayments,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
 function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];documents=cached.documents||[];documentPayments=cached.documentPayments||[];jobDepositPayments=cached.jobDepositPayments||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
@@ -459,9 +491,9 @@ async function performLoadAll(){
     if(customerResult.error){if(loadCachedSnapshot())return;throw customerResult.error}
     customers=customerResult.data||[];
     const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
-    if(jobResult.error){jobs=[];jobsReady=false}else{jobs=jobResult.data||[];jobsReady=true}
+    if(jobResult.error){jobs=[];jobsReady=false}else{jobs=(jobResult.data||[]).filter(job=>!job.archived_at);jobsReady=true}
     const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
-    if(documentResult.error){documents=[];documentsReady=false}else{documents=documentResult.data||[];documentsReady=true}
+    if(documentResult.error){documents=[];documentsReady=false}else{documents=(documentResult.data||[]).filter(document=>!document.archived_at);documentsReady=true}
     const documentPaymentResult=await sb.from('document_payments').select('*').order('paid_on',{ascending:false}).order('created_at',{ascending:false});
     documentPayments=documentPaymentResult.error?[]:documentPaymentResult.data||[];
     const depositResult=await sb.from('job_deposit_payments').select('*').order('paid_on',{ascending:false}).order('created_at',{ascending:false});
@@ -996,7 +1028,8 @@ function openCustomer(id){
   <div class="muted-box" style="margin-top:14px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(documentHistory.map(documentCard).join('')||'<div class="meta">No documents recorded yet.</div>'):'<div class="meta">Documents need the v0.3 database update.</div>'}</div></div>`);
 }
 async function changeCustomerStatus(id,status){
-  const {error}=await sb.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll();openCustomer(id)
+  const archiving=status==='archived',payload={status,updated_at:new Date().toISOString(),archived_at:archiving?new Date().toISOString():null,archived_by:archiving?user.id:null,last_modified_by:user.id};
+  const {error}=await sb.from('customers').update(payload).eq('id',id);if(error)return alert(archiving?'Archiving needs the Production Hardening database update before it can be used. Nothing has been deleted.':error.message);await writeAudit('customer',id,archiving?'archived':'restored',archiving?'Customer archived':'Customer restored');await loadAll();openCustomer(id)
 }
 async function deleteCustomerSafely(id){
   if(!isOnline())return alert('Connect to the internet before checking whether this customer can be deleted.');
@@ -1034,7 +1067,9 @@ async function saveNewCustomer(){
   const name=$('cName').value.trim();if(!name)return alert('Enter the customer name.');
   const serviceDate=$('cServiceDate').value;const local=tempId();
   const payload={owner_id:user.id,name,address:$('cAddress').value.trim(),postcode:$('cPostcode').value.trim().toUpperCase(),phone:$('cPhone').value.trim(),email:$('cEmail').value.trim(),boiler_make_model:$('cBoiler').value.trim(),notes:$('cNotes').value.trim(),status:'active',service_count:serviceDate?1:0,last_service:serviceDate||null,next_due:serviceDate?addYear(serviceDate):null};
-  try{const data=await createCustomerRecord(payload,local);closeModal();if(data)openCustomer(data.id)}catch(error){alert(error.message||'Could not save this customer. Please try again.')}
+  const likelyDuplicate=customers.find(customer=>String(customer.name||'').trim().toLowerCase()===name.toLowerCase()&&normalisePostcode(customer.postcode)===normalisePostcode(payload.postcode));
+  if(likelyDuplicate&&!confirm(`This looks like the existing customer ${displayCustomerName(likelyDuplicate.name)} at ${likelyDuplicate.postcode||'the same address'}. Create another record anyway?`))return;
+  try{const data=await createCustomerRecord(payload,local);if(data)await writeAudit('customer',data.id,'created',`Customer created: ${data.name||name}`);closeModal();if(data)openCustomer(data.id)}catch(error){alert(error.message||'Could not save this customer. Please try again.')}
 }
 function editCustomer(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
@@ -1171,9 +1206,11 @@ async function saveNewJob(){
   const button=$('saveJobBtn');button.disabled=true;button.textContent='Saving…';setModalBusy(true);
   const price=$('jPrice').value.trim(),stage=$('jStage')?.value||'booked';
   const numberOrNull=value=>String(value??'').trim()===''?null:Number(value),payload={owner_id:user.id,customer_id:selectedJobCustomerId||null,title,job_type:inferJobType(title),status:stage,billing_method:$('jBilling')?.value||'time_materials',agreed_price:price===''?null:Number(price),scheduled_date:stage==='booked'?($('jDate').value||null):null,scheduled_time:stage==='booked'?(quarterHourInputValue('jTime')||null):null,address:$('jAddress').value.trim(),postcode:$('jPostcode').value.trim().toUpperCase(),description:$('jDescription').value.trim(),quoted_amount:price===''?null:Number(price),waiting_reason:stage==='waiting'?($('jWaitingReason')?.value||'other'):null,follow_up_date:null,lead_source:$('jLeadSource')?.value||null,lead_town:$('jLeadTown')?.value.trim()||null,property_type:$('jPropertyType')?.value||null,lead_campaign:$('jLeadCampaign')?.value.trim()||null,lead_keyword:$('jLeadKeyword')?.value.trim()||null,lead_landing_page:$('jLeadLanding')?.value.trim()||null,lead_cost:numberOrNull($('jLeadCost')?.value),lsa_charge:numberOrNull($('jLsaCharge')?.value)};
+  const likelyDuplicate=jobs.find(job=>job.customer_id===payload.customer_id&&String(job.title||'').trim().toLowerCase()===title.toLowerCase()&&job.scheduled_date===payload.scheduled_date&&job.scheduled_time===payload.scheduled_time&&!['completed','lost','cancelled'].includes(job.status));
+  if(likelyDuplicate&&!confirm('A matching open job is already booked for this customer, date and time. Create another job anyway?')){button.disabled=false;button.textContent='Book work';setModalBusy(false);return}
   if(!isOnline()){const id=tempId(),data={...payload,id,created_at:new Date().toISOString()};jobs.push(data);queueOperation('jobs','insert',payload,id);button.disabled=false;button.textContent='Book work';setModalBusy(false);renderAll();closeWorkflow();showPage('dashboard');return}
   try{
-    const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)throw error;
+    const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)throw error;await writeAudit('job',data?.id,'created',`Job created: ${title}`);
     if(payload.customer_id&&payload.status==='booked'){const {error:customerError}=await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);if(customerError)console.error('Job saved but customer status update failed',customerError)}
     await loadAll();
     const saved=jobs.find(job=>job.id===data?.id);
@@ -1266,7 +1303,7 @@ function recordJobDeposit(jobId){
 async function saveJobDeposit(jobId){
   const job=jobs.find(item=>item.id===jobId),amount=Number($('jobDepositAmount')?.value||0);if(!job||!amount||amount<=0)return alert('Enter the deposit amount received.');
   const button=$('saveJobDepositBtn');if(button){button.disabled=true;button.textContent='Saving…'}
-  try{const payload={owner_id:user.id,job_id:jobId,amount:Number(amount.toFixed(2)),paid_on:$('jobDepositDate')?.value||today(),method:'bank_transfer',note:$('jobDepositNote')?.value.trim()||null};const {data,error}=await sb.from('job_deposit_payments').insert(payload).select().single();if(error)throw error;await loadAll();const saved=jobDepositPayments.find(payment=>payment.id===data?.id);if(saved)return openDepositReceipt(saved.id);openJob(jobId)}catch(error){alert(error.message||'Could not record this deposit. Please try again.')}finally{if(button?.isConnected){button.disabled=false;button.textContent='Save deposit & prepare receipt'}}
+  try{const payload={owner_id:user.id,job_id:jobId,amount:Number(amount.toFixed(2)),paid_on:$('jobDepositDate')?.value||today(),method:'bank_transfer',note:$('jobDepositNote')?.value.trim()||null};const {data,error}=await sb.from('job_deposit_payments').insert(payload).select().single();if(error)throw error;await writeAudit('deposit',data?.id,'payment_recorded',`Deposit recorded: ${money(payload.amount)}`,{job_id:jobId});await loadAll();const saved=jobDepositPayments.find(payment=>payment.id===data?.id);if(saved)return openDepositReceipt(saved.id);openJob(jobId)}catch(error){alert(error.message||'Could not record this deposit. Please try again.')}finally{if(button?.isConnected){button.disabled=false;button.textContent='Save deposit & prepare receipt'}}
 }
 function openDepositReceipt(id){
   const payment=jobDepositPayments.find(item=>item.id===id),job=jobs.find(item=>item.id===payment?.job_id),customer=customers.find(item=>item.id===job?.customer_id);if(!payment||!job)return;
@@ -1302,7 +1339,7 @@ function openJob(id){
     <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Visits & returns</h3><div class="actions"><button class="gold" onclick="${activeVisitForJob(id)?`finishVisit('${id}')`:`startVisit('${id}')`}">${activeVisitForJob(id)?'Finish visit':'Start visit'}</button><button class="light" onclick="openAddVisit('${id}')">Add manual visit</button><button class="light" onclick="openScheduleReturn('${id}')">Schedule return visit</button></div></div><div class="list">${visitRows||'<div class="meta">No visits recorded yet.</div>'}</div></div>
     <div class="muted-box" style="margin-top:12px"><div class="section-title"><h3>Materials and expenses</h3><button class="gold" onclick="openAddCost('${id}')">Add expense</button></div>${costRows?`<table class="log-table"><tbody>${costRows}</tbody></table>`:'<div class="meta">No materials or expenses recorded yet.</div>'}</div>`:''}
     <div class="muted-box" style="margin-top:12px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(linkedDocuments.map(documentCard).join('')||'<div class="meta">No documents linked yet.</div>'):'<div class="meta">Documents are unavailable.</div>'}</div></div>
-    <div class="actions" style="margin-top:12px">${j.status!=='waiting'?`<button class="light" onclick="openPutOnWaiting('${id}')">Put on waiting</button>`:''}${j.status!=='to_book'?`<button class="light" onclick="moveJobToBook('${id}')">Move to To book</button>`:''}${!['booked','in_progress','completed'].includes(j.status)?`<button class="light" onclick="openScheduleReturn('${id}','book')">Book into diary</button>`:''}${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}<button class="danger" onclick="deleteJob('${id}')">Delete job</button></div>
+    <div class="actions" style="margin-top:12px">${j.status!=='waiting'?`<button class="light" onclick="openPutOnWaiting('${id}')">Put on waiting</button>`:''}${j.status!=='to_book'?`<button class="light" onclick="moveJobToBook('${id}')">Move to To book</button>`:''}${!['booked','in_progress','completed'].includes(j.status)?`<button class="light" onclick="openScheduleReturn('${id}','book')">Book into diary</button>`:''}${j.customer_id?`<button class="light" onclick="openCustomer('${j.customer_id}')">Customer</button>`:''}<button class="danger" onclick="archiveJob('${id}')">Archive job</button></div>
   </details>`,'job-sheet');
 }
 function openPutOnWaiting(jobId){show(`<div class="head"><h2>Put job on waiting</h2><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="field"><label>Waiting for</label><select id="waitReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div><div class="field"><label>Note</label><textarea id="waitNote" placeholder="e.g. Waiting for customer to choose tiles"></textarea></div><div class="field"><label>Optional follow-up date</label><input id="waitFollow" type="date"></div><button class="gold" style="width:100%" onclick="saveWaitingJob('${jobId}')">Save as waiting</button>`)}
@@ -1328,7 +1365,7 @@ function completeJob(id){
 async function saveCompletedJob(id){
   if(!requireOnline())return;
   const job=jobs.find(x=>x.id===id),customer=customers.find(c=>c.id===job?.customer_id),completedAt=new Date().toISOString(),invoice=$('completeInvoice').value.trim(),notes=$('completeNotes').value.trim(),year=Number($('completeBoilerYear')?.value||0),jobUpdate={status:'completed',invoice_number:invoice,description:notes,completed_at:completedAt,updated_at:completedAt,property_type:$('completePropertyType')?.value||job.property_type||null,property_owner_type:$('completeOwner')?.value||job.property_owner_type||null,access_notes:$('completeAccess')?.value.trim()||job.access_notes||null,boiler_make:$('completeBoilerMake')?.value.trim()||job.boiler_make||null,boiler_model:$('completeBoilerModel')?.value.trim()||job.boiler_model||null,boiler_serial_number:$('completeBoilerSerial')?.value.trim()||job.boiler_serial_number||null,boiler_install_year:year||job.boiler_install_year||null,boiler_warranty:$('completeBoilerWarranty')?.value.trim()||job.boiler_warranty||null};
-  const {error}=await sb.from('jobs').update(jobUpdate).eq('id',id);if(error)return alert(error.message);
+  const {error}=await sb.from('jobs').update(jobUpdate).eq('id',id);if(error)return alert(error.message);await writeAudit('job',id,'completed',`Job completed: ${job?.title||'Untitled job'}`);
   if(customer&&(($('completePhone')?.value.trim())||($('completeEmail')?.value.trim())||jobUpdate.boiler_make||jobUpdate.boiler_model)){const customerUpdate={updated_at:completedAt};if($('completePhone')?.value.trim())customerUpdate.phone=$('completePhone').value.trim();if($('completeEmail')?.value.trim())customerUpdate.email=$('completeEmail').value.trim();if(jobUpdate.boiler_make||jobUpdate.boiler_model)customerUpdate.boiler_make_model=[jobUpdate.boiler_make,jobUpdate.boiler_model].filter(Boolean).join(' ');const {error:customerUpdateError}=await sb.from('customers').update(customerUpdate).eq('id',customer.id);if(customerUpdateError)return alert(`Job completed, but customer details could not be saved: ${customerUpdateError.message}`)}
   if(isServiceJob(job)&&customer){
     const date=today(),nextDue=addYear(date);
@@ -1387,7 +1424,13 @@ async function saveJobEdit(id){
   const {error}=await sb.from('jobs').update(payload).eq('id',id);if(error)return alert(error.message);if(payload.customer_id&&payload.status==='booked')await sb.from('customers').update({status:'booked',updated_at:new Date().toISOString()}).eq('id',payload.customer_id);
   await loadAll();closeWorkflow();if(completingService)return completeJob(id);openJob(id)
 }
-async function deleteJob(id){if(!confirm('Permanently delete this job? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('jobs').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
+async function archiveJob(id){
+  const job=jobs.find(item=>item.id===id);if(!job)return;
+  if(!confirm(`Archive ${job.title||'this job'}? It will be hidden from daily work but can be restored from Archived records.`))return;
+  const {error}=await sb.from('jobs').update({archived_at:new Date().toISOString(),archived_by:user.id,last_modified_by:user.id,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return alert('Archiving needs the Production Hardening database update before it can be used. Nothing has been deleted.');
+  await writeAudit('job',id,'archived',`Job archived: ${job.title||'Untitled job'}`);await loadAll();closeModal();showSyncNotice('Job archived safely');
+}
 
 
 function openAddVisit(jobId){
@@ -1508,11 +1551,25 @@ async function applyJobDepositsToInvoice(invoice){
   const status=Math.abs(total-amount)<0.01?'paid':'sent',update={status,updated_at:new Date().toISOString()};if(status==='sent')update.sent_at=new Date().toISOString();const {error:invoiceError}=await sb.from('documents').update(update).eq('id',invoice.id);if(invoiceError)throw invoiceError;
   return pending.length;
 }
+async function insertDocumentSafely(payload){
+  let candidate={...payload};
+  for(let attempt=0;attempt<3;attempt++){
+    const result=await sb.from('documents').insert(candidate).select().single();
+    if(!result.error)return result;
+    // The database index is the final protection. If another device used the
+    // next number first, refresh once and choose the next available number.
+    if(result.error.code==='23505'&&/document/i.test(result.error.message||'')){
+      await loadAll();candidate={...candidate,document_number:nextDocumentNumber(candidate.type)};continue;
+    }
+    return result;
+  }
+  return {data:null,error:new Error('Could not reserve a unique document number. Please try again.')};
+}
 async function saveDocument(type,id=''){
   const lines=collectDocumentLines();if(!lines.length)return alert('Add at least one line item.');const number=$('dNumber').value.trim(),title=$('dTitle').value.trim();if(!number||!title)return alert('Enter the document number and title.');
   const vatRate=Number($('dVat').value||0),fig=calculateFigures(lines,vatRate),payload={owner_id:user.id,customer_id:$('dCustomer').value||null,job_id:$('dJob').value||null,type,document_number:number,status:$('dStatus').value,title,issue_date:$('dIssue').value||today(),due_date:$('dDue').value||null,line_items:lines,subtotal:fig.subtotal,vat_rate:vatRate,vat_amount:fig.vat,total:fig.total,notes:$('dNotes').value.trim(),updated_at:new Date().toISOString()};
   const button=$('saveDocumentBtn');button.disabled=true;button.textContent='Saving…';let result;
-  if(id)result=await sb.from('documents').update(payload).eq('id',id).select().single();else result=await sb.from('documents').insert(payload).select().single();
+  if(id)result=await sb.from('documents').update(payload).eq('id',id).select().single();else result=await insertDocumentSafely(payload);
   button.disabled=false;button.textContent=`Save ${documentTypeLabel(type).toLowerCase()}`;if(result.error)return alert(result.error.message);
   if(payload.job_id&&type==='quote'){
     const linkedJob=jobs.find(job=>job.id===payload.job_id),jobUpdate={quoted_amount:fig.subtotal,updated_at:new Date().toISOString()};
@@ -1520,7 +1577,7 @@ async function saveDocument(type,id=''){
     else if(payload.status!=='accepted'&&!['booked','in_progress','completed'].includes(linkedJob?.status)){jobUpdate.status='quoted'}
     await sb.from('jobs').update(jobUpdate).eq('id',payload.job_id);
   }
-  if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
+  if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:result.data.document_number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
   if(type==='invoice'&&!id){try{await applyJobDepositsToInvoice(result.data)}catch(error){alert(`Invoice saved, but deposits were not applied: ${error.message||error}`)}}
   await loadAll();openDocument(result.data.id)
 }
@@ -1560,6 +1617,7 @@ async function saveInvoicePayment(documentId,full=false){
     const {data,error}=await sb.from('document_payments').insert(payment).select().single();if(error)throw error;
     const newBalance=Math.max(0,balance-payment.amount),status=newBalance<0.01?'paid':document.status==='draft'?'sent':document.status,documentUpdate={status,updated_at:new Date().toISOString()};if(status==='sent'&&!document.sent_at)documentUpdate.sent_at=new Date().toISOString();
     const {error:documentError}=await sb.from('documents').update(documentUpdate).eq('id',documentId);if(documentError)throw documentError;
+    await writeAudit('payment',data?.id,'payment_recorded',`Invoice payment recorded: ${money(payment.amount)}`,{document_id:documentId,fully_paid:status==='paid'});
     try{await syncInvoicePaymentToQuickBooks(documentId,data.id)}catch(syncError){alert(`Payment recorded in ASP Manager, but QuickBooks needs attention: ${syncError.message||syncError}`)}
     await loadAll();openDocument(documentId);
   }catch(error){alert(error.message||'Could not record this payment. Please try again.')}
@@ -1579,7 +1637,7 @@ function openDocument(id){
   ${d.type==='invoice'?`<div class="muted-box" style="margin-top:12px"><h3>Payment progress</h3><div class="meta"><b>${esc(invoicePaymentLabel(d))}</b> · Received ${esc(money(paidAmount))} · Remaining ${esc(money(balance))}</div>${d.status==='sent'&&balance>0?'<div class="notice" style="margin:10px 0 0">Keep an eye on your bank for this payment. When it arrives, use <b>Fully paid</b> or <b>Record part payment</b> below.</div>':''}${payments.length?`<div class="meta" style="margin-top:9px">${payments.map(payment=>`${esc(displayDate(payment.paid_on))} · ${esc(money(payment.amount))}${payment.quickbooks_payment_id?' · synced to QuickBooks':''}${payment.quickbooks_sync_error?` · QuickBooks needs attention: ${esc(payment.quickbooks_sync_error)}`:''}`).join('<br>')}</div>`:''}</div>`:''}
   ${d.notes?`<div class="muted-box" style="margin-top:12px"><h3>Notes</h3><div class="meta">${esc(d.notes)}</div></div>`:''}
   ${d.quickbooks_sync_error?`<div class="notice error" style="margin-top:12px"><strong>QuickBooks sync needs attention</strong><div class="meta">${esc(d.quickbooks_sync_error)}</div></div>`:''}
-  <div class="actions" style="margin-top:14px"><button class="gold" onclick="editDocument('${id}')">Edit</button><button class="navy" onclick="printDocument('${id}')">Print / PDF</button>${d.status!=='paid'&&d.status!=='void'?`<button class="gold" onclick="sendDocument('${id}')">${d.email_sent_at?'Email again':'Send email'}</button>${whatsappBusinessUrl(customer?.phone,documentShareMessage(d,customer))?`<button class="light" onclick="sendDocumentWhatsApp('${id}')">WhatsApp</button>`:''}${documentSmsUrl(d,customer)?`<a class="btn light" href="${esc(documentSmsUrl(d,customer))}">Text</a>`:''}<button class="light" onclick="markDocumentSent('${id}')">Mark as sent</button>`:''}${d.type==='invoice'&&balance>0?`<button class="light" onclick="recordInvoicePayment('${id}')">Record part payment</button><button class="gold" onclick="markInvoiceFullyPaid('${id}')">Fully paid</button>`:''}${d.type==='invoice'&&(!d.quickbooks_invoice_id||payments.some(payment=>payment.quickbooks_sync_error))?`<button class="light" onclick="syncInvoiceToQuickBooks('${id}')">${d.quickbooks_invoice_id?'Retry QuickBooks sync':'Sync to QuickBooks'}</button>`:''}${d.type==='quote'&&d.public_token?`<button class="light" onclick="copyQuoteAcceptanceLink('${id}')">Copy customer link</button>`:''}${d.type==='quote'&&d.status!=='accepted'?`<button class="light" onclick="setDocumentStatus('${id}','accepted')">Accept quote</button>`:''}${d.type==='quote'?`<button class="light" onclick="convertQuoteToInvoice('${id}')">Convert to invoice</button>`:''}${d.type==='quote'&&d.status==='accepted'?`<button class="gold" onclick="createQuoteDepositInvoice('${id}')">Create 50% deposit request</button>`:''}${d.type==='quote'&&d.status==='accepted'&&d.job_id?`<button class="gold" onclick="openScheduleReturn('${d.job_id}','book')">Book into diary</button>`:''}${d.customer_id?`<button class="light" onclick="openCustomer('${d.customer_id}')">Customer</button>`:''}${d.job_id?`<button class="light" onclick="openJob('${d.job_id}')">Job</button>`:''}${d.type==='invoice'&&d.quickbooks_invoice_id?(d.status==='void'?'<span class="badge void">Voided in QuickBooks</span>':`<button class="danger" onclick="voidInvoiceInQuickBooks('${id}')">Void in QuickBooks</button>`):`<button class="danger" onclick="deleteDocument('${id}')">Delete mistake</button>`}</div>`)
+  <div class="actions" style="margin-top:14px"><button class="gold" onclick="editDocument('${id}')">Edit</button><button class="navy" onclick="printDocument('${id}')">Print / PDF</button>${d.status!=='paid'&&d.status!=='void'?`<button class="gold" onclick="sendDocument('${id}')">${d.email_sent_at?'Email again':'Send email'}</button>${whatsappBusinessUrl(customer?.phone,documentShareMessage(d,customer))?`<button class="light" onclick="sendDocumentWhatsApp('${id}')">WhatsApp</button>`:''}${documentSmsUrl(d,customer)?`<a class="btn light" href="${esc(documentSmsUrl(d,customer))}">Text</a>`:''}<button class="light" onclick="markDocumentSent('${id}')">Mark as sent</button>`:''}${d.type==='invoice'&&balance>0?`<button class="light" onclick="recordInvoicePayment('${id}')">Record part payment</button><button class="gold" onclick="markInvoiceFullyPaid('${id}')">Fully paid</button>`:''}${d.type==='invoice'&&(!d.quickbooks_invoice_id||payments.some(payment=>payment.quickbooks_sync_error))?`<button class="light" onclick="syncInvoiceToQuickBooks('${id}')">${d.quickbooks_invoice_id?'Retry QuickBooks sync':'Sync to QuickBooks'}</button>`:''}${d.type==='quote'&&d.public_token?`<button class="light" onclick="copyQuoteAcceptanceLink('${id}')">Copy customer link</button>`:''}${d.type==='quote'&&d.status!=='accepted'?`<button class="light" onclick="setDocumentStatus('${id}','accepted')">Accept quote</button>`:''}${d.type==='quote'?`<button class="light" onclick="convertQuoteToInvoice('${id}')">Convert to invoice</button>`:''}${d.type==='quote'&&d.status==='accepted'?`<button class="gold" onclick="createQuoteDepositInvoice('${id}')">Create 50% deposit request</button>`:''}${d.type==='quote'&&d.status==='accepted'&&d.job_id?`<button class="gold" onclick="openScheduleReturn('${d.job_id}','book')">Book into diary</button>`:''}${d.customer_id?`<button class="light" onclick="openCustomer('${d.customer_id}')">Customer</button>`:''}${d.job_id?`<button class="light" onclick="openJob('${d.job_id}')">Job</button>`:''}${d.type==='invoice'&&d.quickbooks_invoice_id?(d.status==='void'?'<span class="badge void">Voided in QuickBooks</span>':`<button class="danger" onclick="voidInvoiceInQuickBooks('${id}')">Void in QuickBooks</button>`):`<button class="danger" onclick="archiveDocument('${id}')">Archive</button>`}</div>`)
 }
 function editDocument(id){
   const d=documents.find(x=>x.id===id);if(!d)return;lineCounter=0;
@@ -1599,7 +1657,7 @@ async function moveAcceptedQuoteJobToQueue(jobId){
 }
 async function setDocumentStatus(id,status,reopen=true){
   const d=documents.find(x=>x.id===id),update={status,updated_at:new Date().toISOString()};if(status==='sent'&&!d?.sent_at)update.sent_at=new Date().toISOString();const {error}=await sb.from('documents').update(update).eq('id',id);
-  if(error)return alert(error.message);
+  if(error)return alert(error.message);await writeAudit(d?.type==='invoice'?'invoice':'quote',id,status==='sent'?'sent':status==='accepted'?'completed':'updated',`${d?.type==='invoice'?'Invoice':'Quote'} marked ${status}`);
   try{if(d?.job_id&&d.type==='quote'&&status==='accepted')await moveAcceptedQuoteJobToQueue(d.job_id)}catch(jobError){return alert(`Quote accepted, but the linked job could not be moved to the work queue: ${jobError.message}`)}
   await loadAll();if(reopen)openDocument(id)
 }
@@ -1608,9 +1666,9 @@ async function convertQuoteToInvoice(id){
   const deposit=quoteDepositInvoice(q);if(deposit&&deposit.status!=='paid')return alert('This quote has a 50% deposit request. Mark that deposit as fully paid before creating the remaining-balance invoice.');
   const isBalance=Boolean(deposit),lines=isBalance?quoteInvoiceLines(q,.5):(q.line_items||[]),figures=isBalance?calculateFigures(lines,q.vat_rate):{subtotal:q.subtotal,vat:q.vat_amount,total:q.total},title=isBalance?`Balance due — ${q.title||documentNumber(q)}`:q.title,notes=isBalance?[q.notes,'This is the remaining balance after the 50% deposit.'].filter(Boolean).join('\n\n'):q.notes;
   const payload={owner_id:user.id,customer_id:q.customer_id,job_id:q.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title,issue_date:today(),due_date:addDays(today(),14),line_items:lines,subtotal:figures.subtotal,vat_rate:q.vat_rate,vat_amount:figures.vat,total:figures.total,notes};
-  const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);
+  const {data,error}=await insertDocumentSafely(payload);if(error)return alert(error.message);
   const {error:quoteError}=await sb.from('documents').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(quoteError)return alert(quoteError.message);
-  if(q.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',q.job_id);if(jobError)return alert(jobError.message);try{await moveAcceptedQuoteJobToQueue(q.job_id)}catch(queueError){return alert(`Invoice created, but the linked job could not be moved to the work queue: ${queueError.message}`)}}
+  if(q.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:data.document_number,updated_at:new Date().toISOString()}).eq('id',q.job_id);if(jobError)return alert(jobError.message);try{await moveAcceptedQuoteJobToQueue(q.job_id)}catch(queueError){return alert(`Invoice created, but the linked job could not be moved to the work queue: ${queueError.message}`)}}
   try{await applyJobDepositsToInvoice(data)}catch(error){alert(`Invoice created, but deposits were not applied: ${error.message||error}`)}
   await loadAll();openDocument(data.id)
 }
@@ -1624,7 +1682,7 @@ async function createQuoteDepositInvoice(id){
   if(!confirm('Create an editable 50% deposit request? It will be ready for you to send when appropriate.'))return;
   const lines=quoteInvoiceLines(quote,.5),figures=calculateFigures(lines,quote.vat_rate),depositNote='For larger works, a 50% deposit is requested to help secure materials and availability. Please let me know if you would prefer to discuss arrangements.';
   const payload={owner_id:user.id,customer_id:quote.customer_id,job_id:quote.job_id,type:'invoice',document_number:nextDocumentNumber('invoice'),status:'draft',title,issue_date:today(),due_date:addDays(today(),7),line_items:lines,subtotal:figures.subtotal,vat_rate:quote.vat_rate,vat_amount:figures.vat,total:figures.total,notes:[quote.notes,depositNote].filter(Boolean).join('\n\n')};
-  const {data,error}=await sb.from('documents').insert(payload).select().single();if(error)return alert(error.message);if(quote.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:payload.document_number,updated_at:new Date().toISOString()}).eq('id',quote.job_id);if(jobError)return alert(`Deposit request created, but the linked job could not be updated: ${jobError.message}`)}await loadAll();openDocument(data.id)
+  const {data,error}=await insertDocumentSafely(payload);if(error)return alert(error.message);if(quote.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:data.document_number,updated_at:new Date().toISOString()}).eq('id',quote.job_id);if(jobError)return alert(`Deposit request created, but the linked job could not be updated: ${jobError.message}`)}await loadAll();openDocument(data.id)
 }
 async function voidInvoiceInQuickBooks(id){
   const document=documents.find(item=>item.id===id);if(!document||document.type!=='invoice'||!document.quickbooks_invoice_id)return;
@@ -1632,7 +1690,29 @@ async function voidInvoiceInQuickBooks(id){
   if(!confirm(`Void ${documentNumber(document)} in QuickBooks? This keeps an audit record but changes its amount to £0.00.${warning}`))return;
   try{await quickBooksRequest('void-invoice','POST',{document_id:id});await loadAll();alert('Invoice voided in QuickBooks and marked void in ASP Manager.');openDocument(id)}catch(error){alert(error.message||error)}
 }
-async function deleteDocument(id){const document=documents.find(item=>item.id===id);if(document?.quickbooks_invoice_id)return voidInvoiceInQuickBooks(id);if(!confirm('Permanently delete this document? Only use this for a duplicate or mistake.'))return;const {error}=await sb.from('documents').delete().eq('id',id);if(error)return alert(error.message);await loadAll();closeModal()}
+async function archiveDocument(id){
+  const document=documents.find(item=>item.id===id);if(!document)return;if(document.quickbooks_invoice_id)return voidInvoiceInQuickBooks(id);
+  if(!confirm(`Archive ${documentNumber(document)}? It will be hidden from active quotes and invoices but can be restored from Archived records.`))return;
+  const {error}=await sb.from('documents').update({archived_at:new Date().toISOString(),archived_by:user.id,last_modified_by:user.id,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return alert('Archiving needs the Production Hardening database update before it can be used. Nothing has been deleted.');
+  await writeAudit(document.type==='invoice'?'invoice':'quote',id,'archived',`${documentTypeLabel(document.type)} archived: ${documentNumber(document)}`);await loadAll();closeModal();showSyncNotice('Document archived safely');
+}
+async function openArchivedRecords(){
+  if(!isOnline())return alert('Connect to the internet to view archived records.');
+  const tables=[['customers','customer'],['jobs','job'],['documents','document']];
+  const results=await Promise.all(tables.map(async([table,type])=>{const {data,error}=await sb.from(table).select('*').not('archived_at','is',null).order('archived_at',{ascending:false});return {table,type,data:data||[],error}}));
+  if(results.some(result=>result.error))return alert('Archived records need the Production Hardening database update before they can be used.');
+  const rows=results.flatMap(result=>result.data.map(record=>({record,type:result.type,table:result.table}))).sort((a,b)=>String(b.record.archived_at||'').localeCompare(String(a.record.archived_at||'')));
+  const list=rows.length?rows.map(({record,type,table})=>{
+    const label=type==='customer'?displayCustomerName(record.name):type==='job'?(record.title||record.job_type||'Untitled job'):(record.document_number||record.title||'Untitled document');
+    return `<div class="item"><div><h3>${esc(label)}</h3><div class="meta">${esc(type[0].toUpperCase()+type.slice(1))} Â· Archived ${esc(displayDate(String(record.archived_at||'').slice(0,10)))}</div></div><button class="gold" onclick="restoreArchivedRecord('${table}','${type}','${record.id}')">Restore</button></div>`;
+  }).join(''):'<div class="meta">No archived records.</div>';
+  show(`<div class="head"><div><h2>Archived records</h2><div class="meta">Nothing here is permanently deleted. Restore a record when needed.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list}</div>`);
+}
+async function restoreArchivedRecord(table,type,id){
+  const {error}=await sb.from(table).update({archived_at:null,archived_by:null,last_modified_by:user.id,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return alert(error.message);await writeAudit(type,id,'restored',`${type[0].toUpperCase()+type.slice(1)} restored`);await loadAll();openArchivedRecords();
+}
 function printDocument(id){
   const d=documents.find(x=>x.id===id);if(!d)return;const c=documentCustomer(d),j=documentJob(d),lines=Array.isArray(d.line_items)?d.line_items:[],w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print this document.');
   const rows=lines.map(line=>`<tr><td>${esc(line.description)}</td><td class="n">${esc(line.quantity)}</td><td class="n">${esc(money(line.unit_price))}</td><td class="n">${esc(money((Number(line.quantity)||0)*(Number(line.unit_price)||0)))}</td></tr>`).join('');
@@ -1747,7 +1827,40 @@ async function saveStockItem(){const name=smartCaps($('stockName')?.value);if(!n
 async function changeStock(id,delta){const item=stockItems.find(x=>x.id===id);if(!item)return;const quantity=Math.max(0,Number(item.quantity||0)+Number(delta||0));const needed=quantity<=Number(item.minimum_quantity||1);const {error}=await sb.from('stock_items').update({quantity,needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
 async function toggleNeeded(id,needed){const {error}=await sb.from('stock_items').update({needed,updated_at:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadAll()}
 async function deleteStock(id){if(!confirm('Delete this stock item?'))return;const {error}=await sb.from('stock_items').delete().eq('id',id);if(error)return alert(error.message);await loadAll()}
-function downloadBackup(){const payload={version:'0.7',created_at:new Date().toISOString(),customers,jobs,documents,tasks,stock_items:stockItems,job_visits:jobVisits,job_costs:jobCosts};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`ASP_Manager_Backup_${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function downloadBackup(){
+  const status=$('backupStatus');
+  if(status)status.textContent='Preparing your business data exportâ€¦';
+  const cached={customers,jobs,documents,document_payments:documentPayments,job_deposit_payments:jobDepositPayments,tasks,stock_items:stockItems,job_visits:jobVisits,job_costs:jobCosts};
+  const exportTables=['customers','jobs','documents','document_payments','job_deposit_payments','tasks','stock_items','job_visits','job_costs','service_history','job_photos','gas_safety_certificates','gas_safety_certificate_appliances','gas_safety_certificate_attachments'];
+  const data={},unavailable=[];
+  for(const table of exportTables){
+    if(isOnline()&&sb&&user){
+      const {data:rows,error}=await sb.from(table).select('*').order('created_at',{ascending:true});
+      if(!error){data[table]=rows||[];continue}
+    }
+    if(Object.prototype.hasOwnProperty.call(cached,table))data[table]=cached[table]||[];
+    else {data[table]=[];unavailable.push(table)}
+  }
+  const payload={
+    version:'1.0',
+    export_type:'ASP Manager Business Data Export',
+    exported_at:new Date().toISOString(),
+    timezone:'Europe/London',
+    storage_files_embedded:false,
+    storage_note:'Photo, certificate and document files are not embedded in this JSON export. Their database references and metadata are included where available.',
+    unavailable_tables:unavailable,
+    data
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=`ASP_Manager_Business_Export_${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  localStorage.setItem('asp-manager-last-backup-at',payload.exported_at);
+  if(status)status.textContent=unavailable.length?`Export saved. Some optional data was not available on this device: ${unavailable.join(', ')}.`:`Export saved at ${new Date(payload.exported_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}. Keep this file somewhere secure.`;
+}
+function openSystemHealth(){
+  const pending=readOfflineQueue().length,lastBackup=localStorage.getItem('asp-manager-last-backup-at'),snapshot=localStorage.getItem('asp-manager-offline-snapshot'),lastBackupLabel=lastBackup?new Date(lastBackup).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}):'No export recorded on this device',snapshotLabel=snapshot?(() => {try{return new Date(JSON.parse(snapshot).saved_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}catch{return 'Available'}})():'No offline snapshot yet';
+  const rows=[['Connection',isOnline()?'Online':'Offline â€” changes will wait on this device'],['Sync queue',pending?`${pending} change${pending===1?'':'s'} waiting to sync`:'No pending changes'],['Last local snapshot',snapshotLabel],['Last business-data export',lastBackupLabel],['Core records',`${customers.length} customers Â· ${jobs.length} jobs Â· ${documents.length} quotes/invoices`],['QuickBooks','Use the QuickBooks card to confirm the current connection and last invoice sync.']];
+  show(`<div class="head"><div><h2>System health</h2><div class="meta">A quick check before a busy day or a database update.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="list">${rows.map(([label,value])=>`<div class="item"><b>${esc(label)}</b><span class="meta">${esc(value)}</span></div>`).join('')}</div><div class="notice" style="margin-top:12px"><strong>Before an update</strong><div class="meta">Export Business Data, check there are no pending changes, then keep the export in iCloud Drive or another secure location.</div></div>`);
+}
 
 setTimeout(()=>{if(appView?.classList.contains('loading')){console.warn('Loading watchdog released the screen');appView.classList.remove('loading');const notice=$('setupNotice');if(notice){notice.innerHTML='<strong>Loading took too long.</strong> The screen has been unlocked. Refresh once if any section is missing.';notice.classList.remove('hidden')}}},12000);
 
