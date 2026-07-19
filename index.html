@@ -174,6 +174,10 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       </div>
     </div>
 
+    <div class="card compact-section">
+      <div class="section-title"><div><h2>AI readiness</h2><div id="aiReadinessSummary" class="meta">Checking structured business data…</div></div><button class="light" onclick="openAiReadiness()">Open</button></div>
+    </div>
+
     <div class="card materials-card compact-section">
       <div class="section-title"><h2>Materials To Get</h2><button class="light" onclick="openMaterialsList()">Manage</button></div>
       <div class="material-quick-add"><input id="dashboardMaterialTitle" type="text" placeholder="Add an item" aria-label="Add material"><button class="gold" onclick="quickAddDashboardMaterial()">Add</button></div>
@@ -212,6 +216,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="showDue('30')">Service Planner</button>
         <button class="light" onclick="openIdeas()">Work ideas</button>
         <button class="light" onclick="openQuickBooks()">QuickBooks</button>
+        <button class="light" onclick="openAiReadiness()">AI readiness</button>
       </div>
     </div>
     <div id="backupSection" class="card">
@@ -513,6 +518,9 @@ function jobStatusLabel(status){return ({enquiry:'New lead',contacted:'Contacted
 function documentStatusLabel(status){return ({draft:'Draft',sent:'Sent',accepted:'Accepted',declined:'Declined',paid:'Paid',overdue:'Overdue',void:'Void'})[status]||status||'Draft'}
 function documentTypeLabel(type){return type==='invoice'?'Invoice':'Quote'}
 function documentStatusOptions(type,selected='draft'){const values=type==='invoice'?[['draft','Draft'],['sent','Sent'],['paid','Paid'],['overdue','Overdue'],['void','Void']]:[['draft','Draft'],['sent','Sent'],['accepted','Accepted'],['declined','Declined'],['void','Void']];return values.map(([value,label])=>`<option value="${value}" ${value===selected?'selected':''}>${label}</option>`).join('')}
+function aiReadinessData(){const completed=jobs.filter(job=>job.status==='completed'),quotes=documents.filter(document=>document.type==='quote'),accepted=quotes.filter(document=>document.status==='accepted'),rejected=quotes.filter(document=>document.status==='declined'),invoices=documents.filter(document=>document.type==='invoice'),withMaterials=completed.filter(job=>jobCosts.some(cost=>cost.job_id===job.id)),withLabour=completed.filter(job=>Number(jobFigures(job).hours||0)>0),withProfit=completed.filter(job=>{const figures=jobFigures(job);return Number(figures.sale||0)>0&&jobCosts.some(cost=>cost.job_id===job.id)}),withPhotos=completed.filter(job=>jobPhotos.some(photo=>photo.job_id===job.id)),withCategory=completed.filter(job=>String(job.job_type||'').trim()),categoryCounts={};completed.forEach(job=>{const category=String(job.job_type||'').trim();if(category)categoryCounts[category]=(categoryCounts[category]||0)+1});const repeatedCategories=Object.values(categoryCounts).filter(count=>count>=3).length;const resolved=accepted.length+rejected.length;let stage='Early stage',message='Not enough data yet — keep recording normal work.';if(completed.length>=10&&resolved>=5&&withMaterials.length>=5&&withLabour.length>=5&&withProfit.length>=5){stage='Learning stage';message='Enough data is being collected to start identifying patterns later.'}if(completed.length>=30&&resolved>=15&&withMaterials.length>=15&&withLabour.length>=15&&withProfit.length>=15&&withPhotos.length>=10&&withCategory.length>=25&&repeatedCategories>=3){stage='AI ready';message='Enough similar, priced work is recorded for future quote suggestions.'}return {stage,message,completed:completed.length,completedQuotes:resolved,accepted:accepted.length,rejected:rejected.length,invoices:invoices.length,materials:withMaterials.length,labour:withLabour.length,profit:withProfit.length,photos:withPhotos.length,categories:withCategory.length,repeatedCategories}}
+function renderAiReadinessSummary(){const target=$('aiReadinessSummary');if(!target)return;const data=aiReadinessData();target.innerHTML=`<b>${esc(data.stage)}</b> · ${esc(data.completed)} completed job${data.completed===1?'':'s'} recorded`}
+function openAiReadiness(){const d=aiReadinessData(),rows=[['Completed jobs',d.completed],['Completed quotes',d.completedQuotes],['Accepted quotes',d.accepted],['Rejected quotes',d.rejected],['Invoices',d.invoices],['Jobs with materials recorded',d.materials],['Jobs with labour hours recorded',d.labour],['Jobs with final profit recorded',d.profit],['Jobs with photos',d.photos],['Jobs with categories assigned',d.categories],['Categories with 3+ completed jobs',d.repeatedCategories]];show(`<div class="head"><div><h2>AI readiness</h2><div class="meta">Data maturity only — no AI quote suggestions are active.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="notice ${d.stage==='AI ready'?'success':''}"><strong>${esc(d.stage)}</strong><div class="meta">${esc(d.message)}</div></div><div class="list" style="margin-top:12px">${rows.map(([label,value])=>`<div class="item"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('')}</div><div class="muted-box" style="margin-top:12px"><h3>Suggested thresholds</h3><div class="meta"><b>Early stage:</b> under 10 completed jobs or 5 resolved quotes.<br><b>Learning stage:</b> 10 completed jobs, 5 resolved quotes, and 5 jobs each with materials, labour and profit data.<br><b>AI ready:</b> 30 completed jobs, 15 resolved quotes, 15 with materials/labour/profit, 10 with photos, 25 categorised jobs and at least 3 repeat job categories.</div></div>`)}
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
 function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
 function documentNumber(document){return document.document_number||`${document.type==='invoice'?'Invoice':'Quote'} (no number)`}
@@ -686,6 +694,7 @@ function renderDashboard(){
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
   const workQueue=workQueueJobs();
   const acceptedQuotes=documents.filter(document=>document.type==='quote'&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
+  renderAiReadinessSummary();
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
   const overdue=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)<0);
   const due30=serviceEligible.filter(c=>c.next_due&&daysUntil(c.next_due)>=0&&daysUntil(c.next_due)<=30);
