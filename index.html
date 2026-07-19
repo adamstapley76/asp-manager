@@ -1231,6 +1231,14 @@ function waitingReasonLabel(value){return ({customer:'customer',parts:'parts',ma
 function leadSourceLabel(value){return ({google_lsa:'Google LSA',google_ads:'Google Ads',organic_search:'Organic search',google_business:'Google Business Profile',existing_customer:'Existing customer',recommendation:'Recommendation',friend_family:'Friend / family',builder_trade:'Builder / other trade',other:'Other'})[value]||value||''}
 function billingLabel(value){return ({time_materials:'Time and materials',quoted:'Quoted / fixed price',day_rate:'Day rate',fixed_plus_extras:'Fixed price plus extras'})[value]||'Time and materials'}
 function isServiceJob(job){return String(job?.job_type||'').trim().toLowerCase()==='boiler service'}
+function payableInvoicesForJob(jobId){return documents.filter(document=>document.type==='invoice'&&document.job_id===jobId&&document.status!=='void'&&invoiceBalance(document)>0).sort((a,b)=>(a.issue_date||'').localeCompare(b.issue_date||''))}
+function openJobPayment(jobId){
+  const job=jobs.find(item=>item.id===jobId);if(!job)return;
+  const invoices=payableInvoicesForJob(jobId),acceptedQuote=documents.find(document=>document.type==='quote'&&document.job_id===jobId&&document.status==='accepted');
+  if(invoices.length===1)return recordInvoicePayment(invoices[0].id);
+  if(invoices.length>1)return show(`<div class="head"><div><h2>Record payment</h2><div class="meta">Choose which invoice the bank payment is for.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="list">${invoices.map(invoice=>`<div class="item"><div><h3>${esc(documentNumber(invoice))} · ${esc(invoice.title||'Invoice')}</h3><div class="meta">${esc(invoicePaymentLabel(invoice))} · ${esc(money(invoiceBalance(invoice)))} remaining</div></div><div class="item-actions"><button class="light" onclick="recordInvoicePayment('${invoice.id}')">Part payment</button><button class="gold" onclick="markInvoiceFullyPaid('${invoice.id}')">Fully paid & sync</button></div></div>`).join('')}</div>`);
+  show(`<div class="head"><div><h2>Record payment</h2><div class="meta">Payments are recorded against an invoice so they can sync correctly to QuickBooks.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>No unpaid invoice is linked to this job yet.</strong>${acceptedQuote?' Create the 50% deposit request first, then record the payment and it will sync to QuickBooks.':' Create an invoice first, then record the payment against it.'}</div><div class="actions" style="margin-top:12px">${acceptedQuote?`<button class="gold" onclick="createQuoteDepositInvoice('${acceptedQuote.id}')">Create 50% deposit request</button>`:''}<button class="light" onclick="openNewDocument('invoice','${jobId}','${job.customer_id||''}')">Create invoice</button></div>`)
+}
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
@@ -1245,6 +1253,7 @@ function openJob(id){
     ${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
+    ${documentsReady?`<button class="gold" onclick="openJobPayment('${id}')">Record payment</button>`:''}
     ${workLogsReady&&j.status!=='completed'?(activeVisit?`<button class="navy" onclick="finishVisit('${id}')">Finish visit</button><button class="light" onclick="openEditStartedVisit('${activeVisit.id}','${id}')">Correct start</button><button class="danger" onclick="cancelStartedVisit('${activeVisit.id}','${id}')">Undo start</button>`:`<button class="navy" onclick="startVisit('${id}')">Start visit</button>`):''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':'Complete job'}</button>`:''}
     <button class="light" onclick="editJob('${id}')">Edit</button>
