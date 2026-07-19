@@ -193,6 +193,46 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
   }
 }
 
+async function syncPayment(admin: ReturnType<typeof adminClient>, ownerId: string, documentId: string, paymentId: string) {
+  const { data: payment, error: paymentError } = await admin.from('document_payments').select('*').eq('id', paymentId).eq('document_id', documentId).eq('owner_id', ownerId).maybeSingle()
+  if (paymentError || !payment) throw new Error('Payment not found.')
+  if (payment.quickbooks_payment_id) return { paymentId: payment.quickbooks_payment_id, alreadySynced: true }
+  const { data: document, error: documentError } = await admin.from('documents').select('id, owner_id, customer_id, type, document_number, total, quickbooks_invoice_id, customers(id, name, address, postcode, phone, email, quickbooks_customer_id)').eq('id', documentId).eq('owner_id', ownerId).maybeSingle()
+  if (documentError || !document || document.type !== 'invoice') throw new Error('Invoice not found.')
+  const { data: relatedPayments, error: relatedPaymentsError } = await admin.from('document_payments').select('amount').eq('document_id', documentId).eq('owner_id', ownerId)
+  if (relatedPaymentsError) throw new Error('Could not validate the invoice payment total.')
+  const paidTotal = (relatedPayments || []).reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  if (paidTotal > Number(document.total || 0) + 0.001) throw new Error('Recorded payments cannot be more than the invoice total.')
+  const customer = Array.isArray(document.customers) ? document.customers[0] : document.customers
+  if (!customer) throw new Error('Choose a customer before syncing a payment to QuickBooks.')
+  const { data: connection, error: connectionError } = await admin.from('quickbooks_connections').select('*').eq('owner_id', ownerId).maybeSingle()
+  if (connectionError || !connection) throw new Error('Connect QuickBooks before syncing a payment.')
+  try {
+    const invoice = document.quickbooks_invoice_id ? { invoiceId: document.quickbooks_invoice_id } : await syncInvoice(admin, ownerId, documentId)
+    const linkedCustomer = await ensureCustomer(admin, connection, customer)
+    const created = await qboRequest(admin, linkedCustomer.connection, '/payment?minorversion=75', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        CustomerRef: { value: linkedCustomer.id },
+        TotalAmt: Number(payment.amount),
+        TxnDate: text(payment.paid_on),
+        PrivateNote: `ASP Manager payment for ${text(document.document_number)}${text(payment.note) ? ` — ${text(payment.note)}` : ''}`,
+        Line: [{ Amount: Number(payment.amount), LinkedTxn: [{ TxnId: invoice.invoiceId, TxnType: 'Invoice' }] }],
+      }),
+    })
+    const quickBooksPaymentId = text(created.body?.Payment?.Id)
+    if (!quickBooksPaymentId) throw new Error('QuickBooks did not return a payment ID.')
+    const now = new Date().toISOString()
+    await admin.from('document_payments').update({ quickbooks_payment_id: quickBooksPaymentId, quickbooks_synced_at: now, quickbooks_sync_error: null, updated_at: now }).eq('id', payment.id)
+    await admin.from('quickbooks_connections').update({ last_synced_at: now, last_sync_error: null }).eq('owner_id', ownerId)
+    return { paymentId: quickBooksPaymentId, alreadySynced: false }
+  } catch (error) {
+    const message = text(error instanceof Error ? error.message : error).slice(0, 1000)
+    await admin.from('document_payments').update({ quickbooks_sync_error: message, updated_at: new Date().toISOString() }).eq('id', payment.id)
+    await admin.from('quickbooks_connections').update({ last_sync_error: message }).eq('owner_id', ownerId)
+    throw error
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const url = new URL(request.url)
@@ -239,6 +279,11 @@ Deno.serve(async (request) => {
   if (mode === 'sync-invoice' && request.method === 'POST') {
     const payload = await request.json().catch(() => ({}))
     try { return json(await syncInvoice(admin, user.id, text(payload.document_id))) }
+    catch (error) { return json({ error: text(error instanceof Error ? error.message : error) }, 400) }
+  }
+  if (mode === 'sync-payment' && request.method === 'POST') {
+    const payload = await request.json().catch(() => ({}))
+    try { return json(await syncPayment(admin, user.id, text(payload.document_id), text(payload.payment_id))) }
     catch (error) { return json({ error: text(error instanceof Error ? error.message : error) }, 400) }
   }
   return json({ error: 'Not found.' }, 404)
