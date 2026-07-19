@@ -1432,7 +1432,7 @@ async function saveDocument(type,id=''){
   if(payload.job_id&&type==='invoice')await sb.from('jobs').update({invoice_number:number,updated_at:new Date().toISOString()}).eq('id',payload.job_id);
   await loadAll();openDocument(result.data.id)
 }
-function quoteAcceptanceUrl(document){return document?.public_token?`https://njlxklvpbcmmyaartboh.supabase.co/functions/v1/quote-acceptance?token=${encodeURIComponent(document.public_token)}`:''}
+function quoteAcceptanceUrl(document){return document?.public_token?`${location.origin}/document.html?token=${encodeURIComponent(document.public_token)}`:''}
 async function quickBooksRequest(mode,method='GET',payload=null){
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)throw new Error('Sign in again before connecting QuickBooks.');
   const response=await fetch(`${cfg.supabaseUrl}/functions/v1/quickbooks-connect?mode=${encodeURIComponent(mode)}`,{method,headers:{authorization:`Bearer ${session.access_token}`,'content-type':'application/json'},body:payload?JSON.stringify(payload):undefined});
@@ -1448,7 +1448,7 @@ async function documentEmailRequest(payload){const {data:{session}}=await sb.aut
 async function sendDocument(id){
   const document=documents.find(item=>item.id===id);if(!document)return;
   const customer=documentCustomer(document);if(!customer?.email)return alert('Add the customer’s email address before sending this document.');if(!confirm(`Email ${documentNumber(document)} to ${customer.email}?`))return;
-  try{await documentEmailRequest({document_id:id});await loadAll();openDocument(id);alert(`${document.type==='quote'?'Quote':'Invoice'} emailed to ${customer.email}. You’ll receive an email when they first open it.`)}catch(error){alert(error.message||error)}
+  try{await documentEmailRequest({document_id:id,view_url:`${location.origin}/document.html`});await loadAll();openDocument(id);alert(`${document.type==='quote'?'Quote':'Invoice'} emailed to ${customer.email}. You’ll receive an email when they first open it.`)}catch(error){alert(error.message||error)}
 }
 async function markDocumentSent(id){await setDocumentStatus(id,'sent',true)}
 function recordInvoicePayment(id,full=false){
