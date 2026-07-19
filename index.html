@@ -1290,7 +1290,7 @@ function payableInvoicesForJob(jobId){return documents.filter(document=>document
 function jobDeposits(jobId){return jobDepositPayments.filter(payment=>payment.job_id===jobId)}
 function jobDepositTotal(jobId){return jobDeposits(jobId).reduce((sum,payment)=>sum+Number(payment.amount||0),0)}
 function unappliedJobDeposits(jobId){return jobDeposits(jobId).filter(payment=>!payment.applied_document_id)}
-function depositReceiptUrl(payment){return payment?.receipt_token?`https://app.adamstapley.co.uk/r/${encodeURIComponent(payment.receipt_token)}`:''}
+function depositReceiptUrl(payment){return payment?.receipt_token?`${cfg.supabaseUrl}/functions/v1/deposit-receipt?token=${encodeURIComponent(payment.receipt_token)}`:''}
 function depositReceiptMessage(payment,customer){const first=String(customer?.name||'there').trim().split(/\s+/)[0]||'there',link=depositReceiptUrl(payment);return link?`Hi ${first}, thank you — we have received your deposit of ${money(payment.amount)} for your job. Your receipt is ready to view: ${link}`:''}
 function openJobPayment(jobId){
   const job=jobs.find(item=>item.id===jobId);if(!job)return;
