@@ -699,7 +699,7 @@ function documentCard(document){
 const renderDocumentCard=documentCard;
 documentCard=function(document){
   const markup=renderDocumentCard(document),payments=document.type==='invoice'?invoicePayments(document.id):[];
-  const cleanup=document.type!=='invoice'||document.status==='void'?'':document.quickbooks_invoice_id?`<button class="danger" onclick="voidInvoiceInQuickBooks('${document.id}')">Void & remove</button>`:document.status==='draft'&&!payments.length?`<button class="danger" onclick="deleteDraftInvoice('${document.id}')">Delete draft</button>`:'';
+  const cleanup=document.type!=='invoice'?'':document.status==='void'?`<button class="danger" onclick="removeVoidedInvoice('${document.id}')">Remove from app</button>`:document.quickbooks_invoice_id?`<button class="danger" onclick="voidInvoiceInQuickBooks('${document.id}')">Void & remove</button>`:document.status==='draft'&&!payments.length?`<button class="danger" onclick="deleteDraftInvoice('${document.id}')">Delete draft</button>`:'';
   return cleanup?markup.replace(/<\/div><\/div>$/,`${cleanup}</div></div>`):markup;
 };
 function acceptedQuoteCard(document){
@@ -1710,6 +1710,17 @@ async function deleteDraftInvoice(id){
     if(document.job_id){const {error:jobError}=await sb.from('jobs').update({invoice_number:null,updated_at:new Date().toISOString()}).eq('id',document.job_id).eq('invoice_number',document.document_number);if(jobError)throw jobError}
     const {error}=await sb.from('documents').delete().eq('id',id);if(error)throw error;
     await loadAll();closeModal();showSyncNotice('Draft invoice deleted');
+  }catch(error){alert(error.message||error)}
+}
+async function removeVoidedInvoice(id){
+  const document=documents.find(item=>item.id===id);
+  if(!document||document.type!=='invoice'||document.status!=='void')return;
+  if(!confirm(`Remove ${documentNumber(document)} from ASP Manager? It will stay safely voided in QuickBooks for your accounting record.`))return;
+  try{
+    const now=new Date().toISOString(),{error}=await sb.from('documents').update({archived_at:now,archived_by:user.id,last_modified_by:user.id,updated_at:now}).eq('id',id);
+    if(error)throw error;
+    await writeAudit('invoice',id,'archived',`Voided invoice removed from active records: ${documentNumber(document)}`);
+    await loadAll();closeModal();showSyncNotice('Voided invoice removed from active records');
   }catch(error){alert(error.message||error)}
 }
 async function archiveDocument(id){
