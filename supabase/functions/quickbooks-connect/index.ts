@@ -233,6 +233,33 @@ async function syncPayment(admin: ReturnType<typeof adminClient>, ownerId: strin
   }
 }
 
+async function voidInvoice(admin: ReturnType<typeof adminClient>, ownerId: string, documentId: string) {
+  const { data: document, error: documentError } = await admin.from('documents').select('id, owner_id, type, document_number, quickbooks_invoice_id').eq('id', documentId).eq('owner_id', ownerId).maybeSingle()
+  if (documentError || !document || document.type !== 'invoice') throw new Error('Invoice not found.')
+  if (!document.quickbooks_invoice_id) throw new Error('This invoice has not been synced to QuickBooks.')
+  const { data: connection, error: connectionError } = await admin.from('quickbooks_connections').select('*').eq('owner_id', ownerId).maybeSingle()
+  if (connectionError || !connection) throw new Error('Connect QuickBooks before voiding an invoice.')
+  try {
+    const current = await qboRequest(admin, connection, `/invoice/${encodeURIComponent(document.quickbooks_invoice_id)}?minorversion=75`)
+    const invoice = current.body?.Invoice
+    if (!invoice?.Id || invoice?.SyncToken === undefined) throw new Error('QuickBooks could not retrieve the current invoice version.')
+    await qboRequest(admin, current.connection, '/invoice?operation=void&minorversion=75', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ Id: invoice.Id, SyncToken: invoice.SyncToken }),
+    })
+    const now = new Date().toISOString()
+    await admin.from('documents').update({ status: 'void', quickbooks_sync_error: null, updated_at: now }).eq('id', document.id)
+    await admin.from('quickbooks_connections').update({ last_synced_at: now, last_sync_error: null }).eq('owner_id', ownerId)
+    return { voided: true }
+  } catch (error) {
+    const message = text(error instanceof Error ? error.message : error).slice(0, 1000)
+    await admin.from('documents').update({ quickbooks_sync_error: message, updated_at: new Date().toISOString() }).eq('id', document.id)
+    await admin.from('quickbooks_connections').update({ last_sync_error: message }).eq('owner_id', ownerId)
+    throw error
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const url = new URL(request.url)
@@ -284,6 +311,11 @@ Deno.serve(async (request) => {
   if (mode === 'sync-payment' && request.method === 'POST') {
     const payload = await request.json().catch(() => ({}))
     try { return json(await syncPayment(admin, user.id, text(payload.document_id), text(payload.payment_id))) }
+    catch (error) { return json({ error: text(error instanceof Error ? error.message : error) }, 400) }
+  }
+  if (mode === 'void-invoice' && request.method === 'POST') {
+    const payload = await request.json().catch(() => ({}))
+    try { return json(await voidInvoice(admin, user.id, text(payload.document_id))) }
     catch (error) { return json({ error: text(error instanceof Error ? error.message : error) }, 400) }
   }
   return json({ error: 'Not found.' }, 404)
