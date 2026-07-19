@@ -219,6 +219,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openAiReadiness()">AI readiness</button>
         <button class="light" onclick="openArchivedRecords()">Archived records</button>
         <button class="light" onclick="openSystemHealth()">System health</button>
+        <button class="light" onclick="openDevelopmentLog()">Development</button>
       </div>
     </div>
     <div id="backupSection" class="card">
@@ -285,7 +286,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -504,6 +505,8 @@ async function performLoadAll(){
     const visitResult=await sb.from('job_visits').select('*').order('visit_date',{ascending:false}).order('created_at',{ascending:false});
     const costResult=await sb.from('job_costs').select('*').order('cost_date',{ascending:false}).order('created_at',{ascending:false});
     if(visitResult.error||costResult.error){jobVisits=[];jobCosts=[];workLogsReady=false}else{jobVisits=visitResult.data||[];jobCosts=costResult.data||[];workLogsReady=true}
+    const developmentResult=await sb.from('development_items').select('*').order('created_at',{ascending:false});
+    if(developmentResult.error){developmentItems=[];developmentReady=false}else{developmentItems=developmentResult.data||[];developmentReady=true}
     const missing=[];
     if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
     if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
@@ -1860,6 +1863,79 @@ function openSystemHealth(){
   const pending=readOfflineQueue().length,lastBackup=localStorage.getItem('asp-manager-last-backup-at'),snapshot=localStorage.getItem('asp-manager-offline-snapshot'),lastBackupLabel=lastBackup?new Date(lastBackup).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}):'No export recorded on this device',snapshotLabel=snapshot?(() => {try{return new Date(JSON.parse(snapshot).saved_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}catch{return 'Available'}})():'No offline snapshot yet';
   const rows=[['Connection',isOnline()?'Online':'Offline â€” changes will wait on this device'],['Sync queue',pending?`${pending} change${pending===1?'':'s'} waiting to sync`:'No pending changes'],['Last local snapshot',snapshotLabel],['Last business-data export',lastBackupLabel],['Core records',`${customers.length} customers Â· ${jobs.length} jobs Â· ${documents.length} quotes/invoices`],['QuickBooks','Use the QuickBooks card to confirm the current connection and last invoice sync.']];
   show(`<div class="head"><div><h2>System health</h2><div class="meta">A quick check before a busy day or a database update.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="list">${rows.map(([label,value])=>`<div class="item"><b>${esc(label)}</b><span class="meta">${esc(value)}</span></div>`).join('')}</div><div class="notice" style="margin-top:12px"><strong>Before an update</strong><div class="meta">Export Business Data, check there are no pending changes, then keep the export in iCloud Drive or another secure location.</div></div>`);
+}
+
+function developmentStatusLabel(status){return status==='resolved'?'Resolved':'Open'}
+function developmentDate(value){try{return new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch{return ''}}
+function openDevelopmentLog(){
+  if(!developmentReady)return alert('The Development log needs its database update before it can be used.');
+  const items=developmentItems.filter(item=>item.status===developmentView);
+  const tabs=['open','resolved'].map(status=>`<button class="light ${developmentView===status?'active':''}" onclick="setDevelopmentView('${status}')">${developmentStatusLabel(status)}</button>`).join('');
+  const cards=items.map(item=>`<div class="item" style="display:block"><div class="section-title" style="margin-bottom:5px"><div><b>${esc(item.title)}</b><div class="meta">${developmentDate(item.created_at)}${item.source==='chat'?' · From work chat':''}</div></div><span class="badge ${item.status==='resolved'?'active-badge':'waiting'}">${developmentStatusLabel(item.status)}</span></div>${item.notes?`<div class="meta" style="white-space:pre-wrap">${esc(item.notes)}</div>`:''}${item.screenshot_path?`<div class="actions" style="margin-top:10px"><button class="light" onclick="viewDevelopmentScreenshot('${item.id}')">View screenshot</button>${item.status==='open'?`<button class="light" onclick="resolveDevelopmentItem('${item.id}')">Resolve & clear image</button>`:`<button class="light" onclick="deleteDevelopmentItem('${item.id}')">Remove permanently</button>`}</div>`:item.status==='open'?`<div class="actions" style="margin-top:10px"><button class="light" onclick="resolveDevelopmentItem('${item.id}')">Resolve</button></div>`:`<div class="actions" style="margin-top:10px"><button class="light" onclick="deleteDevelopmentItem('${item.id}')">Remove permanently</button></div>`}</div>`).join('')||`<div class="empty">${developmentView==='open'?'No open development notes. Add one when you spot an improvement.':'No resolved notes kept here.'}</div>`;
+  show(`<div class="head"><div><h2>Development log</h2><div class="meta">Private notes and screenshot evidence for improving ASP Manager.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Keep it useful and tidy</strong><div class="meta">Add a quick note or screenshot from any device. Resolving an item removes its stored screenshot; you can then remove the completed note when it is no longer useful.</div></div><div class="section-title" style="margin-top:12px"><div class="filter-row" style="margin:0">${tabs}</div><button class="gold" onclick="openDevelopmentItemForm()">+ Add note</button></div><div class="list">${cards}</div>`);
+}
+function setDevelopmentView(view){developmentView=view;openDevelopmentLog()}
+function openDevelopmentItemForm(){
+  show(`<div class="head"><div><h2>Add development note</h2><div class="meta">Private to your ASP Manager account.</div></div><button class="light" onclick="openDevelopmentLog()">Back</button></div><div class="field"><label for="developmentTitle">What needs attention?</label><input id="developmentTitle" maxlength="160" placeholder="e.g. Quote screen on iPhone"></div><div class="field"><label for="developmentNotes">Notes</label><textarea id="developmentNotes" rows="5" placeholder="What happened, where it happened, and what you would like changed."></textarea></div><div class="field"><label for="developmentScreenshot">Screenshot (optional)</label><input id="developmentScreenshot" type="file" accept="image/jpeg,image/png,image/webp"><div class="meta">Images are resized before upload to keep the log mobile-friendly.</div></div><button class="gold" style="width:100%" onclick="saveDevelopmentItem()">Save development note</button>`);
+  setTimeout(()=>$('developmentTitle')?.focus(),50);
+}
+async function compressDevelopmentScreenshot(file){
+  if(!file)return null;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Use a JPG, PNG or WebP screenshot.');
+  if(file.size>15*1024*1024)throw new Error('Choose an image smaller than 15 MB.');
+  const sourceUrl=URL.createObjectURL(file);
+  try{
+    const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('That screenshot could not be read.'));img.src=sourceUrl});
+    const scale=Math.min(1,1600/Math.max(image.naturalWidth||image.width,1));
+    const width=Math.max(1,Math.round((image.naturalWidth||image.width)*scale)),height=Math.max(1,Math.round((image.naturalHeight||image.height)*scale));
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const context=canvas.getContext('2d');context.drawImage(image,0,0,width,height);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.9));
+    if(!blob)throw new Error('That screenshot could not be prepared.');
+    return new File([blob],'development-screenshot.webp',{type:'image/webp'});
+  }finally{URL.revokeObjectURL(sourceUrl)}
+}
+async function saveDevelopmentItem(){
+  const title=String($('developmentTitle')?.value||'').trim(),notes=String($('developmentNotes')?.value||'').trim(),file=$('developmentScreenshot')?.files?.[0];
+  if(!title)return alert('Add a short title so this can be found later.');
+  if(!isOnline())return alert('Connect to the internet before adding a screenshot to the Development log.');
+  setModalBusy(true);let screenshotPath='';
+  try{
+    if(file){
+      const uniqueId=crypto?.randomUUID?.()||Math.random().toString(36).slice(2),compressed=await compressDevelopmentScreenshot(file),path=`${user.id}/${Date.now()}-${uniqueId}.webp`;
+      const {error:uploadError}=await sb.storage.from('development-files').upload(path,compressed,{contentType:compressed.type,upsert:false});
+      if(uploadError)throw uploadError;screenshotPath=path;
+    }
+    const {data,error}=await sb.from('development_items').insert({owner_id:user.id,title,notes,screenshot_path:screenshotPath||null,source:'app'}).select().single();
+    if(error){if(screenshotPath)await sb.storage.from('development-files').remove([screenshotPath]);throw error}
+    await writeAudit('file',data.id,'created','Development item created',{has_screenshot:!!screenshotPath});
+    await loadAll();developmentView='open';openDevelopmentLog();
+  }catch(error){alert(friendlyError(error))}finally{setModalBusy(false)}
+}
+async function viewDevelopmentScreenshot(id){
+  const item=developmentItems.find(entry=>entry.id===id);if(!item?.screenshot_path)return;
+  const preview=window.open('','_blank');
+  const {data,error}=await sb.storage.from('development-files').createSignedUrl(item.screenshot_path,900);
+  if(error||!data?.signedUrl){if(preview)preview.close();return alert(friendlyError(error||new Error('Screenshot not found.')))}
+  if(preview)preview.location.href=data.signedUrl;else window.location.href=data.signedUrl;
+}
+async function resolveDevelopmentItem(id){
+  const item=developmentItems.find(entry=>entry.id===id);if(!item)return;
+  if(!confirm('Resolve this note and remove its stored screenshot?'))return;
+  setModalBusy(true);
+  try{
+    if(item.screenshot_path){const {error:removeError}=await sb.storage.from('development-files').remove([item.screenshot_path]);if(removeError)throw removeError}
+    const {error}=await sb.from('development_items').update({status:'resolved',resolved_at:new Date().toISOString(),screenshot_path:null,updated_at:new Date().toISOString()}).eq('id',id);
+    if(error)throw error;await writeAudit('file',id,'updated','Development item resolved');await loadAll();developmentView='open';openDevelopmentLog();
+  }catch(error){alert(friendlyError(error))}finally{setModalBusy(false)}
+}
+async function deleteDevelopmentItem(id){
+  const item=developmentItems.find(entry=>entry.id===id);if(!item)return;
+  if(!confirm('Remove this completed development note permanently?'))return;
+  setModalBusy(true);
+  try{
+    if(item.screenshot_path){const {error:removeError}=await sb.storage.from('development-files').remove([item.screenshot_path]);if(removeError)throw removeError}
+    const {error}=await sb.from('development_items').delete().eq('id',id);if(error)throw error;await loadAll();openDevelopmentLog();
+  }catch(error){alert(friendlyError(error))}finally{setModalBusy(false)}
 }
 
 setTimeout(()=>{if(appView?.classList.contains('loading')){console.warn('Loading watchdog released the screen');appView.classList.remove('loading');const notice=$('setupNotice');if(notice){notice.innerHTML='<strong>Loading took too long.</strong> The screen has been unlocked. Refresh once if any section is missing.';notice.classList.remove('hidden')}}},12000);
