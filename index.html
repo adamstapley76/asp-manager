@@ -150,6 +150,12 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="closeModalAndBook()">Book work</button></div>
     </div>
 
+    <div class="card today-calendar">
+      <div class="section-title"><div><h2>This week</h2><div class="meta">Your diary at a glance. Choose a day to see the work in time order.</div></div><button class="gold" onclick="openNewJob()">Book work</button></div>
+      <div class="actions" style="margin:-2px 0 12px"><button class="light" onclick="shiftDiary(-1)">Previous</button><button class="navy" onclick="goToTodayInDiary()">Today</button><button class="light" onclick="shiftDiary(1)">Next</button></div>
+      <div id="dashboardDiaryResults"></div>
+    </div>
+
     <div id="acceptedQuotesCard" class="card compact-section hidden">
       <div class="section-title"><div><h2>Quotes accepted</h2><div class="meta">Customers are ready for the next step.</div></div><button class="light" onclick="showPage('documents');setDocumentFilter('accepted')">View all</button></div>
       <div id="acceptedQuotesList" class="list"></div>
@@ -158,16 +164,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div id="awaitingPaymentCard" class="card compact-section hidden">
       <div class="section-title"><div><h2>Awaiting payment</h2><div class="meta">Invoices sent to customers — record payment when it reaches your bank.</div></div><button class="light" onclick="openAwaitingPayments()">View all</button></div>
       <div id="awaitingPaymentList" class="list"></div>
-    </div>
-
-    <div class="card today-card today-primary">
-      <div class="section-title"><h2>Today's jobs</h2></div>
-      <div id="todayJobs" class="list"></div>
-    </div>
-
-    <div class="card tomorrow-card compact-section">
-      <div class="section-title"><div><h2 id="upcomingJobsTitle">Tomorrow's jobs</h2><div class="meta" id="tomorrowLabel"></div></div></div>
-      <div id="tomorrowJobs" class="list"></div>
     </div>
 
     <div class="card service-summary compact-section">
@@ -869,7 +865,7 @@ function renderDashboard(){
 
 function startOfDiaryWeek(date=today()){const value=new Date(`${date}T12:00:00`),day=value.getDay(),mondayOffset=day===0?-6:1-day;return addDays(date,mondayOffset)}
 function renderDiary(){
-  const holder=$('diaryResults');if(!holder)return;
+  const holders=[$('diaryResults'),$('dashboardDiaryResults')].filter(Boolean);if(!holders.length)return;
   const input=$('diaryFrom'),requested=input?.value||today(),from=startOfDiaryWeek(requested),days=7,to=addDays(from,days-1);
   if(input&&input.value!==from)input.value=from;
   const relevant=jobs.filter(j=>j.scheduled_date&&j.scheduled_date>=from&&j.scheduled_date<=to&&!['cancelled'].includes(j.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
@@ -879,7 +875,8 @@ function renderDiary(){
   const selectedJobs=groups[diarySelectedDate]||[];
   const selectedLabel=new Date(`${diarySelectedDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const weekLabel=`${new Date(`${from}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${new Date(`${to}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
-  holder.innerHTML=`<div class="calendar-range"><strong>${esc(weekLabel)}</strong><span>${relevant.length} booked job${relevant.length===1?'':'s'}</span></div><div class="calendar-week-strip">${dates.map(date=>{const dayJobs=groups[date]||[],value=new Date(`${date}T12:00:00`),weekday=value.toLocaleDateString('en-GB',{weekday:'short'}),day=value.getDate();return `<button class="calendar-day-tab ${date===diarySelectedDate?'selected':''} ${date===today()?'today':''}" onclick="setDiaryDay('${date}')" aria-label="Show ${esc(displayDate(date))}"><span class="weekday">${esc(weekday)}</span><span class="day-number">${day}</span><small>${dayJobs.length?`${dayJobs.length} job${dayJobs.length===1?'':'s'}`:'Free'}</small></button>`}).join('')}</div><div class="calendar-day-detail"><div class="calendar-day-heading"><div><h3>${esc(selectedLabel)}</h3><div class="meta">${selectedJobs.length?`${selectedJobs.length} job${selectedJobs.length===1?'':'s'} booked`:'Nothing booked yet'}</div></div><button class="light" onclick="openNewJob()">Book work</button></div>${selectedJobs.length?`<div class="calendar-timeline">${selectedJobs.map(calendarJobCard).join('')}</div>`:`<div class="calendar-empty">No work is booked for this day.<br><button class="gold" onclick="openNewJob()">Book work</button></div>`}</div>`;
+  const markup=`<div class="calendar-range"><strong>${esc(weekLabel)}</strong><span>${relevant.length} booked job${relevant.length===1?'':'s'}</span></div><div class="calendar-week-strip">${dates.map(date=>{const dayJobs=groups[date]||[],value=new Date(`${date}T12:00:00`),weekday=value.toLocaleDateString('en-GB',{weekday:'short'}),day=value.getDate();return `<button class="calendar-day-tab ${date===diarySelectedDate?'selected':''} ${date===today()?'today':''}" onclick="setDiaryDay('${date}')" aria-label="Show ${esc(displayDate(date))}"><span class="weekday">${esc(weekday)}</span><span class="day-number">${day}</span><small>${dayJobs.length?`${dayJobs.length} job${dayJobs.length===1?'':'s'}`:'Free'}</small></button>`}).join('')}</div><div class="calendar-day-detail"><div class="calendar-day-heading"><div><h3>${esc(selectedLabel)}</h3><div class="meta">${selectedJobs.length?`${selectedJobs.length} job${selectedJobs.length===1?'':'s'} booked`:'Nothing booked yet'}</div></div><button class="light" onclick="openNewJob()">Book work</button></div>${selectedJobs.length?`<div class="calendar-timeline">${selectedJobs.map(calendarJobCard).join('')}</div>`:`<div class="calendar-empty">No work is booked for this day.<br><button class="gold" onclick="openNewJob()">Book work</button></div>`}</div>`;
+  holders.forEach(holder=>holder.innerHTML=markup);
 }
 function setDiaryDay(date){diarySelectedDate=date;renderDiary()}
 function calendarJobCard(job){const customer=customers.find(item=>item.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time to confirm',address=resolveJobAddress(job);return `<div class="calendar-appointment"><div class="calendar-time">${esc(when)}</div><div><button class="calendar-job" onclick="openJob('${job.id}')"><strong>${esc(job.title||job.job_type||'Untitled job')}</strong><span>${esc(customer?.name||'No customer linked')}</span>${address?`<span>${esc(address)}</span>`:''}</button><div class="calendar-job-actions"><button class="light" onclick="openJob('${job.id}')">Open job</button><button class="light" onclick="openMoveJob('${job.id}')">Move</button></div></div></div>`}
