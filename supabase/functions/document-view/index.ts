@@ -35,7 +35,7 @@ Deno.serve(async (request) => {
           method: 'POST',
           headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
           body: JSON.stringify({
-            from: 'ASP Manager <info@adamstapley.co.uk>',
+            from: 'Adam Stapley Plumbing Ltd <info@adamstapley.co.uk>',
             to: [owner.user.email],
             subject: `${document.type === 'quote' ? 'Quote' : 'Invoice'} viewed: ${text(document.document_number)}`,
             html: `<p><b>${text(customer?.name || 'A customer')}</b> viewed ${text(document.document_number)}.</p><p>Total: £${Number(document.total || 0).toFixed(2)}</p>`,
