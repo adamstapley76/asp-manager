@@ -12,7 +12,7 @@
   --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
   --text:#1f2937;--muted:#667085;--line:#e4e7ec;--red:#b42318;--amber:#b54708;
   --green:#067647;--blue:#175cd3;--purple:#6941c6;--white:#fff;
-  --header-height:0px;--mobile-nav-height:52px;--visual-viewport-top:0px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
+  --header-height:0px;--mobile-nav-height:52px;--dashboard-hero-height:58px;--visual-viewport-top:0px;--visual-viewport-height:100dvh;--modal-available-height:calc(100dvh - 110px)
 }
 *{box-sizing:border-box;min-width:0}
 html{scroll-behavior:smooth;width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
@@ -109,8 +109,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     #authView{padding-top:20px}.app-nav{border-radius:0!important}
     .app-nav{gap:7px!important;background:#fff!important;padding:7px 10px!important;box-shadow:0 2px 10px #10182812}.app-nav button{border:1px solid #dce2e8!important;border-radius:999px!important;background:#fff!important;box-shadow:0 1px 2px #1018280d;font-weight:800}.app-nav button.active{background:var(--navy)!important;color:#fff!important;border-color:var(--navy)!important}.app-nav #navDiary{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--navy)!important}
     header{display:none}
-    #appView:has(#pageDashboard:not(.hidden)){padding-top:calc(var(--mobile-nav-height) + 58px)}
-    #appView:has(#pageDashboard:not(.hidden)) #mobileNavShell{top:58px}
+    #appView:has(#pageDashboard:not(.hidden)){padding-top:calc(var(--mobile-nav-height) + var(--dashboard-hero-height))}
+    #appView:has(#pageDashboard:not(.hidden)) #mobileNavShell{top:var(--dashboard-hero-height)}
     #pageDashboard>.hero-today{position:fixed;top:0;left:0;right:0;z-index:41;border-radius:0;margin:0!important;padding:calc(9px + env(safe-area-inset-top)) 13px 9px!important;box-shadow:0 3px 12px #10182818}
     .service-summary-grid{grid-template-columns:repeat(3,1fr)}
     .today-primary .item{padding:8px}
@@ -298,12 +298,17 @@ function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
   const headerHeight=header?.getBoundingClientRect().height||0,navHeight=nav?.getBoundingClientRect().height||0;
   const viewport=window.visualViewport,viewportHeight=viewport?.height||window.innerHeight,isMobile=matchMedia('(max-width:760px)').matches;
+  const dashboard=$('pageDashboard'),dashboardActive=Boolean(dashboard&&!dashboard.classList.contains('hidden'));
+  const dashboardHero=dashboardActive?dashboard.querySelector(':scope > .hero-today'):null;
+  const dashboardHeroHeight=isMobile&&dashboardHero?Math.max(58,Math.ceil(dashboardHero.getBoundingClientRect().height||0)):0;
+  const mobileChromeHeight=isMobile?headerHeight+navHeight+dashboardHeroHeight:0;
   if(header)document.documentElement.style.setProperty('--header-height',headerHeight+'px');
   if(nav)document.documentElement.style.setProperty('--mobile-nav-height',navHeight+'px');
+  if(dashboardActive)document.documentElement.style.setProperty('--dashboard-hero-height',dashboardHeroHeight+'px');
   document.documentElement.style.setProperty('--visual-viewport-top',(viewport?.offsetTop||0)+'px');
   document.documentElement.style.setProperty('--visual-viewport-height',viewportHeight+'px');
-  document.documentElement.style.setProperty('--modal-top',((viewport?.offsetTop||0)+(isMobile?headerHeight+navHeight:0))+'px');
-  document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-(isMobile?headerHeight+navHeight:0))+'px');
+  document.documentElement.style.setProperty('--modal-top',((viewport?.offsetTop||0)+mobileChromeHeight)+'px');
+  document.documentElement.style.setProperty('--modal-available-height',Math.max(240,viewportHeight-mobileChromeHeight)+'px');
 }
 const appHeader=document.querySelector('header');if(appHeader)new ResizeObserver(syncFixedChromeHeights).observe(appHeader);
 new ResizeObserver(syncFixedChromeHeights).observe($('mobileNavShell'));
@@ -312,7 +317,7 @@ function ensureActiveFieldVisible(behavior='auto'){
   const field=document.activeElement;if(!field||!/^(INPUT|TEXTAREA|SELECT)$/.test(field.tagName))return;
   const viewport=window.visualViewport,viewportTop=viewport?.offsetTop||0,viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
   const sheet=field.closest('.sheet'),workflowScroller=field.closest('.workflow-scroll'),scrollContainer=workflowScroller||sheet,rect=field.getBoundingClientRect();
-  const stickyHead=sheet?.querySelector(':scope > .head'),chromeBottom=(document.querySelector('header')?.getBoundingClientRect().bottom||0)+($('mobileNavShell')?.getBoundingClientRect().height||0);
+  const stickyHead=sheet?.querySelector(':scope > .head'),chromeBottom=Math.max(document.querySelector('header')?.getBoundingClientRect().bottom||0,$('mobileNavShell')?.getBoundingClientRect().bottom||0);
   const containerRect=scrollContainer?.getBoundingClientRect(),visibleTop=workflowScroller?(containerRect.top+12):(sheet?Math.max(sheet.getBoundingClientRect().top,(stickyHead?.getBoundingClientRect().bottom||sheet.getBoundingClientRect().top))+10:Math.max(viewportTop,chromeBottom)+10);
   const visibleBottom=Math.min(viewportBottom-18,containerRect?.bottom??viewportBottom-18);
   let delta=0;if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;else if(rect.top<visibleTop)delta=rect.top-visibleTop;
@@ -547,6 +552,7 @@ function showPage(page){
     $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
     $(`nav${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('active',p===page);
   });
+  syncFixedChromeHeights();requestAnimationFrame(syncFixedChromeHeights);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -802,7 +808,7 @@ function openWhatsAppBusiness(value,text=''){const business=whatsappBusinessUrl(
 function whatsappBusinessButton(value,text='',className='btn light',before=''){const href=whatsappBusinessUrl(value,text);if(!href)return '';return `<a class="${className}" href="${href}" data-phone="${esc(value)}" data-text="${esc(text)}" onclick="${before}return openWhatsAppBusiness(this.dataset.phone,this.dataset.text)">WhatsApp</a>`}
 function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job),active=!['completed','lost','cancelled'].includes(job.status);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappBusinessButton(c.phone)}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${active?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
-function returnVisitNeeded(job){return ['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required)}
+function returnVisitNeeded(job){return Boolean(job?.is_return_visit)||(['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required))}
 function workQueueJobs(){return jobs.filter(job=>!['completed','lost','cancelled'].includes(job.status)&&!job.scheduled_date).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''))}
 function queueJobCard(job){
   const returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':job.status==='to_book'?'Ready to book':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
@@ -1101,6 +1107,9 @@ function show(html,sheetClass=''){
   lockBackgroundPage();
   sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
   sheet.innerHTML=html||'<div class="notice error">This screen could not be displayed.</div>';
+  sheet.querySelectorAll('button[onclick^="markDocumentSent"]').forEach(button=>button.textContent='Already sent another way');
+  sheet.querySelectorAll('button[onclick^="sendDocument"]').forEach(button=>{if(button.textContent.trim()==='Send & sync')button.textContent='Send email & sync'});
+  const paymentButton=sheet.querySelector('.actions button[onclick^="openInvoicePayment"]');if(paymentButton)paymentButton.parentElement.prepend(paymentButton);
   modal.classList.add('on');modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   prepareFormInputs(sheet);syncFixedChromeHeights();
 }
@@ -1550,8 +1559,9 @@ function depositReceiptUrl(payment){return payment?.receipt_token?`${cfg.supabas
 function depositReceiptMessage(payment,customer){const first=String(customer?.name||'there').trim().split(/\s+/)[0]||'there',link=depositReceiptUrl(payment);return link?`Hi ${first}, thank you — we have received your deposit of ${money(payment.amount)} for your job. Your receipt is ready to view: ${link}`:''}
 function openJobPayment(jobId){
   const job=jobs.find(item=>item.id===jobId);if(!job)return;
-  const invoices=payableInvoicesForJob(jobId),acceptedQuote=documents.find(document=>document.type==='quote'&&document.job_id===jobId&&document.status==='accepted');
+  const invoices=payableInvoicesForJob(jobId),allInvoices=documents.filter(document=>document.type==='invoice'&&document.job_id===jobId&&document.status!=='void'),acceptedQuote=documents.find(document=>document.type==='quote'&&document.job_id===jobId&&document.status==='accepted');
   if(!depositsReady)return alert('Job deposits need the latest database update before they can be recorded.');
+  if(!invoices.length&&allInvoices.length)return openJobCheckout(jobId);
   if(!invoices.length)return show(`<div class="head"><div><h2>Record invoice payment</h2><div class="meta">Create the invoice when work is ready to be billed.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>There is no invoice for this job yet.</strong> If the customer has paid money upfront, record it as a deposit now. It will be deducted automatically from the final invoice later.</div><div class="actions" style="margin-top:12px"><button class="gold" onclick="recordJobDeposit('${jobId}')">Record deposit received</button><button class="light" onclick="openNewDocument('invoice','${jobId}','${job.customer_id||''}')">Create invoice</button></div>`);
   if(invoices.length===1)return openInvoicePayment(invoices[0].id);
   if(invoices.length>1)return show(`<div class="head"><div><h2>Record payment</h2><div class="meta">Choose which invoice the bank payment is for.</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="list">${invoices.map(invoice=>`<div class="item"><div><h3>${esc(documentNumber(invoice))} · ${esc(invoice.title||'Invoice')}</h3><div class="meta">${esc(invoicePaymentLabel(invoice))} · ${esc(money(invoiceBalance(invoice)))} remaining</div></div><div class="item-actions"><button class="gold" onclick="openInvoicePayment('${invoice.id}')">Payment</button></div></div>`).join('')}</div>`);
@@ -1577,6 +1587,7 @@ function sendDepositReceiptWhatsApp(id){const payment=jobDepositPayments.find(it
 function openJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const customer=customers.find(c=>c.id===j.customer_id),price=money(j.agreed_price??j.quoted_amount),linkedDocuments=documents.filter(d=>d.job_id===id).sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
+  const hasInvoice=linkedDocuments.some(document=>document.type==='invoice'&&document.status!=='void'),hasPayableInvoice=linkedDocuments.some(document=>document.type==='invoice'&&document.status!=='void'&&invoiceBalance(document)>0);
   const fig=jobFigures(j),address=resolveJobAddress(j),wa=customer?.phone?whatsappUrl(customer.phone):'',deposits=jobDeposits(id),depositTotal=jobDepositTotal(id),unappliedDeposits=unappliedJobDeposits(id);
   const visitRows=fig.visits.map(v=>`<div class="item visit-card"><div><h3>${esc(displayDate(v.visit_date))}${v.start_time?` · ${esc(displayTime(v.start_time))}${v.end_time?`–${esc(displayTime(v.end_time))}`:''}`:''}</h3><div class="meta">${esc(v.notes||'No visit notes')}<br>${Number(v.hours||0)?`${esc(v.hours)} hours`:v.start_time?'Visit in progress':''}${v.return_required?' · Return required':''}</div></div><div class="item-actions">${v.start_time&&!v.end_time?`<button class="gold" onclick="finishVisit('${id}')">Finish</button>`:''}<button class="light" onclick="${v.start_time&&!v.end_time?`openEditStartedVisit('${v.id}','${id}')`:`openEditVisit('${v.id}','${id}')`}">${v.start_time&&!v.end_time?'Correct start':'Edit'}</button></div></div>`).join('');
   const costRows=fig.costs.map(c=>`<tr><td>${esc(displayDate(c.cost_date))}</td><td>${esc(c.description)}</td><td class="num">${esc(money(Number(c.quantity||1)*Number(c.unit_cost||0)))}</td><td><button class="light" onclick="openEditJobCost('${c.id}','${id}')">Edit</button></td></tr>`).join('');
@@ -1589,8 +1600,9 @@ function openJob(id){
     ${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
-    ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">Invoice & payment</button>`}
+    ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:hasPayableInvoice?`<button class="gold" onclick="openJobPayment('${id}')">Payment</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">${hasInvoice?'Open invoice':'Create invoice'}</button>`}
     ${j.status!=='completed'?`<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work not in diary</button>`:''}`:''}
+    <button class="light" onclick="openFollowOnWork('${id}')">Return visit</button>
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
   <details class="secondary-panel"><summary>More job details</summary>
@@ -1647,6 +1659,19 @@ function openJobCheckout(jobId,message=''){
   const customer=customers.find(item=>item.id===job.customer_id),invoices=documents.filter(document=>document.type==='invoice'&&document.job_id===jobId&&document.status!=='void').sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||''));
   const invoiceActions=invoices.length?`<div class="list">${invoices.map(invoice=>`<div class="item"><div><h3>${esc(documentNumber(invoice))}</h3><div class="meta">${esc(invoicePaymentLabel(invoice))}${invoice.quickbooks_invoice_id?' · Synced to QuickBooks':invoice.email_sent_at?' · QuickBooks still needs syncing':''}</div></div><div class="item-actions">${!invoice.email_sent_at?`<button class="gold" onclick="sendDocument('${invoice.id}')">Send & sync</button>`:''}<button class="light" onclick="openDocument('${invoice.id}')">Open</button>${invoice.email_sent_at&&!invoice.quickbooks_invoice_id?`<button class="light" onclick="syncInvoiceToQuickBooks('${invoice.id}')">Sync QuickBooks</button>`:''}${invoiceBalance(invoice)>0?`<button class="gold" onclick="openInvoicePayment('${invoice.id}')">Payment</button>`:''}</div></div>`).join('')}</div>`:`<div class="notice"><strong>No invoice yet.</strong><div class="meta">Create it now with the job and customer already filled in, then send it when ready.</div></div><button class="gold" style="width:100%;margin-top:10px" onclick="openNewDocument('invoice','${jobId}','${job.customer_id||''}')">Create invoice</button>`;
   show(`<div class="head"><div><h2>Job completed</h2><div class="meta">${esc(job.title||'Job')} · ${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="openJob('${jobId}')">Back to job</button></div>${message?`<div class="notice success">${esc(message)}</div>`:''}<div class="notice success"><strong>Work saved.</strong><div class="meta">Choose the next money step.</div></div><div class="muted-box" style="margin-top:12px"><h3>Invoice & payment</h3>${invoiceActions}</div>${depositsReady?`<button class="light" style="width:100%;margin-top:12px" onclick="recordJobDeposit('${jobId}')">Record a deposit instead</button>`:''}<button class="light" style="width:100%;margin-top:8px" onclick="openJob('${jobId}')">Finish for now</button>`)
+}
+function openFollowOnWork(jobId){
+  const job=jobs.find(item=>item.id===jobId),customer=customers.find(item=>item.id===job?.customer_id);if(!job)return;
+  showWorkflow(`<div class="head"><div><h2>Return visit</h2><div class="meta">The original diary job remains as your record.</div></div><button class="light" onclick="closeWorkflow();openJob('${jobId}')">Back</button></div><div class="notice"><strong>Add to Work not in diary</strong><div class="meta">This creates one separate, prioritised follow-on item for ${esc(customer?.name||'this customer')}.</div></div><div class="field"><label>What needs doing?</label><input id="followOnTitle" value="${esc(job.title||job.job_type||'Return visit')}" autocapitalize="sentences"></div><div class="field"><label>Notes (optional)</label><textarea id="followOnNotes" placeholder="Anything to remember for the return visit"></textarea></div><button class="gold" style="width:100%;margin-top:14px" onclick="createFollowOnWork('${jobId}')">Add return visit</button>`);
+}
+async function createFollowOnWork(jobId){
+  if(!requireOnline())return;
+  const job=jobs.find(item=>item.id===jobId);if(!job)return;
+  const title=$('followOnTitle')?.value.trim()||job.title||job.job_type||'Return visit',notes=$('followOnNotes')?.value.trim()||'';
+  const payload={owner_id:user.id,parent_job_id:jobId,is_return_visit:true,customer_id:job.customer_id||null,title:/^return visit/i.test(title)?title:`Return visit — ${title}`,job_type:job.job_type||'',status:'to_book',scheduled_date:null,scheduled_time:null,address:job.address||'',postcode:job.postcode||'',description:[`Return visit required from ${displayDate(job.scheduled_date||today())}.`,notes].filter(Boolean).join('\n\n'),quoted_amount:null,invoice_number:null,billing_method:job.billing_method||'time_materials',agreed_price:null,waiting_reason:null,follow_up_date:null,lead_source:job.lead_source||null,lead_channel:job.lead_channel||null,lead_town:job.lead_town||null,property_type:job.property_type||null,property_owner_type:job.property_owner_type||null,access_notes:job.access_notes||null,boiler_make:job.boiler_make||null,boiler_model:job.boiler_model||null,boiler_serial_number:job.boiler_serial_number||null,boiler_install_year:job.boiler_install_year||null,boiler_warranty:job.boiler_warranty||null,estimated_duration_minutes:job.estimated_duration_minutes||null};
+  const {data,error}=await sb.from('jobs').insert(payload).select().single();if(error)return alert(error.message||'Could not add the return visit.');
+  await writeAudit('job',data?.id,'return_visit_created',`Return visit created: ${title}`,{parent_job_id:jobId});
+  await loadAll();closeWorkflow();showSyncNotice('Return visit added to Work not in diary.');
 }
 function editJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
