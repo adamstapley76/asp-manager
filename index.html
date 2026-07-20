@@ -1276,7 +1276,7 @@ async function saveService(id){
 }
 
 function customerOptions(selected=''){return `<option value="">No customer linked</option>`+customers.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)} — ${esc(c.postcode||'No postcode')}</option>`).join('')}
-let selectedJobCustomerId='',selectedEditJobCustomerId='';
+let selectedJobCustomerId='',selectedEditJobCustomerId='',newJobDraft=null;
 function customerSearchText(c){return [c.name,customerAddress(c),c.address,c.postcode,c.phone,c.email].filter(Boolean).join(' ').toLowerCase()}
 function compactSearchText(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function customerMatches(customer,query){const normal=String(query||'').trim().toLowerCase(),compact=compactSearchText(query),search=customerSearchText(customer);return search.includes(normal)||compactSearchText(search).includes(compact)}
@@ -1304,16 +1304,14 @@ function inferJobType(title){
   if(/boiler|heating/.test(t))return 'Heating repair';
   return 'Other';
 }
-function applyJobTemplate(value){if(!$('jTitle'))return;$('jTitle').value=value;$('jobTypeHint').textContent=`Type: ${inferJobType(value)}`;$('jDescription')?.focus()}
-function updateJobTypeHint(){if($('jobTypeHint'))$('jobTypeHint').textContent=`Type: ${inferJobType($('jTitle')?.value)}`}
-function openNewJob(customerId=''){
+function openNewJob(customerId='',skipCustomerChoice=false){
   if(!jobsReady)return show(`<div class="head"><h2>Jobs setup needed</h2><button class="light" onclick="closeModal()">Close</button></div><div class="notice"><strong>Run supabase_setup_v0.2.sql first.</strong></div>`);
+  if(!customerId&&!skipCustomerChoice)return openJobCustomerChoice();
   selectedJobCustomerId=customerId||'';
   const customer=customers.find(c=>c.id===customerId);
   showWorkflow(`<div class="head"><h2>Book work</h2><button class="light" onclick="closeWorkflow()">Close</button></div>
-  <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" autocapitalize="words" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div><div id="inlineCustomerCreate" class="inline-create hidden"></div></div>
-  <div class="field"><label>Work needed</label><input id="jTitle" autocomplete="off" autocapitalize="words" placeholder="e.g. Boiler service, pump replacement, WC repair" oninput="updateJobTypeHint()"><div id="jobTypeHint" class="meta">Type: Other</div></div>
-  <div class="choice-grid"><button type="button" class="choice" onclick="applyJobTemplate('Boiler service')">Boiler service</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler installation')">Boiler installation</button><button type="button" class="choice" onclick="applyJobTemplate('Boiler repair')">Boiler repair</button><button type="button" class="choice" onclick="applyJobTemplate('Quote visit')">Quote visit</button><button type="button" class="choice" onclick="applyJobTemplate('Gas safety certificate')">Gas safety</button></div>
+  <div class="field"><label>Customer</label><input id="jCustomerSearch" autocomplete="off" autocapitalize="words" placeholder="Type name, address, postcode or phone" value="${esc(customer?.name||'')}" oninput="renderJobCustomerSearch()"><div id="jCustomerResults" class="customer-search-results"></div><div id="jSelectedCustomer" class="${customer?'selected-customer':'hidden'}"></div></div>
+  <div class="field"><label>Work needed</label><input id="jTitle" autocomplete="off" autocapitalize="words" placeholder="e.g. Boiler service, pump replacement, WC repair"></div>
   <div class="field"><label>Where should this work go?</label><select id="jStage" onchange="toggleJobStageFields()"><option value="booked">Book into diary now</option><option value="enquiry">New lead — needs contacting</option><option value="to_book">Not in diary — work agreed, no date yet</option><option value="waiting">Waiting — cannot arrange the next visit yet</option></select></div>
   <div id="jobDateFields" class="row"><div class="field"><label>Date</label><input id="jDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="jTime" type="time" step="900"></div></div>
   <div id="waitingReasonField" class="field hidden"><label>Waiting for</label><select id="jWaitingReason"><option value="customer">Customer</option><option value="parts">Parts</option><option value="materials">Materials</option><option value="another_trade">Another trade</option><option value="approval">Approval</option><option value="payment">Payment</option><option value="other">Other</option></select></div>
@@ -1323,21 +1321,20 @@ function openNewJob(customerId=''){
   <div class="field"><label>Lead source</label><select id="jLeadSource">${leadSourceOptions()}</select></div><div class="row"><div class="field"><label>Town</label><input id="jLeadTown" placeholder="Optional"></div><div class="field"><label>Property type</label><select id="jPropertyType"><option value="">Not recorded</option><option>House</option><option>Flat</option><option>Commercial</option><option>Other</option></select></div></div><details class="secondary-panel"><summary>Marketing details</summary><div class="row"><div class="field"><label>Campaign</label><input id="jLeadCampaign" placeholder="Optional"></div><div class="field"><label>Keyword</label><input id="jLeadKeyword" placeholder="Optional"></div></div><div class="field"><label>Landing page</label><input id="jLeadLanding" type="url" inputmode="url" placeholder="Optional"></div><div class="row"><div class="field"><label>Lead cost £</label><input id="jLeadCost" type="number" inputmode="decimal" step="0.01"></div><div class="field"><label>LSA charge £</label><input id="jLsaCharge" type="number" inputmode="decimal" step="0.01"></div></div></details>
   <div class="field"><label>Notes (optional)</label><textarea id="jDescription" autocapitalize="sentences"></textarea></div></details>
   <button id="saveJobBtn" class="gold" style="width:100%" onclick="saveNewJob()">Book work</button>`);
-  enableAddressAutocompleteSoon('jAddress','jPostcode');if(customer)selectJobCustomer(customer.id,false); else setTimeout(()=>$('jCustomerSearch')?.focus(),50);
+  enableAddressAutocompleteSoon('jAddress','jPostcode');if(customer)selectJobCustomer(customer.id,false);restoreNewJobDraft();
 }
 function toggleJobStageFields(){const stage=$('jStage')?.value||'booked';$('jobDateFields')?.classList.toggle('hidden',stage!=='booked');$('waitingReasonField')?.classList.toggle('hidden',stage!=='waiting');}
+function captureNewJobDraft(){return {title:$('jTitle')?.value||'',stage:$('jStage')?.value||'booked',date:$('jDate')?.value||today(),time:$('jTime')?.value||'',address:$('jAddress')?.value||'',postcode:$('jPostcode')?.value||'',price:$('jPrice')?.value||'',billing:$('jBilling')?.value||'time_materials',description:$('jDescription')?.value||''}}
+function restoreNewJobDraft(){const draft=newJobDraft;if(!draft)return;const set=(id,value)=>{if($(id))$(id).value=value};set('jTitle',draft.title);set('jStage',draft.stage);set('jDate',draft.date);set('jTime',draft.time);set('jAddress',draft.address);set('jPostcode',draft.postcode);set('jPrice',draft.price);set('jBilling',draft.billing);set('jDescription',draft.description);toggleJobStageFields();newJobDraft=null}
+function openJobCustomerChoice(){newJobDraft=null;showWorkflow(`<div class="head"><div><h2>Book work</h2><div class="meta">Who is this booking for?</div></div><button class="light" onclick="closeWorkflow()">Close</button></div><div class="choice-grid" style="grid-template-columns:1fr"><button type="button" class="choice" onclick="openNewJob('',true)"><strong>Existing customer</strong><span class="meta">Search by name, postcode, address or phone.</span></button><button type="button" class="choice" onclick="openNewJobCustomer()"><strong>New customer</strong><span class="meta">Add their details now, or fill in anything unknown later.</span></button></div>`)}
 function renderJobCustomerSearch(){
-  const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase(),creator=$('inlineCustomerCreate');
-  if(!box)return;if(q.length<1){box.innerHTML='';creator?.classList.add('hidden');return}
+  const box=$('jCustomerResults'),q=($('jCustomerSearch')?.value||'').trim().toLowerCase();
+  if(!box)return;if(q.length<1){box.innerHTML='';return}
   const matches=matchingCustomers(q);
-  box.innerHTML=customerPickHtml(matches,'selectJobCustomer')+`<button type="button" class="customer-pick" onclick="showInlineJobCustomerCreator()"><strong>Create new customer: ${esc(($('jCustomerSearch')?.value||'').trim())}</strong><span class="meta">Add them here and keep this booking.</span></button>`;
-  creator?.classList.add('hidden');
+  box.innerHTML=customerPickHtml(matches,'selectJobCustomer')+`<button type="button" class="customer-pick" onclick="openNewJobCustomer()"><strong>New customer: ${esc(($('jCustomerSearch')?.value||'').trim())}</strong><span class="meta">Add their contact details, or leave anything unknown for later.</span></button>`;
 }
-function showInlineJobCustomerCreator(){const creator=$('inlineCustomerCreate'),name=($('jCustomerSearch')?.value||'').trim();if(!creator||!name)return;creator.classList.remove('hidden');creator.innerHTML=inlineCustomerCreatorHtml('inline',name,'createCustomerInsideJob','Book Work');enableAddressAutocompleteSoon('inlineAddress','inlinePostcode');prepareFormInputs(creator);creator.querySelector('input')?.focus()}
-async function createCustomerInsideJob(){
-  const data=await createInlineCustomer('inline','Created while booking work.');if(!data)return;
-  selectedJobCustomerId=data.id;if($('jCustomerSearch'))$('jCustomerSearch').value=data.name;selectJobCustomer(data.id,false);$('inlineCustomerCreate')?.classList.add('hidden');
-}
+function openNewJobCustomer(){const typedName=$('jCustomerSearch')?.value.trim()||'',draft=captureNewJobDraft();newJobDraft=draft;showWorkflow(`<div class="head"><div><h2>New customer</h2><div class="meta">Add what you know now. You can fill in anything else later.</div></div><button class="light" onclick="openJobCustomerChoice()">Back</button></div><div class="field"><label>Name *</label><input id="bookCustomerName" autocomplete="name" autocapitalize="words" value="${esc(typedName)}"></div><div class="field"><label>Phone</label><input id="bookCustomerPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Can add later"></div><div class="field"><label>Email</label><input id="bookCustomerEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Can add later"></div><div class="field"><label>Address</label><input id="bookCustomerAddress" autocomplete="street-address" autocapitalize="words" placeholder="Can add later"></div><div class="field"><label>Postcode</label><input id="bookCustomerPostcode" autocomplete="postal-code" autocapitalize="characters" placeholder="Can add later"></div><button class="gold" style="width:100%" onclick="createCustomerForNewJob()">Continue to booking</button>`);enableAddressAutocompleteSoon('bookCustomerAddress','bookCustomerPostcode');setTimeout(()=>$('bookCustomerName')?.focus(),50)}
+async function createCustomerForNewJob(){const data=await createInlineCustomer('bookCustomer','Created while booking work.');if(!data)return;newJobDraft={...(newJobDraft||{}),address:data.address||newJobDraft?.address||'',postcode:data.postcode||newJobDraft?.postcode||''};openNewJob(data.id)}
 function selectJobCustomer(id,updateSearch=true){
   const c=customers.find(x=>x.id===id);if(!c)return;selectedJobCustomerId=id;
   if(updateSearch&&$('jCustomerSearch'))$('jCustomerSearch').value=c.name||'';
