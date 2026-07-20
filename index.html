@@ -550,7 +550,7 @@ function showPage(page){
   currentPage=page;
   ['dashboard','diary','customers','jobs','documents','van','settings'].forEach(p=>{
     $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
-    $(`nav${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('active',p===page);
+    $(`nav${p[0].toUpperCase()+p.slice(1)}`)?.classList.toggle('active',p===page);
   });
   syncFixedChromeHeights();requestAnimationFrame(syncFixedChromeHeights);
   window.scrollTo({top:0,behavior:'smooth'});
