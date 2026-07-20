@@ -217,6 +217,8 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openIdeas()">Work ideas</button>
         <button class="light" onclick="openQuickBooks()">QuickBooks</button>
         <button class="light" onclick="openAiReadiness()">AI readiness</button>
+        <button class="light" onclick="openHistoricalImport()">Import Invoice2go history</button>
+        <button class="light" onclick="openHistoricalRecords()">Historical work</button>
         <button class="light" onclick="openArchivedRecords()">Archived records</button>
         <button class="light" onclick="openSystemHealth()">System health</button>
         <button class="light" onclick="openDevelopmentItemForm()">Report screenshot</button>
@@ -287,7 +289,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],historicalCustomerCache={},pendingHistoricalImport=null,jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -580,6 +582,114 @@ function addressParts(address,postcode=''){
   return {address:line,postcode:resolvedPostcode,full:[line,resolvedPostcode].filter(Boolean).join(', ')};
 }
 function customerAddress(customer){return addressParts(customer?.address,customer?.postcode).full}
+function normaliseHistoryText(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function historyEmail(value){return String(value||'').trim().toLowerCase()}
+function historyPostcode(value){const compact=normalisePostcode(value).replace(/\s/g,'');const match=compact.match(/[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}/);return match?match[0]:''}
+function historyDate(value){const text=String(value||'').trim();if(!text)return null;const match=text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);if(match)return `${match[1]}-${String(match[2]).padStart(2,'0')}-${String(match[3]).padStart(2,'0')}`;const parsed=new Date(text);return Number.isNaN(parsed.getTime())?null:parsed.toISOString().slice(0,10)}
+function historyMoney(value){const number=Number(String(value??'').replace(/[^0-9.-]/g,''));return Number.isFinite(number)?number:0}
+function parseCsvText(text){
+  const rows=[],row=[];let field='',quoted=false;
+  for(let i=0;i<text.length;i++){
+    const char=text[i];
+    if(quoted){if(char==='"'&&text[i+1]==='"'){field+='"';i++}else if(char==='"')quoted=false;else field+=char;continue}
+    if(char==='"'){quoted=true;continue}
+    if(char===','){row.push(field);field='';continue}
+    if(char==='\n'){row.push(field.replace(/\r$/,''));rows.push([...row]);row.length=0;field='';continue}
+    field+=char;
+  }
+  if(field||row.length){row.push(field.replace(/\r$/,''));rows.push(row)}
+  const headers=(rows.shift()||[]).map(header=>String(header||'').trim());
+  return rows.filter(row=>row.some(value=>String(value||'').trim())).map(row=>Object.fromEntries(headers.map((header,index)=>[header,row[index]||''])));
+}
+function splitCsvRow(text,separator=';'){
+  const values=[];let value='',quoted=false;
+  for(let i=0;i<text.length;i++){
+    const char=text[i];
+    if(quoted){if(char==='"'&&text[i+1]==='"'){value+='"';i++}else if(char==='"')quoted=false;else value+=char;continue}
+    if(char==='"'){quoted=true;continue}
+    if(char===separator){values.push(value);value='';continue}
+    value+=char;
+  }
+  values.push(value);return values;
+}
+function invoice2goLineItems(value){
+  const groups=splitCsvRow(String(value||''));if(groups.length<2)return [];
+  const headers=splitCsvRow(groups.shift(),',').map(header=>header.trim().toLowerCase());
+  return groups.map(group=>{
+    const cells=splitCsvRow(group,',');const item={};headers.forEach((header,index)=>item[header]=cells[index]||'');
+    return {description:item.description||item.name||'Historical item',quantity:historyMoney(item.qty||item.quantity)||1,unit_price:historyMoney(item.unit_price||item.price)};
+  }).filter(item=>item.description||item.unit_price);
+}
+function historicalStatus(row,type){
+  const raw=String(type==='invoice'?row.DocumentStatus:row.EstimateStatus||row.DocumentStatus||'').trim().toLowerCase();
+  if(type==='invoice')return raw==='fully_paid'?'paid':raw==='sent'?'sent':raw||'historical';
+  return ({approved:'approved',declined:'declined',pending:'pending'})[raw]||raw||'historical';
+}
+function matchHistoricalCustomer(row){
+  const email=historyEmail(row.EmailRecipient),name=normaliseHistoryText(row.Name),address=String(row.DocumentRecipientAddress||''),postcode=historyPostcode(address),emailMatches=email?customers.filter(customer=>historyEmail(customer.email)===email):[];
+  if(emailMatches.length===1)return {customer:emailMatches[0],status:'matched',reason:'email'};
+  const namePostcodeMatches=name&&postcode?customers.filter(customer=>normaliseHistoryText(customer.name)===name&&historyPostcode(`${customer.address||''} ${customer.postcode||''}`)===postcode):[];
+  if(namePostcodeMatches.length===1)return {customer:namePostcodeMatches[0],status:'matched',reason:'name and postcode'};
+  const nameMatches=name?customers.filter(customer=>normaliseHistoryText(customer.name)===name):[];
+  if(nameMatches.length===1&&!email&&!postcode)return {customer:nameMatches[0],status:'review',reason:'name only'};
+  return {customer:null,status:name||email?'review':'unmatched',reason:nameMatches.length>1?'more than one customer has this name':'no safe customer match'};
+}
+function mapInvoice2goRow(row,type){
+  const match=matchHistoricalCustomer(row),subtotal=historyMoney(row.SubtotalAmount),vat=historyMoney(row.TotalTaxAmount),total=historyMoney(row.TotalAmount),paid=historyMoney(row.AmountPaidAmount),address=String(row.DocumentRecipientAddress||'').trim();
+  return {owner_id:user.id,source:'invoice2go',external_id:`${type}:${String(row.Id||'').trim()}`,customer_id:match.customer?.id||null,document_type:type,document_number:String(row.DocumentNumber||'').trim()||null,document_date:historyDate(row.DocumentDate),customer_name:String(row.Name||'').trim(),customer_email:historyEmail(row.EmailRecipient)||null,customer_address:address||null,status:historicalStatus(row,type),output_status:String(row.OutputStatus||'').trim()||null,subtotal,vat_amount:vat,vat_rate:subtotal?Math.round((vat/subtotal)*10000)/100:null,total,amount_paid:paid,balance_due:historyMoney(row.BalanceDueAmount),paid_date:historyDate(row.DatePaid),line_items:invoice2goLineItems(row.Items),notes:String(row.Comment||'').trim()||null,raw_data:row,match_status:match.status,_matchReason:match.reason};
+}
+function historicalPreviewCard(record){return `<div class="item"><div><h3>${esc(record.document_type==='invoice'?'Invoice':'Quote')} ${esc(record.document_number||'without number')}</h3><div class="meta">${esc(record.customer_name||'No customer name')} · ${esc(record.document_date?displayDate(record.document_date):'No date')} · ${esc(money(record.total))}</div><div class="meta">${record.match_status==='matched'?`Linked to ${esc(customerName(record.customer_id))}`:`Needs review — ${esc(record._matchReason)}`}</div></div><span class="badge ${record.match_status==='matched'?'active-badge':'archived'}">${esc(record.status)}</span></div>`}
+function openHistoricalImport(){
+  show(`<div class="head"><div><h2>Import Invoice2go history</h2><div class="meta">Historical work is visible on customer records but cannot affect live invoices, QuickBooks, reminders or your current prices.</div></div><button class="light" onclick="closeModal()">Close</button></div>
+  <div class="notice"><strong>Safe import</strong><div class="meta">Choose your Invoice2go invoice and estimate CSV files. The app will first show a preview and match results. Nothing is written until you choose an import.</div></div>
+  <div class="field"><label>Invoice CSV</label><input id="historyInvoicesFile" type="file" accept=".csv,text/csv"></div>
+  <div class="field"><label>Estimate / quote CSV</label><input id="historyQuotesFile" type="file" accept=".csv,text/csv"></div>
+  <button class="gold" style="width:100%;margin-top:8px" onclick="previewHistoricalImport()">Preview safely</button>
+  <div id="historyImportPreview" class="meta" style="margin-top:12px">No files have been read yet.</div>`)
+}
+async function previewHistoricalImport(){
+  const invoiceFile=$('historyInvoicesFile')?.files?.[0],quoteFile=$('historyQuotesFile')?.files?.[0];
+  if(!invoiceFile&&!quoteFile)return alert('Choose at least one Invoice2go CSV file first.');
+  const target=$('historyImportPreview');if(target)target.innerHTML='Reading the files on this device…';
+  try{
+    const [invoiceText,quoteText]=await Promise.all([invoiceFile?invoiceFile.text():'',quoteFile?quoteFile.text():'']);
+    const records=[...parseCsvText(invoiceText).map(row=>mapInvoice2goRow(row,'invoice')),...parseCsvText(quoteText).map(row=>mapInvoice2goRow(row,'quote'))].filter(record=>record.external_id!=='invoice:'&&record.external_id!=='quote:');
+    if(!records.length)throw new Error('No usable Invoice2go records were found in those files.');
+    const existing=[];for(let index=0;index<records.length;index+=200){const ids=records.slice(index,index+200).map(record=>record.external_id);const {data,error}=await sb.from('historical_documents').select('external_id').in('external_id',ids);if(error)throw error;existing.push(...(data||[]))}
+    const existingIds=new Set(existing.map(row=>row.external_id)),newRecords=records.filter(record=>!existingIds.has(record.external_id)),matched=newRecords.filter(record=>record.match_status==='matched').length,review=newRecords.filter(record=>record.match_status==='review').length,unmatched=newRecords.filter(record=>record.match_status==='unmatched').length;
+    pendingHistoricalImport={records,newRecords};
+    target.innerHTML=`<div class="notice success"><strong>Preview ready</strong><div class="meta">${records.length} records found. ${newRecords.length} are new; ${existingIds.size} were already imported and will be skipped.</div></div><div class="grid" style="margin-top:10px"><div class="kpi"><b>${matched}</b><span>Safely linked</span></div><div class="kpi"><b>${review}</b><span>Need review</span></div><div class="kpi"><b>${unmatched}</b><span>No customer match</span></div></div><div class="list" style="margin-top:12px">${newRecords.slice(0,6).map(historicalPreviewCard).join('')}</div><div class="muted-box" style="margin-top:12px"><b>What happens next</b><div class="meta">Start with a small sample to check the customer history. Once happy, return here and import the remainder. Historical prices remain labelled as past work and are never used to change a live invoice.</div></div><div class="actions" style="margin-top:12px"><button class="light" onclick="importHistoricalDocuments('sample')">Import sample (up to 50)</button><button class="gold" onclick="importHistoricalDocuments('all')">Import ${newRecords.length} records</button></div>`;
+  }catch(error){console.error('Historical preview failed',error);if(target)target.innerHTML=`<div class="notice error">${esc(friendlyError(error))}</div>`}
+}
+async function importHistoricalDocuments(scope){
+  const state=pendingHistoricalImport;if(!state?.newRecords?.length)return alert('Create a preview first.');
+  const records=scope==='sample'?state.newRecords.slice(0,50):state.newRecords;
+  if(scope==='all'&&!confirm(`Import ${records.length} historical Invoice2go records? They will be visible in customer history, with uncertain matches kept for review.`))return;
+  setModalBusy(true);
+  try{
+    for(let index=0;index<records.length;index+=100){const payload=records.slice(index,index+100).map(({_matchReason,...record})=>record);const {error}=await sb.from('historical_documents').insert(payload);if(error)throw error}
+    historicalCustomerCache={};pendingHistoricalImport=null;
+    showSyncNotice(`${records.length} historical record${records.length===1?'':'s'} imported safely`);openHistoricalRecords();
+  }catch(error){console.error('Historical import failed',error);alert(`Nothing further was imported after the failed batch. ${friendlyError(error)}`)}finally{setModalBusy(false)}
+}
+function historicalWorkCard(record){const customer=record.customer_id?customerName(record.customer_id):'Unlinked customer';return `<div class="item"><div><h3>${esc(record.document_type==='invoice'?'Invoice':'Quote')} ${esc(record.document_number||'')}</h3><div class="meta">${esc(record.document_date?displayDate(record.document_date):'No date')} · ${esc(customer)} · ${esc(money(record.total))}</div><div class="meta">Invoice2go history · ${esc(record.status)}${record.match_status!=='matched'?` · ${esc(record.match_status==='unmatched'?'Unmatched':'Needs review')}`:''}</div></div><span class="badge archived">Historical</span></div>`}
+async function openHistoricalRecords(){
+  if(!isOnline())return alert('Connect to the internet to view historical work.');
+  show(`<div class="head"><div><h2>Historical work</h2><div class="meta">Imported Invoice2go quotes and invoices. They are records for reference, not live ASP Manager documents.</div></div><button class="light" onclick="closeModal()">Close</button></div><div id="historicalRecordsList" class="meta">Loading historical work…</div>`);
+  const {data,error}=await sb.from('historical_documents').select('*').order('document_date',{ascending:false}).limit(100);
+  const target=$('historicalRecordsList');if(!target)return;
+  if(error){target.innerHTML=`<div class="notice error">${esc(friendlyError(error))}</div>`;return}
+  const records=data||[],matched=records.filter(record=>record.match_status==='matched').length;
+  target.innerHTML=`<div class="grid"><div class="kpi"><b>${records.length}</b><span>Newest records shown</span></div><div class="kpi"><b>${matched}</b><span>Linked to customers</span></div></div><div class="list" style="margin-top:12px">${records.map(historicalWorkCard).join('')||'<div class="meta">No historical records imported yet.</div>'}</div>`;
+}
+async function loadCustomerHistoricalWork(customerId){
+  const target=$(`customerHistoricalWork-${customerId}`);if(!target)return;
+  try{
+    let records=historicalCustomerCache[customerId];
+    if(!records){const {data,error}=await sb.from('historical_documents').select('*').eq('customer_id',customerId).order('document_date',{ascending:false});if(error)throw error;records=data||[];historicalCustomerCache[customerId]=records}
+    target.innerHTML=records.length?`<div class="list">${records.map(historicalWorkCard).join('')}</div>`:'<div class="meta">No Invoice2go history linked to this customer yet.</div>';
+  }catch(error){console.error('Customer historical work failed',error);target.innerHTML='<div class="meta">Historical work is not available yet.</div>'}
+}
 function customerCard(customer){
   return `<div class="item"><div><h3>${esc(customer.name||'Unnamed customer')}</h3><div class="meta">${esc(customerAddress(customer)||'No address')}</div><div class="meta">${esc(customer.phone||customer.email||'No contact details')} · ${esc(customerStatusLabel(customer.status))}</div></div><div class="item-actions">${dueBadge(customer)}<button class="gold" onclick="openCustomer('${customer.id}')">Open</button></div></div>`;
 }
@@ -1035,7 +1145,9 @@ function openCustomer(id){
   </div>
   <details class="secondary-panel"><summary>More customer actions</summary><div class="notice">Archive is the normal option. Permanent deletion is only available for an unlinked duplicate or mistake.</div><button class="danger" onclick="deleteCustomerSafely('${id}')">Delete customer</button></details>
   <div class="muted-box" style="margin-top:14px"><h3>Recent jobs</h3><div class="list">${jobsReady?(history.map(jobCard).join('')||'<div class="meta">No jobs recorded yet.</div>'):'<div class="meta">Jobs need the v0.2 database update.</div>'}</div></div>
-  <div class="muted-box" style="margin-top:14px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(documentHistory.map(documentCard).join('')||'<div class="meta">No documents recorded yet.</div>'):'<div class="meta">Documents need the v0.3 database update.</div>'}</div></div>`);
+  <div class="muted-box" style="margin-top:14px"><h3>Quotes & invoices</h3><div class="list">${documentsReady?(documentHistory.map(documentCard).join('')||'<div class="meta">No documents recorded yet.</div>'):'<div class="meta">Documents need the v0.3 database update.</div>'}</div></div>
+  <div class="muted-box" style="margin-top:14px"><h3>Historical work</h3><div class="meta">Past Invoice2go work appears here for reference. It does not affect live prices, invoices, reminders or QuickBooks.</div><div id="customerHistoricalWork-${id}" class="meta" style="margin-top:8px">Loading historical work…</div></div>`);
+  loadCustomerHistoricalWork(id);
 }
 async function changeCustomerStatus(id,status){
   const archiving=status==='archived',payload={status,updated_at:new Date().toISOString(),archived_at:archiving?new Date().toISOString():null,archived_by:archiving?user.id:null,last_modified_by:user.id};
