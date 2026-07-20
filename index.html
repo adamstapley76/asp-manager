@@ -143,12 +143,12 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
   <div id="mobileNavShell" class="card mobile-nav-shell">
     <nav id="primaryMobileNav" class="app-nav primary-mobile-nav" aria-label="Primary">
       <button id="navDashboard" class="light active" onclick="closeModalAndShowPage('dashboard')">Today</button>
-      <button id="navCustomers" class="light" onclick="closeModalAndShowPage('customers')">Customers</button>
       <button id="navDiary" class="gold" onclick="closeModalAndShowPage('diary')">Diary</button>
+      <button id="navDocuments" class="light" onclick="openInvoices()">Invoices</button>
+      <button id="navQuotes" class="light" onclick="openQuotes()">Quotes</button>
       <button id="navSettings" class="light" onclick="closeModalAndShowPage('settings')">More</button>
       <button id="navIdea" class="light" onclick="openIdea()">+ Idea</button>
       <button id="navJobs" class="light" onclick="showPage('jobs')">Jobs</button>
-      <button id="navDocuments" class="light" onclick="openInvoices()">Invoices</button>
       <button id="navVan" class="light" onclick="showPage('van')">Van</button>
     </nav>
   </div>
@@ -207,6 +207,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     <div class="card compact-section">
       <div class="section-title"><h2>More</h2></div>
       <div class="more-grid">
+        <button class="light" onclick="showPage('customers')">Customers</button>
         <button class="light" onclick="openInvoices()">Invoices</button>
         <button class="light" onclick="openQuotes()">Quotes</button>
         <button class="light" onclick="document.getElementById('backupSection').scrollIntoView({behavior:'smooth'})">Backup</button>
@@ -1013,8 +1014,9 @@ function renderJobs(){
   $('jobResults').innerHTML=list.map(jobCard).join('')||'<div class="empty">No jobs match this filter.</div>';
 }
 function setDocumentFilter(value){documentFilter=value;document.querySelectorAll('#documentFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderDocuments()}
-function openInvoices(){showPage('documents');setDocumentFilter('invoices')}
-function openQuotes(){showPage('documents');setDocumentFilter('quotes')}
+function setDocumentNav(activeId){['navDocuments','navQuotes'].forEach(id=>$(id)?.classList.toggle('active',id===activeId))}
+function openInvoices(){showPage('documents');setDocumentFilter('invoices');setDocumentNav('navDocuments')}
+function openQuotes(){showPage('documents');setDocumentFilter('quotes');setDocumentNav('navQuotes')}
 function openAwaitingPayments(){showPage('documents');setDocumentFilter('awaiting')}
 function renderDocuments(){
   if(!documentsReady){$('documentResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.3.sql</b> in Supabase to enable Quotes & invoices.</div>';return}
