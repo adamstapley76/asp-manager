@@ -171,7 +171,9 @@ async function syncInvoice(admin: ReturnType<typeof adminClient>, ownerId: strin
       CustomerRef: { value: linkedCustomer.id },
       DocNumber: documentNumber,
       TxnDate: text(document.issue_date),
-      DueDate: text(document.due_date) || undefined,
+      // The app's standard terms are due on completion. Falling back to the
+      // issue date prevents QuickBooks from applying a customer's Net 14 default.
+      DueDate: text(document.due_date) || text(document.issue_date) || undefined,
       CustomerMemo: text(document.notes) ? { value: text(document.notes) } : undefined,
       Line: lines.map((line: any) => ({
         Description: text(line.description), Amount: Number(line.quantity || 0) * Number(line.unit_price || 0), DetailType: 'SalesItemLineDetail',
