@@ -836,8 +836,8 @@ function renderDashboard(){
   if($('upcomingJobsTitle'))$('upcomingJobsTitle').textContent=isTomorrow?"Tomorrow's jobs":`${new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long'})}'s jobs`;
   if($('tomorrowLabel'))$('tomorrowLabel').textContent=new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
-  const todayList=openJobs.filter(j=>j.scheduled_date===today()&&!['waiting','to_book'].includes(j.status)).sort(byTime);
-  const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate&&!['waiting','to_book'].includes(j.status)).sort(byTime);
+  const todayList=openJobs.filter(j=>j.scheduled_date===today()).sort(byTime);
+  const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate).sort(byTime);
   renderDashboardDiary(todayList,openJobs);
   const workQueue=workQueueJobs();
   const acceptedQuotes=documents.filter(document=>document.type==='quote'&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
@@ -862,7 +862,7 @@ function renderDashboard(){
 
 function renderDashboardDiary(todayList,openJobs){
   const holder=$('dashboardDiaryResults');if(!holder)return;
-  const from=today(),to=addDays(from,6),ahead=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>from&&job.scheduled_date<=to&&!['waiting','to_book'].includes(job.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  const from=today(),to=addDays(from,6),ahead=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>from&&job.scheduled_date<=to).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   const groups={};ahead.forEach(job=>(groups[job.scheduled_date]??=[]).push(job));
   const todayMarkup=todayList.length?todayList.map(job=>dashboardJobCard(job,'today')).join(''):'<div class="empty">No jobs booked today. Use Book work when something comes in.</div>';
   const aheadMarkup=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayJobs])=>`<div class="week-ahead-day"><div class="week-ahead-day-label">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div>${dayJobs.map(job=>{const customer=customers.find(item=>item.id===job.customer_id);return `<button class="week-ahead-job" onclick="openJob('${job.id}')"><time>${esc(job.scheduled_time?displayTime(job.scheduled_time):'TBC')}</time><span><strong>${esc(job.title||job.job_type||'Untitled job')}</strong><small>${esc(customer?.name||'No customer linked')}</small></span><span class="chevron">›</span></button>`}).join('')}</div>`).join('');
