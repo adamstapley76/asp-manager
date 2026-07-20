@@ -865,9 +865,11 @@ function renderDashboardDiary(todayList,openJobs){
   const holder=$('dashboardDiaryResults');if(!holder)return;
   const from=today(),to=addDays(from,6),ahead=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>from&&job.scheduled_date<=to).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   const groups={};ahead.forEach(job=>(groups[job.scheduled_date]??=[]).push(job));
+  // Keep the rest of the current week visible even when there is nothing booked yet.
+  Array.from({length:6},(_,index)=>addDays(from,index+1)).forEach(date=>{groups[date]??=[]});
   const todayMarkup=todayList.length?todayList.map(job=>dashboardJobCard(job,'today')).join(''):'<div class="empty">No jobs booked today. Use Book work when something comes in.</div>';
   const aheadMarkup=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayJobs])=>`<div class="week-ahead-day"><div class="week-ahead-day-label">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div>${dayJobs.map(job=>{const customer=customers.find(item=>item.id===job.customer_id);return `<button class="week-ahead-job" onclick="openJob('${job.id}')"><time>${esc(job.scheduled_time?displayTime(job.scheduled_time):'TBC')}</time><span><strong>${esc(job.title||job.job_type||'Untitled job')}</strong><small>${esc(customer?.name||'No customer linked')}</small></span><span class="chevron">›</span></button>`}).join('')}</div>`).join('');
-  const weekBody=aheadMarkup?`<div class="week-ahead">${aheadMarkup}</div>`:'';
+  const weekBody=`<div class="week-ahead">${aheadMarkup}</div>`;
   holder.innerHTML=`<div class="calendar-day-heading"><div><h3>Today · ${esc(displayDate(from))}</h3><div class="meta">${todayList.length?`${todayList.length} job${todayList.length===1?'':'s'} in your diary`:'Your day is clear'}</div></div></div><div class="calendar-timeline">${todayMarkup}</div>${weekBody}`;
 }
 
