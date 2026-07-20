@@ -107,6 +107,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     header{position:fixed;top:0;left:0;right:0;z-index:40;padding-top:env(safe-area-inset-top)}.header-inner{padding:10px 12px}.brand{font-size:19px}.sub{font-size:11px}
     #appView{padding-top:calc(var(--mobile-nav-height) + 12px)}#mobileNavShell{position:fixed;left:0;right:0;top:0;z-index:40;margin:0;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;border-radius:0;background:#fff;box-shadow:0 2px 10px #10182822}
     #authView{padding-top:20px}.app-nav{border-radius:0!important}
+    .app-nav{gap:7px!important;background:#fff!important;padding:7px 10px!important;box-shadow:0 2px 10px #10182812}.app-nav button{border:1px solid #dce2e8!important;border-radius:999px!important;background:#fff!important;box-shadow:0 1px 2px #1018280d;font-weight:800}.app-nav button.active{background:var(--navy)!important;color:#fff!important;border-color:var(--navy)!important}.app-nav #navDiary{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--navy)!important}
     header{display:none}
     #appView:has(#pageDashboard:not(.hidden)){padding-top:calc(var(--mobile-nav-height) + 58px)}
     #appView:has(#pageDashboard:not(.hidden)) #mobileNavShell{top:58px}
@@ -1029,7 +1030,9 @@ function renderDocuments(){
 $('customerSearch').addEventListener('input',renderCustomers);$('jobSearch').addEventListener('input',renderJobs);$('documentSearch').addEventListener('input',renderDocuments);
 
 function show(html,sheetClass=''){
-  if(matchMedia('(max-width:760px)').matches&&/<(?:input|textarea|select)\b/i.test(html||''))return showWorkflow(html);
+  const needsInputPage=matchMedia('(max-width:760px)').matches&&/<(?:input|textarea|select)\b/i.test(html||'');
+  if(needsInputPage)return showWorkflow(html);
+  if(!$('workflowView')?.classList.contains('hidden'))closeWorkflow();
   const sheet=$('sheet'),modal=$('modal');if(!sheet||!modal)return;
   lockBackgroundPage();
   sheet.className=`sheet${sheetClass?` ${sheetClass}`:''}`;
@@ -1523,7 +1526,7 @@ function openJob(id){
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">Invoice & payment</button>`}
-    ${j.status!=='completed'?`<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>`:''}
+    ${j.status!=='completed'?`<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work not in diary</button>`:''}`:''}
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
   <details class="secondary-panel"><summary>More job details</summary>
