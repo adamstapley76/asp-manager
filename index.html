@@ -808,7 +808,7 @@ function jobCard(job){
   return `<div class="item job-compact"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${jobQuickActions(job)}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function dashboardJobCard(job,mode='today'){
-  const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time not set',price=money(job.agreed_price??job.quoted_amount),address=resolveJobAddress(job),openOnly=mode==='tomorrow';
+  const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time to confirm',price=money(job.agreed_price??job.quoted_amount),address=resolveJobAddress(job),openOnly=mode==='tomorrow';
   const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}</div>`;
   return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
@@ -847,7 +847,10 @@ function renderDashboard(){
   if($('upcomingJobsTitle'))$('upcomingJobsTitle').textContent=isTomorrow?"Tomorrow's jobs":`${new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long'})}'s jobs`;
   if($('tomorrowLabel'))$('tomorrowLabel').textContent=new Date(`${upcomingDate}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const byTime=(a,b)=>(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99');
-  const todayList=openJobs.filter(j=>j.scheduled_date===today()).sort(byTime);
+  // The diary deliberately keeps completed work visible for the day. Do the
+  // same here: a booking must never seem to disappear simply because it was
+  // completed, has no time yet, or sits outside normal working hours.
+  const todayList=jobs.filter(j=>j.scheduled_date===today()&&!['lost','cancelled'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate).sort(byTime);
   renderDashboardDiary(todayList,openJobs);
   const workQueue=workQueueJobs();
