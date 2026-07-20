@@ -566,7 +566,18 @@ function openAiReadiness(){const d=aiReadinessData(),rows=[['Completed jobs',d.c
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
 function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
 function documentNumber(document){return document.document_number||`${document.type==='invoice'?'Invoice':'Quote'} (no number)`}
-function nextDocumentNumber(type){const prefix=type==='invoice'?'INV':'Q',year=new Date().getFullYear();let n=documents.filter(d=>d.type===type&&String(d.document_number||'').includes(String(year))).length+1,candidate='';do{candidate=`${prefix}-${year}-${String(n++).padStart(3,'0')}`}while(documents.some(d=>d.document_number===candidate));return candidate}
+function nextDocumentNumberFrom(records,type,year=new Date().getFullYear()){
+  const prefix=type==='invoice'?'INV':'Q',pattern=new RegExp(`^${prefix}-${year}-(\\d+)$`),numbers=new Set();
+  (records||[]).forEach(record=>{const match=String(record?.document_number||record||'').trim().match(pattern);if(match)numbers.add(Number(match[1]))});
+  const highest=Math.max(0,...numbers);
+  return `${prefix}-${year}-${String(highest+1).padStart(3,'0')}`;
+}
+function nextDocumentNumber(type){return nextDocumentNumberFrom(documents,type)}
+async function nextDocumentNumberFromDatabase(type){
+  const prefix=type==='invoice'?'INV':'Q',year=new Date().getFullYear(),{data,error}=await sb.from('documents').select('document_number').eq('owner_id',user.id).like('document_number',`${prefix}-${year}-%`);
+  if(error)throw error;
+  return nextDocumentNumberFrom(data,type,year);
+}
 function calculateFigures(lines,vatRate){const subtotal=lines.reduce((sum,line)=>sum+(Number(line.quantity)||0)*(Number(line.unit_price)||0),0),vat=subtotal*(Number(vatRate)||0)/100;return {subtotal,vat,total:subtotal+vat}}
 function invoicePayments(documentId){return documentPayments.filter(payment=>payment.document_id===documentId)}
 function invoicePaidAmount(document){const total=Number(document?.total)||0,recorded=invoicePayments(document?.id).reduce((sum,payment)=>sum+(Number(payment.amount)||0),0),settled=recorded>0?recorded:document?.status==='paid'?total:0;return Math.min(total,settled)}
@@ -1813,17 +1824,19 @@ async function applyJobDepositsToInvoice(invoice){
 }
 async function insertDocumentSafely(payload){
   let candidate={...payload};
-  for(let attempt=0;attempt<3;attempt++){
+  for(let attempt=0;attempt<8;attempt++){
     const result=await sb.from('documents').insert(candidate).select().single();
     if(!result.error)return result;
     // The database index is the final protection. If another device used the
-    // next number first, refresh once and choose the next available number.
+    // next number first (or a past test/void created a gap), check the full
+    // saved sequence before choosing the next available number.
     if(result.error.code==='23505'&&/document/i.test(result.error.message||'')){
-      await loadAll();candidate={...candidate,document_number:nextDocumentNumber(candidate.type)};continue;
+      try{candidate={...candidate,document_number:await nextDocumentNumberFromDatabase(candidate.type)};continue}
+      catch(numberError){return {data:null,error:numberError}}
     }
     return result;
   }
-  return {data:null,error:new Error('Could not reserve a unique document number. Please try again.')};
+  return {data:null,error:new Error('Could not reserve a unique document number. Please check the invoice list and try again.')};
 }
 async function saveDocument(type,id=''){
   const lines=collectDocumentLines();if(!lines.length)return alert('Add at least one line item.');const number=$('dNumber').value.trim(),title=$('dTitle').value.trim();if(!number||!title)return alert('Enter the document number and title.');
