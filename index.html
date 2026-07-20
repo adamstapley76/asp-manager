@@ -148,7 +148,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageDashboard">
     <div class="card hero-today">
-      <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="openNewMenu()">+ New</button></div>
+      <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="closeModalAndBook()">Book work</button></div>
     </div>
 
     <div id="acceptedQuotesCard" class="card compact-section hidden">
@@ -162,7 +162,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div class="card today-card today-primary">
-      <div class="section-title"><h2>Today's jobs</h2><button class="light" onclick="openQuickDiaryEntry()">+ Quick</button></div>
+      <div class="section-title"><h2>Today's jobs</h2></div>
       <div id="todayJobs" class="list"></div>
     </div>
 
@@ -199,7 +199,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageDiary" class="hidden">
     <div class="card">
-      <div class="section-title"><div><h2>Work diary</h2><div class="meta">Your booked work, linked to customers and navigation.</div></div><button class="gold" onclick="openNewJob()">+ Book job</button></div>
+      <div class="section-title"><div><h2>Work diary</h2><div class="meta">Your booked work, linked to customers and navigation.</div></div><button class="gold" onclick="openNewJob()">Book work</button></div>
       <div class="row"><div class="field"><label>Week starting</label><input id="diaryFrom" type="date" onchange="renderDiary()"></div><div class="field"><label>Days shown</label><select id="diaryDays" onchange="renderDiary()"><option value="7" selected>Week</option><option value="14">2 weeks</option><option value="30">30 days</option></select></div></div>
       <div class="actions" style="margin:-2px 0 12px"><button class="light" onclick="shiftDiary(-1)">Previous</button><button class="navy" onclick="goToTodayInDiary()">Today</button><button class="light" onclick="shiftDiary(1)">Next</button></div>
       <div id="diaryResults"></div>
@@ -256,7 +256,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageJobs" class="hidden">
     <div class="card">
-      <div class="section-title"><h2>Jobs & leads</h2><div class="actions"><button class="light" onclick="openLeadTracker()">Lead tracker</button><button class="gold" onclick="openNewJob()">+ New job</button></div></div>
+      <div class="section-title"><h2>Jobs & leads</h2><div class="actions"><button class="light" onclick="openLeadTracker()">Lead tracker</button><button class="gold" onclick="openNewJob()">Book work</button></div></div>
       <div class="toolbar"><input id="jobSearch" placeholder="Search customer, job, address or postcode"><button class="navy" onclick="renderJobs()">Search</button></div>
       <div id="jobFilters" class="filter-row">
         <button class="light active" data-filter="open" onclick="setJobFilter('open')">Open</button>
@@ -1076,9 +1076,6 @@ document.addEventListener('focusin',event=>{
   if(event.target.closest('.sheet')){scheduleModalViewportSettle(320);return}
 });
 
-function openNewMenu(){
-  show(`<div class="head"><h2>What do you want to add?</h2><button class="light" onclick="closeModal()">Close</button></div><div class="new-menu"><button class="navy" onclick="openNewCustomer()">New Customer</button><button class="light" onclick="openQuickDiaryEntry()">Quick Diary Entry</button><button class="light" onclick="openNewDocument('quote')">Quote</button><button class="light" onclick="openNewDocument('invoice')">Invoice</button></div>`)
-}
 function openMaterialsList(){show(`<div class="head"><div><h2>Materials To Get</h2><div class="meta">Your permanent shopping list. Job materials stay at the top.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="row material-add-row"><div class="field"><label for="materialTitle">Item</label><input id="materialTitle" type="text" inputmode="text" autocapitalize="words" autocomplete="off" placeholder="e.g. White silicone"></div><div class="field"><label for="materialQty">Quantity</label><input id="materialQty" type="number" inputmode="decimal" step="any" min="0.01" placeholder="1"></div></div><div class="field"><label for="materialCategory">Category</label><select id="materialCategory"><option>Boiler</option><option>Plumbing</option><option>Building</option><option>Van Stock</option><option selected>Other</option></select></div><button id="saveMaterialBtn" class="gold" style="width:100%;margin-bottom:12px" onclick="saveMaterialItem()">Add item</button><div id="fullMaterialsList" class="material-full-list"></div>`);renderFullMaterials()}
 function openServicePicker(){
   show(`<div class="head"><h2>Book boiler service</h2><button class="light" onclick="closeModal()">Close</button></div><div class="field"><label>Find customer</label><input id="serviceCustomerSearch" autocomplete="off" placeholder="Type name, address, postcode or phone" oninput="renderServiceCustomerSearch()"></div><div id="serviceCustomerResults" class="customer-search-results"></div>`);setTimeout(()=>$('serviceCustomerSearch')?.focus(),50)
@@ -1359,17 +1356,6 @@ async function saveNewJob(){
     closeWorkflow();openJob(saved.id);
   }catch(error){console.error('Book work failed',error);alert(friendlyError(error))}
   finally{setModalBusy(false);appView.classList.remove('loading');if(button?.isConnected){button.disabled=false;button.textContent='Book work'}}
-}
-
-function openQuickDiaryEntry(){
-  if(!jobsReady)return alert('Run the jobs database setup first.');
-  showWorkflow(`<div class="head"><h2>Quick diary entry</h2><button class="light" onclick="closeWorkflow()">Close</button></div><div class="meta" style="margin-bottom:12px">For friends, informal visits or anything you just need in the working day.</div><div class="field"><label>What is it?</label><input id="quickTitle" placeholder="e.g. Les - pump"></div><div class="row"><div class="field"><label>Date</label><input id="quickDate" type="date" value="${today()}"></div><div class="field"><label>Time</label><input id="quickTime" type="time" step="900"></div></div><div class="field"><label>Area / address (optional)</label><input id="quickAddress" autocomplete="street-address" autocapitalize="words" autocorrect="off" spellcheck="false" list="quickKnownAddresses"><datalist id="quickKnownAddresses">${customers.filter(c=>c.address).slice(0,500).map(c=>`<option value="${esc(customerAddress(c))}">`).join('')}</datalist></div><div class="field"><label>Postcode (optional)</label><input id="quickPostcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters"></div><div class="field"><label>Notes / parts to remember (optional)</label><textarea id="quickNotes"></textarea></div><button id="saveQuickDiaryBtn" class="gold" style="width:100%" onclick="saveQuickDiaryEntry()">Add to diary</button>`);enableAddressAutocompleteSoon('quickAddress','quickPostcode');setTimeout(()=>$('quickTitle')?.focus(),50)
-}
-async function saveQuickDiaryEntry(){
-  const title=$('quickTitle').value.trim();if(!title)return alert('Enter a short title.');const resolved=addressParts($('quickAddress').value,$('quickPostcode').value||$('quickAddress').dataset.selectedPostcode);
-  const payload={owner_id:user.id,customer_id:null,title,job_type:inferJobType(title),status:'booked',scheduled_date:$('quickDate').value||today(),scheduled_time:quarterHourInputValue('quickTime')||null,address:resolved.address,postcode:resolved.postcode,description:$('quickNotes').value.trim(),quoted_amount:null},button=$('saveQuickDiaryBtn');if(button){button.disabled=true;button.textContent='Saving…'}
-  if(!isOnline()){const id=tempId();jobs.push({...payload,id,created_at:new Date().toISOString()});queueOperation('jobs','insert',payload,id);renderAll();closeWorkflow();showPage('dashboard');return}
-  try{const {error}=await sb.from('jobs').insert(payload);if(error)throw error;await loadAll();closeWorkflow();showPage('dashboard')}catch(error){console.error('Quick diary entry failed',error);alert(friendlyError(error))}finally{if(button?.isConnected){button.disabled=false;button.textContent='Add to diary'}}
 }
 
 function visitsForJob(id){return jobVisits.filter(v=>v.job_id===id).sort((a,b)=>(b.visit_date||'').localeCompare(a.visit_date||'')||(b.created_at||'').localeCompare(a.created_at||''))}
