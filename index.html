@@ -287,7 +287,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],historicalCustomerCache={},pendingHistoricalImport=null,jobsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],leadEvents=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],historicalCustomerCache={},pendingHistoricalImport=null,jobsReady=true,leadEventsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -434,8 +434,8 @@ async function performOfflineSync(){
   }catch(error){console.error(error);updateSyncPill(true);showSyncNotice('Some saved work could not sync. Tap the sync status after signal returns.','error')}
 }
 
-function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,jobDiaryBlocks,documents,documentPayments,jobDepositPayments,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
-function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];jobDiaryBlocks=cached.jobDiaryBlocks||[];documents=cached.documents||[];documentPayments=cached.documentPayments||[];jobDepositPayments=cached.jobDepositPayments||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
+function cacheSnapshot(){try{localStorage.setItem('asp-manager-offline-snapshot',JSON.stringify({customers,jobs,leadEvents,jobDiaryBlocks,documents,documentPayments,jobDepositPayments,tasks,stockItems,jobVisits,jobCosts,saved_at:new Date().toISOString()}))}catch{}}
+function loadCachedSnapshot(){try{const cached=JSON.parse(localStorage.getItem('asp-manager-offline-snapshot')||'null');if(!cached)return false;customers=cached.customers||[];jobs=cached.jobs||[];leadEvents=cached.leadEvents||[];jobDiaryBlocks=cached.jobDiaryBlocks||[];documents=cached.documents||[];documentPayments=cached.documentPayments||[];jobDepositPayments=cached.jobDepositPayments||[];tasks=cached.tasks||[];stockItems=cached.stockItems||[];jobVisits=cached.jobVisits||[];jobCosts=cached.jobCosts||[];renderAll();return true}catch{return false}}
 function configProblem(){
   if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey)return 'ASP Manager is not connected. Complete config.js first.';
   if(cfg.supabaseUrl.includes('PASTE_')||cfg.supabaseKey.includes('PASTE_'))return 'ASP Manager is not connected. Complete config.js first.';
@@ -495,6 +495,8 @@ async function performLoadAll(){
     customers=customerResult.data||[];
     const jobResult=await sb.from('jobs').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     if(jobResult.error){jobs=[];jobsReady=false}else{jobs=(jobResult.data||[]).filter(job=>!job.archived_at);jobsReady=true}
+    const leadEventResult=await sb.from('lead_events').select('*').order('occurred_at',{ascending:false}).limit(1000);
+    if(leadEventResult.error){leadEvents=[];leadEventsReady=false}else{leadEvents=leadEventResult.data||[];leadEventsReady=true}
     const diaryBlockResult=await sb.from('job_diary_blocks').select('*').order('block_date',{ascending:true}).order('start_time',{ascending:true});
     if(diaryBlockResult.error){jobDiaryBlocks=[];diaryBlocksReady=false}else{jobDiaryBlocks=diaryBlockResult.data||[];diaryBlocksReady=true}
     const documentResult=await sb.from('documents').select('*').order('issue_date',{ascending:false}).order('created_at',{ascending:false});
@@ -866,11 +868,9 @@ function renderDashboardDiary(todayList,openJobs){
   const holder=$('dashboardDiaryResults');if(!holder)return;
   const from=today(),to=addDays(from,6),ahead=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>from&&job.scheduled_date<=to).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   const groups={};ahead.forEach(job=>(groups[job.scheduled_date]??=[]).push(job));
-  // Keep the rest of the current week visible even when there is nothing booked yet.
-  Array.from({length:6},(_,index)=>addDays(from,index+1)).forEach(date=>{groups[date]??=[]});
   const todayMarkup=todayList.length?todayList.map(job=>dashboardJobCard(job,'today')).join(''):'<div class="empty">No jobs booked today. Use Book work when something comes in.</div>';
   const aheadMarkup=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayJobs])=>`<div class="week-ahead-day"><div class="week-ahead-day-label">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div>${dayJobs.map(job=>{const customer=customers.find(item=>item.id===job.customer_id);return `<button class="week-ahead-job" onclick="openJob('${job.id}')"><time>${esc(job.scheduled_time?displayTime(job.scheduled_time):'TBC')}</time><span><strong>${esc(job.title||job.job_type||'Untitled job')}</strong><small>${esc(customer?.name||'No customer linked')}</small></span><span class="chevron">›</span></button>`}).join('')}</div>`).join('');
-  const weekBody=`<div class="week-ahead">${aheadMarkup}</div>`;
+  const weekBody=aheadMarkup?`<div class="week-ahead">${aheadMarkup}</div>`:'';
   holder.innerHTML=`<div class="calendar-day-heading"><div><h3>Today · ${esc(displayDate(from))}</h3><div class="meta">${todayList.length?`${todayList.length} job${todayList.length===1?'':'s'} in your diary`:'Your day is clear'}</div></div></div><div class="calendar-timeline">${todayMarkup}</div>${weekBody}`;
 }
 
