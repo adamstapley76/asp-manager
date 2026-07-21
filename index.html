@@ -563,6 +563,7 @@ function renderAiReadinessSummary(){const target=$('aiReadinessSummary');if(!tar
 function openAiReadiness(){const d=aiReadinessData(),rows=[['Completed jobs',d.completed],['Completed quotes',d.completedQuotes],['Accepted quotes',d.accepted],['Rejected quotes',d.rejected],['Invoices',d.invoices],['Jobs with supplier costs',d.supplierCosts],['Jobs with materials',d.materials],['Jobs with labour hours',d.labour],['Jobs with profit',d.profit],['Jobs with photos',d.photos],['Completed certificates',d.certificates],['Completed boiler records',d.boilerRecords],['Jobs with categories assigned',d.categories],['Categories with 3+ completed jobs',d.repeatedCategories]];show(`<div class="head"><div><h2>AI readiness</h2><div class="meta">Data maturity only — no AI quote suggestions are active.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="notice ${d.stage==='AI Ready'?'success':''}"><strong>${esc(d.stage)}</strong><div class="meta">${esc(d.message)}</div></div><div class="list" style="margin-top:12px">${rows.map(([label,value])=>`<div class="item"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('')}</div><div class="muted-box" style="margin-top:12px"><h3>Suggested thresholds</h3><div class="meta"><b>Collecting Data:</b> under 10 completed jobs or 5 resolved quotes.<br><b>Learning Patterns:</b> 10 completed jobs, 5 resolved quotes, and 5 jobs each with supplier costs, labour and profit data.<br><b>AI Ready:</b> 30 completed jobs, 15 resolved quotes, 15 with supplier costs/labour/profit, 10 with photos, 25 categorised jobs and at least 3 repeat job categories.</div></div>`)}
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
 function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
+function isLiveQuote(document){const job=documentJob(document);return document?.type==='quote'&&!['completed','lost','cancelled'].includes(job?.status)}
 function documentNumber(document){return document.document_number||`${document.type==='invoice'?'Invoice':'Quote'} (no number)`}
 function nextDocumentNumberFrom(records,type,year=new Date().getFullYear()){
   const prefix=type==='invoice'?'INV':'Q',pattern=new RegExp(`^${prefix}-${year}-(\\d+)$`),numbers=new Set();
@@ -841,10 +842,11 @@ function dashboardJobCard(job,mode='today'){
   const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}</div>`;
   return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.diaryJobId||job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.diaryJobId||job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}${job.continued?' · continues':''}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
+function documentListTitle(document){const title=String(document?.title||documentTypeLabel(document?.type)||'Document').replace(/\s+/g,' ').trim();return title.length>74?`${title.slice(0,71).trimEnd()}…`:title}
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
   const balance=document.type==='invoice'?invoiceBalance(document):0,payment=document.type==='invoice'?` · ${esc(invoicePaymentLabel(document))}`:'';
-  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(document.title||documentTypeLabel(document.type))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span>${payment}</div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button>${document.type==='invoice'&&balance>0?`<button class="gold" onclick="openInvoicePayment('${document.id}')">Payment</button>`:''}</div></div>`;
+  return `<div class="item"><div><h3>${esc(documentNumber(document))} · ${esc(documentListTitle(document))}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b>${job?` · ${esc(job.title)}`:''}</div><div class="meta">${esc(documentTypeLabel(document.type))} · ${esc(date)} · <span class="price">${esc(money(document.total)||'£0.00')}</span>${payment}</div></div><div class="item-actions"><span class="badge ${esc(document.status)}">${esc(documentStatusLabel(document.status))}</span><button class="gold" onclick="openDocument('${document.id}')">Open</button>${document.type==='invoice'&&balance>0?`<button class="gold" onclick="openInvoicePayment('${document.id}')">Payment</button>`:''}</div></div>`;
 }
 const renderDocumentCard=documentCard;
 documentCard=function(document){
@@ -884,7 +886,7 @@ function renderDashboard(){
   const unfinished=jobs.filter(job=>job.scheduled_date&&job.scheduled_date<today()&&!['completed','lost','cancelled'].includes(job.status)).sort((a,b)=>String(b.scheduled_date).localeCompare(String(a.scheduled_date))||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   renderDashboardDiary(todayList,openJobs);
   const workQueue=workQueueJobs();
-  const acceptedQuotes=documents.filter(document=>document.type==='quote'&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
+  const acceptedQuotes=documents.filter(document=>isLiveQuote(document)&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
   const awaitingPayments=documents.filter(document=>document.type==='invoice'&&['sent','overdue'].includes(document.status)&&invoiceBalance(document)>0).sort((a,b)=>(a.due_date||'9999-12-31').localeCompare(b.due_date||'9999-12-31'));
   renderAiReadinessSummary();
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
@@ -1095,8 +1097,8 @@ function renderDocuments(){
   if(!documentsReady){$('documentResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.3.sql</b> in Supabase to enable Quotes & invoices.</div>';return}
   const q=($('documentSearch')?.value||'').trim().toLowerCase();let list=[...documents];
   if(documentFilter==='open')list=list.filter(d=>!['declined','paid','void'].includes(d.status));
-  else if(documentFilter==='accepted')list=list.filter(d=>d.type==='quote'&&d.status==='accepted');
-  else if(documentFilter==='quotes')list=list.filter(d=>d.type==='quote');
+  else if(documentFilter==='accepted')list=list.filter(d=>isLiveQuote(d)&&d.status==='accepted');
+  else if(documentFilter==='quotes')list=list.filter(d=>isLiveQuote(d));
   else if(documentFilter==='invoices')list=list.filter(d=>d.type==='invoice');
   else if(documentFilter==='quote_drafts')list=list.filter(d=>d.type==='quote'&&d.status==='draft');
   else if(documentFilter==='quote_sent')list=list.filter(d=>d.type==='quote'&&d.status==='sent');
