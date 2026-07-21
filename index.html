@@ -158,6 +158,11 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div class="section-title"><div><h1 id="greeting">Good morning Adam</h1><div id="todayLabel" class="meta"></div></div><button class="gold" onclick="closeModalAndBook()">Book work</button></div>
     </div>
 
+    <div id="unfinishedJobsCard" class="card compact-section hidden">
+      <div class="section-title"><h2>Needs finishing</h2><button class="light" onclick="openUnfinishedJobs()">View all</button></div>
+      <div id="unfinishedJobsList" class="list"></div>
+    </div>
+
     <div class="card today-calendar">
       <div id="dashboardDiaryResults"></div>
     </div>
@@ -218,7 +223,6 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="openHistoricalRecords()">Historical work</button>
         <button class="light" onclick="openArchivedRecords()">Archived records</button>
         <button class="light" onclick="openSystemHealth()">System health</button>
-        <button class="light" onclick="openDevelopmentItemForm()">Report screenshot</button>
         <button class="light" onclick="openDevelopmentLog()">Development</button>
       </div>
     </div>
@@ -263,7 +267,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageDocuments" class="hidden">
     <div class="card">
-      <div class="section-title"><h2>Quotes & invoices</h2><div class="actions"><button class="light" onclick="openNewDocument('invoice')">+ Invoice</button><button class="gold" onclick="openNewDocument('quote')">+ Quote</button></div></div>
+      <div class="section-title"><h2>Quotes & invoices</h2><div class="actions"><button class="light" onclick="openHistoricalRecords(documentFilter==='quotes'?'quote':'')">History</button><button class="light" onclick="openNewDocument('invoice')">+ Invoice</button><button class="gold" onclick="openNewDocument('quote')">+ Quote</button></div></div>
       <div class="toolbar"><input id="documentSearch" placeholder="Search customer, number, title or job"><button class="navy" onclick="renderDocuments()">Search</button></div>
       <div id="documentFilters" class="filter-row">
         <button class="light active" data-filter="open" onclick="setDocumentFilter('open')">To send</button>
@@ -696,10 +700,13 @@ async function importHistoricalDocuments(scope){
   }catch(error){console.error('Historical import failed',error);alert(`Nothing further was imported after the failed batch. ${friendlyError(error)}`)}finally{setModalBusy(false)}
 }
 function historicalWorkCard(record){const customer=record.customer_id?customerName(record.customer_id):'Unlinked customer';return `<div class="item"><div><h3>${esc(record.document_type==='invoice'?'Invoice':'Quote')} ${esc(record.document_number||'')}</h3><div class="meta">${esc(record.document_date?displayDate(record.document_date):'No date')} · ${esc(customer)} · ${esc(money(record.total))}</div><div class="meta">Invoice2go history · ${esc(record.status)}${record.match_status!=='matched'?` · ${esc(record.match_status==='unmatched'?'Unmatched':'Needs review')}`:''}</div></div><span class="badge archived">Historical</span></div>`}
-async function openHistoricalRecords(){
+async function openHistoricalRecords(type=''){
   if(!isOnline())return alert('Connect to the internet to view historical work.');
-  show(`<div class="head"><div><h2>Historical work</h2><div class="meta">Imported Invoice2go quotes and invoices. They are records for reference, not live ASP Manager documents.</div></div><button class="light" onclick="closeModal()">Close</button></div><div id="historicalRecordsList" class="meta">Loading historical work…</div>`);
-  const {data,error}=await sb.from('historical_documents').select('*').order('document_date',{ascending:false}).limit(100);
+  const label=type==='quote'?'Historical quotes':'Historical work';
+  show(`<div class="head"><div><h2>${label}</h2><div class="meta">Imported Invoice2go ${type==='quote'?'quotes':'quotes and invoices'}. They are records for reference, not live ASP Manager documents.</div></div><button class="light" onclick="closeModal()">Close</button></div><div id="historicalRecordsList" class="meta">Loading ${type==='quote'?'quotes':'historical work'}…</div>`);
+  let request=sb.from('historical_documents').select('*').order('document_date',{ascending:false}).limit(100);
+  if(type)request=request.eq('document_type',type);
+  const {data,error}=await request;
   const target=$('historicalRecordsList');if(!target)return;
   if(error){target.innerHTML=`<div class="notice error">${esc(friendlyError(error))}</div>`;return}
   const records=data||[],matched=records.filter(record=>record.match_status==='matched').length;
@@ -822,7 +829,7 @@ function jobCard(job){
 function dashboardJobCard(job,mode='today'){
   const customer=customers.find(c=>c.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time to confirm',price=money(job.agreed_price??job.quoted_amount),address=resolveJobAddress(job),openOnly=mode==='tomorrow';
   const todayActions=openOnly?'':`<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Navigate</a>`:''}</div>`;
-  return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
+  return `<div class="item job-compact dashboard-job clickable" role="button" tabindex="0" onclick="openJob('${job.diaryJobId||job.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openJob('${job.diaryJobId||job.id}')}"><div><span class="job-time">${esc(when)}</span><h3>${esc(job.title||job.job_type||'Untitled job')}${job.continued?' · continues':''}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b></div><div class="meta">${esc(address||'No address')}${price?` · <span class="price">${esc(price)} + VAT</span>`:''}</div>${todayActions}</div><div class="item-actions"><span class="badge ${esc(job.status)}">${esc(jobStatusLabel(job.status))}</span></div></div>`;
 }
 function documentCard(document){
   const customer=documentCustomer(document),job=documentJob(document),date=document.issue_date?displayDate(document.issue_date):'No date';
@@ -864,6 +871,7 @@ function renderDashboard(){
   // completed, has no time yet, or sits outside normal working hours.
   const todayList=jobs.filter(j=>j.scheduled_date===today()&&!['lost','cancelled'].includes(j.status)).sort(byTime);
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate).sort(byTime);
+  const unfinished=jobs.filter(job=>job.scheduled_date&&job.scheduled_date<today()&&!['completed','lost','cancelled'].includes(job.status)).sort((a,b)=>String(b.scheduled_date).localeCompare(String(a.scheduled_date))||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   renderDashboardDiary(todayList,openJobs);
   const workQueue=workQueueJobs();
   const acceptedQuotes=documents.filter(document=>document.type==='quote'&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
@@ -882,18 +890,27 @@ function renderDashboard(){
   if($('acceptedQuotesList'))$('acceptedQuotesList').innerHTML=acceptedQuotes.slice(0,3).map(acceptedQuoteCard).join('');
   if($('awaitingPaymentCard'))$('awaitingPaymentCard').classList.toggle('hidden',!awaitingPayments.length);
   if($('awaitingPaymentList'))$('awaitingPaymentList').innerHTML=awaitingPayments.slice(0,3).map(invoice=>{const customer=documentCustomer(invoice);return `<div class="item"><div><h3>${esc(documentNumber(invoice))}</h3><div class="meta">${esc(customer?.name||'No customer linked')} · ${esc(money(invoiceBalance(invoice)))} remaining${invoice.due_date?` · due ${esc(displayDate(invoice.due_date))}`:''}</div></div><div class="item-actions"><button class="light" onclick="openDocument('${invoice.id}')">Open</button><button class="gold" onclick="openInvoicePayment('${invoice.id}')">Payment</button></div></div>`}).join('');
+  if($('unfinishedJobsCard'))$('unfinishedJobsCard').classList.toggle('hidden',!unfinished.length);
+  if($('unfinishedJobsList'))$('unfinishedJobsList').innerHTML=unfinished.slice(0,2).map(job=>`<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta">Booked ${esc(displayDate(job.scheduled_date))}${job.scheduled_time?` at ${esc(displayTime(job.scheduled_time))}`:''} · still open</div></div><div class="item-actions"><button class="gold" onclick="openJob('${job.id}')">Finish</button></div></div>`).join('');
   if($('todayJobs'))$('todayJobs').innerHTML=jobsReady?(todayList.map(job=>dashboardJobCard(job,'today')).join('')||'<div class="empty">No jobs booked today.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
   if($('tomorrowJobs'))$('tomorrowJobs').innerHTML=jobsReady?(tomorrowList.map(job=>dashboardJobCard(job,'tomorrow')).join('')||'<div class="empty">Nothing booked tomorrow.</div>'):'<div class="empty">Run the v0.2 SQL setup to enable jobs.</div>';
 }
 
+function openUnfinishedJobs(){
+  const list=jobs.filter(job=>job.scheduled_date&&job.scheduled_date<today()&&!['completed','lost','cancelled'].includes(job.status)).sort((a,b)=>String(b.scheduled_date).localeCompare(String(a.scheduled_date))||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  show(`<div class="head"><div><h2>Needs finishing</h2><div class="meta">Jobs from earlier days that are still open. Choose what happened so nothing is lost.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list.map(job=>`<div class="item"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta">${esc(displayDate(job.scheduled_date))}${job.scheduled_time?` · ${esc(displayTime(job.scheduled_time))}`:''} · ${esc(customerName(job.customer_id))}</div></div><div class="item-actions"><button class="gold" onclick="openJob('${job.id}')">Open</button></div></div>`).join('')||'<div class="empty">Nothing needs attention.</div>'}</div>`)
+}
+
 function renderDashboardDiary(todayList,openJobs){
   const holder=$('dashboardDiaryResults');if(!holder)return;
-  const from=today(),to=addDays(from,6),ahead=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>from&&job.scheduled_date<=to).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
-  const groups={};ahead.forEach(job=>(groups[job.scheduled_date]??=[]).push(job));
-  const todayMarkup=todayList.length?todayList.map(job=>dashboardJobCard(job,'today')).join(''):'<div class="empty">No jobs booked today. Use Book work when something comes in.</div>';
-  const aheadMarkup=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayJobs])=>`<div class="week-ahead-day"><div class="week-ahead-day-label">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div>${dayJobs.map(job=>{const customer=customers.find(item=>item.id===job.customer_id);return `<button class="week-ahead-job" onclick="openJob('${job.id}')"><time>${esc(job.scheduled_time?displayTime(job.scheduled_time):'TBC')}</time><span><strong>${esc(job.title||job.job_type||'Untitled job')}</strong><small>${esc(customer?.name||'No customer linked')}</small></span><span class="chevron">›</span></button>`}).join('')}</div>`).join('');
+  const from=today(),to=addDays(from,6),normal=openJobs.filter(job=>job.scheduled_date&&job.scheduled_date>=from&&job.scheduled_date<=to),continued=jobDiaryBlocks.filter(block=>block.block_date>=from&&block.block_date<=to).map(block=>{const job=jobs.find(item=>item.id===block.job_id);return job&&!['completed','lost','cancelled'].includes(job.status)?{...job,id:`continued-${block.id}`,diaryJobId:job.id,scheduled_date:block.block_date,scheduled_time:block.start_time||'08:00',continued:true}:null}).filter(Boolean),all=[...normal,...continued].sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
+  const groups={};all.forEach(job=>(groups[job.scheduled_date]??=[]).push(job));
+  const todayEntries=groups[from]||todayList;
+  const todayMarkup=todayEntries.length?todayEntries.map(job=>dashboardJobCard(job,'today')).join(''):'<div class="empty">No jobs booked today. Use Book work when something comes in.</div>';
+  const ahead=all.filter(job=>job.scheduled_date>from);
+  const aheadMarkup=Object.entries(groups).filter(([date])=>date>from).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayJobs])=>`<div class="week-ahead-day"><div class="week-ahead-day-label">${esc(new Date(`${date}T12:00:00`).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))}</div>${dayJobs.map(job=>{const customer=customers.find(item=>item.id===job.customer_id);return `<button class="week-ahead-job" onclick="openJob('${job.diaryJobId||job.id}')"><time>${esc(job.scheduled_time?displayTime(job.scheduled_time):'TBC')}</time><span><strong>${esc(job.title||job.job_type||'Untitled job')}${job.continued?' · continues':''}</strong><small>${esc(customer?.name||'No customer linked')}</small></span><span class="chevron">›</span></button>`}).join('')}</div>`).join('');
   const weekBody=aheadMarkup?`<div class="week-ahead">${aheadMarkup}</div>`:'';
-  holder.innerHTML=`<div class="calendar-day-heading"><div><h3>Today · ${esc(displayDate(from))}</h3><div class="meta">${todayList.length?`${todayList.length} job${todayList.length===1?'':'s'} in your diary`:'Your day is clear'}</div></div></div><div class="calendar-timeline">${todayMarkup}</div>${weekBody}`;
+  holder.innerHTML=`<div class="calendar-day-heading"><div><h3>Today · ${esc(displayDate(from))}</h3><div class="meta">${todayEntries.length?`${todayEntries.length} job${todayEntries.length===1?'':'s'} in your diary`:'Your day is clear'}</div></div></div><div class="calendar-timeline">${todayMarkup}</div>${weekBody}`;
 }
 
 function startOfDiaryWeek(date=today()){const value=new Date(`${date}T12:00:00`),day=value.getDay(),mondayOffset=day===0?-6:1-day;return addDays(date,mondayOffset)}
@@ -937,7 +954,8 @@ function renderMaterials(){
   holder.disabled=false;holder.textContent=list.length?`Open shopping list · ${list.length} item${list.length===1?'':'s'}${jobItems?` · ${jobItems} for jobs`:''}`:'Open shopping list · Nothing to buy';
 }
 function materialsToGet(){return tasks.filter(t=>!t.completed&&!t.due_date&&['manual','job'].includes(materialSource(t))).sort(materialSort)}
-function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<div class="material-full-row"><input class="material-check" type="checkbox" aria-label="Mark ${esc(t.title)} purchased" onchange="markMaterialPurchased('${t.id}','full',this)"><button type="button" class="material-name" onclick="openMaterialActions('${t.id}')">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}<span class="material-category ${materialSource(t)==='job'?'material-source':''}">${esc(materialSource(t)==='job'?'Job material':materialCategory(t))}</span></button><button type="button" class="light material-edit" onclick="openEditMaterial('${t.id}')">Edit</button></div>`).join('')||'<div class="empty">Nothing to buy.</div>'}
+function renderFullMaterials(){const holder=$('fullMaterialsList');if(!holder)return;holder.innerHTML=materialsToGet().map(t=>`<button type="button" class="material-full-row material-tap-row" data-material-id="${esc(t.id)}" onclick="openEditMaterial('${t.id}')"><span class="material-name">${esc(t.title)}${materialQuantity(t)>1?` (${esc(materialQuantity(t))})`:''}<span class="material-category ${materialSource(t)==='job'?'material-source':''}">${esc(materialSource(t)==='job'?'Job material':materialCategory(t))}</span></span><span class="meta">Tap to edit</span></button>`).join('')||'<div class="empty">Nothing to buy.</div>';enableMaterialSwipeDelete(holder)}
+function enableMaterialSwipeDelete(holder){let startX=0,startY=0;holder.querySelectorAll('[data-material-id]').forEach(row=>{row.addEventListener('touchstart',event=>{const touch=event.changedTouches[0];startX=touch.clientX;startY=touch.clientY},{passive:true});row.addEventListener('touchend',event=>{const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY;if(dx<-85&&Math.abs(dx)>Math.abs(dy)){event.preventDefault();deleteMaterialItem(row.dataset.materialId)}})})}
 async function addMaterialToGet(title,quantity=1,refresh=true,category='Other',source='manual'){
   const cleanTitle=String(title||'').trim(),qty=Math.max(.01,Number(quantity||1));if(!cleanTitle)throw new Error('Enter the material.');
   const existing=tasks.find(t=>!t.completed&&!t.due_date&&normaliseMaterialName(t.title)===normaliseMaterialName(cleanTitle));
@@ -962,7 +980,7 @@ async function saveMaterialItem(){
 }
 async function quickAddDashboardMaterial(){const input=$('dashboardMaterialTitle'),title=input?.value.trim(),category=$('dashboardMaterialCategory')?.value||'Other';if(!title)return input?.focus();try{await addMaterialToGet(title,1,true,category);input.value='';input.focus()}catch(error){alert(error.message||String(error))}}
 function openMaterialActions(id){const item=tasks.find(t=>t.id===id);if(!item)return;show(`<div class="head"><div><h2>${esc(item.title)}</h2>${materialQuantity(item)>1?`<div class="meta">Quantity ${esc(materialQuantity(item))}</div>`:''}</div><button class="light" onclick="openMaterialsList()">Back</button></div><div class="actions"><button class="gold" onclick="markMaterialPurchased('${id}')">Mark Purchased</button><button class="danger" onclick="deleteMaterialItem('${id}')">Delete</button></div>`)}
-function openEditMaterial(id,returnTo='list'){const item=tasks.find(t=>t.id===id);if(!item)return;const back=returnTo==='dashboard'?'closeModal();renderAll()':'openMaterialsList()';show(`<div class="head"><h2>Edit material</h2><button class="light" onclick="${back}">Back</button></div><div class="field"><label>Item name</label><input id="editMaterialTitle" type="text" inputmode="text" autocapitalize="words" value="${esc(item.title)}"></div><div class="row"><div class="field"><label>Quantity</label><input id="editMaterialQty" type="number" inputmode="decimal" step="any" min="0.01" value="${esc(materialQuantity(item))}"></div><div class="field"><label>Category</label><select id="editMaterialCategory"><option>Boiler</option><option>Plumbing</option><option>Building</option><option>Van Stock</option><option>Other</option></select></div></div><button id="saveMaterialEditBtn" class="gold" style="width:100%" onclick="saveMaterialEdit('${id}','${returnTo}')">Save changes</button>`);$('editMaterialCategory').value=materialCategory(item)}
+function openEditMaterial(id,returnTo='list'){const item=tasks.find(t=>t.id===id);if(!item)return;const back=returnTo==='dashboard'?'closeModal();renderAll()':'openMaterialsList()';show(`<div class="head"><h2>Edit material</h2><button class="light" onclick="${back}">Back</button></div><div class="field"><label>Item name</label><input id="editMaterialTitle" type="text" inputmode="text" autocapitalize="words" value="${esc(item.title)}"></div><div class="row"><div class="field"><label>Quantity</label><input id="editMaterialQty" type="number" inputmode="decimal" step="any" min="0.01" value="${esc(materialQuantity(item))}"></div><div class="field"><label>Category</label><select id="editMaterialCategory"><option>Boiler</option><option>Plumbing</option><option>Building</option><option>Van Stock</option><option>Other</option></select></div></div><div class="actions"><button id="saveMaterialEditBtn" class="gold" onclick="saveMaterialEdit('${id}','${returnTo}')">Save changes</button><button class="light" onclick="markMaterialPurchased('${id}')">Mark purchased</button><button class="danger" onclick="deleteMaterialItem('${id}')">Delete</button></div>`);$('editMaterialCategory').value=materialCategory(item)}
 async function saveMaterialEdit(id,returnTo='list'){
   const item=tasks.find(t=>t.id===id),title=String($('editMaterialTitle')?.value||'').trim(),quantity=Math.max(.01,Number($('editMaterialQty')?.value||1)),category=$('editMaterialCategory')?.value||'Other';if(!item||!title)return alert('Enter the material name.');
   const update={title,notes:materialQuantityNote(quantity,category,materialSource(item)),updated_at:new Date().toISOString()},button=$('saveMaterialEditBtn');if(button){button.disabled=true;button.textContent='Saving…'}
@@ -1547,6 +1565,17 @@ function recordJobDeposit(jobId){
   const job=jobs.find(item=>item.id===jobId),customer=customers.find(item=>item.id===job?.customer_id);if(!job)return;
   show(`<div class="head"><div><h2>Record deposit received</h2><div class="meta">${esc(job.title||'Job')} · ${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>No invoice is needed yet.</strong> This deposit will be carried into the final invoice later and deducted from the balance due. It will not sync to QuickBooks until that invoice exists.</div><div class="field"><label>Deposit amount</label><input id="jobDepositAmount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></div><div class="field"><label>Date received</label><input id="jobDepositDate" type="date" value="${today()}"></div><div class="field"><label>Note (optional)</label><input id="jobDepositNote" placeholder="e.g. Boiler materials deposit"></div><button id="saveJobDepositBtn" class="gold" style="width:100%" onclick="saveJobDeposit('${jobId}')">Save deposit & prepare receipt</button>`)
 }
+function openJobDepositRequest(jobId){
+  const job=jobs.find(item=>item.id===jobId),customer=customers.find(item=>item.id===job?.customer_id);if(!job)return;
+  const suggested=Number(job.agreed_price??job.quoted_amount??0)>0?Number((Number(job.agreed_price??job.quoted_amount)*.5).toFixed(2)):'';
+  show(`<div class="head"><div><h2>Request a deposit</h2><div class="meta">${esc(job.title||'Job')} · ${esc(customer?.name||'No customer linked')}</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="notice"><strong>Create a deposit invoice ready to send.</strong><div class="meta">Use this before a date is agreed when you need funds to secure materials or availability.</div></div><div class="field"><label>Deposit requested</label><input id="depositRequestAmount" type="number" inputmode="decimal" step="0.01" min="0.01" value="${esc(suggested)}" placeholder="0.00"></div><div class="field"><label>What is it for?</label><input id="depositRequestDescription" value="Materials and availability deposit" placeholder="e.g. Boiler materials deposit"></div><button class="gold" style="width:100%" onclick="createJobDepositRequest('${jobId}')">Create deposit invoice</button>`)
+}
+function createJobDepositRequest(jobId){
+  const job=jobs.find(item=>item.id===jobId),amount=Number($('depositRequestAmount')?.value||0),description=String($('depositRequestDescription')?.value||'Materials and availability deposit').trim();
+  if(!job||!amount||amount<=0)return alert('Enter the deposit amount to request.');
+  openNewDocument('invoice',jobId,job.customer_id||'');
+  setTimeout(()=>{if($('dTitle'))$('dTitle').value=`Deposit request — ${job.title||'Job'}`;if($('dDue'))$('dDue').value=today();const line=$('dLines')?.querySelector('.line-row');if(line){const fields=line.querySelectorAll('input');if(fields[0])fields[0].value=description;if(fields[1])fields[1].value='1';if(fields[2])fields[2].value=Number(amount).toFixed(2)}if($('dNotes'))$('dNotes').value='A deposit is requested to help secure materials and availability. Please let me know if you would prefer to discuss arrangements.';updateDocumentTotals()},0)
+}
 async function saveJobDeposit(jobId){
   const job=jobs.find(item=>item.id===jobId),amount=Number($('jobDepositAmount')?.value||0);if(!job||!amount||amount<=0)return alert('Enter the deposit amount received.');
   const button=$('saveJobDepositBtn');if(button){button.disabled=true;button.textContent='Saving…'}
@@ -1578,7 +1607,7 @@ function openJob(id){
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:hasPayableInvoice?`<button class="gold" onclick="openJobPayment('${id}')">Payment</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">${hasInvoice?'Open invoice':'Create invoice'}</button>`}
-    ${j.status!=='completed'?`<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work not in diary</button>`:''}`:''}
+    ${j.status!=='completed'?`${!j.scheduled_date?`<button class="light" onclick="openJobDepositRequest('${id}')">Request deposit</button>`:''}<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work not in diary</button>`:''}`:''}
     <button class="light" onclick="openFollowOnWork('${id}')">Return visit</button>
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
