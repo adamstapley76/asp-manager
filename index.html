@@ -1605,7 +1605,7 @@ function openQuoteDepositRequest(quoteId){
   openDepositRequest({quote,job,customer,suggested,back:`openDocument('${quoteId}')`})
 }
 function depositRequestMessage({quote,job,customer,amount,description}){
-  const first=String(customer?.name||'there').trim().split(/\s+/)[0]||'there',reference=`${String(customer?.name||'Customer').trim().split(/\s+/).slice(-1)[0]} ${quote?documentNumber(quote):'deposit'}`;
+  const first=String(customer?.name||'there').trim().split(/\s+/)[0]||'there',reference=quote?documentNumber(quote):'Deposit';
   const subject=quote?`quote ${documentNumber(quote)}`:(job?.title||'your job'),link=quote?quoteAcceptanceUrl(quote):'';
   return `Hi ${first}, to help secure materials and availability for ${subject}, a deposit of ${money(amount)} is requested.${description?` (${description})`:''}\n\nBank transfer / internet banking\nNatWest\nSort code: 60-08-01\nAccount number: 62947591\nPayment reference: ${reference}\n\nThere is no pressure — please let me know if you would like to discuss arrangements.${link?`\n\nYou can view your quote here: ${link}`:''}\n\nThanks, Adam`;
 }
