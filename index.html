@@ -168,7 +168,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
     </div>
 
     <div id="acceptedQuotesCard" class="card compact-section hidden">
-      <div class="section-title"><h2>Quotes accepted</h2><button class="light" onclick="showPage('documents');setDocumentFilter('accepted')">View all</button></div>
+      <div class="section-title"><h2>Quotes accepted</h2><button class="light" onclick="openQuotes();setDocumentFilter('accepted')">View all</button></div>
       <div id="acceptedQuotesList" class="list"></div>
     </div>
 
@@ -267,17 +267,9 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
 
   <section id="pageDocuments" class="hidden">
     <div class="card">
-      <div class="section-title"><h2>Quotes & invoices</h2><div class="actions"><button class="light" onclick="openHistoricalRecords(documentFilter==='quotes'?'quote':'')">History</button><button class="light" onclick="openNewDocument('invoice')">+ Invoice</button><button class="gold" onclick="openNewDocument('quote')">+ Quote</button></div></div>
+      <div class="section-title"><div><h2 id="documentWorkspaceTitle">Invoices</h2><div id="documentWorkspaceSubtitle" class="meta">Invoices sent and awaiting payment.</div></div><div id="documentWorkspaceActions" class="actions"></div></div>
       <div class="toolbar"><input id="documentSearch" placeholder="Search customer, number, title or job"><button class="navy" onclick="renderDocuments()">Search</button></div>
-      <div id="documentFilters" class="filter-row">
-        <button class="light active" data-filter="open" onclick="setDocumentFilter('open')">To send</button>
-        <button class="light" data-filter="accepted" onclick="setDocumentFilter('accepted')">Accepted</button>
-        <button class="light" data-filter="quotes" onclick="setDocumentFilter('quotes')">Quotes</button>
-        <button class="light" data-filter="invoices" onclick="setDocumentFilter('invoices')">Invoices</button>
-        <button class="light" data-filter="awaiting" onclick="setDocumentFilter('awaiting')">Awaiting payment</button>
-        <button class="light" data-filter="paid" onclick="setDocumentFilter('paid')">Paid</button>
-        <button class="light" data-filter="all" onclick="setDocumentFilter('all')">All</button>
-      </div>
+      <div id="documentFilters" class="filter-row"></div>
       <div id="documentResults" class="list"></div>
     </div>
   </section>
@@ -291,7 +283,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],leadEvents=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],historicalCustomerCache={},pendingHistoricalImport=null,jobsReady=true,leadEventsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='open',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],leadEvents=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],historicalCustomerCache={},historicalRecords=[],pendingHistoricalImport=null,jobsReady=true,leadEventsReady=true,documentsReady=true,depositsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='invoices',documentWorkspace='invoices',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -551,6 +543,7 @@ function showPage(page){
     $(`page${p[0].toUpperCase()+p.slice(1)}`).classList.toggle('hidden',p!==page);
     $(`nav${p[0].toUpperCase()+p.slice(1)}`)?.classList.toggle('active',p===page);
   });
+  if(page==='documents')renderDocumentWorkspace();
   syncFixedChromeHeights();requestAnimationFrame(syncFixedChromeHeights);
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -699,18 +692,30 @@ async function importHistoricalDocuments(scope){
     showSyncNotice(`${records.length} historical record${records.length===1?'':'s'} imported safely`);openHistoricalRecords();
   }catch(error){console.error('Historical import failed',error);alert(`Nothing further was imported after the failed batch. ${friendlyError(error)}`)}finally{setModalBusy(false)}
 }
-function historicalWorkCard(record){const customer=record.customer_id?customerName(record.customer_id):'Unlinked customer';return `<div class="item"><div><h3>${esc(record.document_type==='invoice'?'Invoice':'Quote')} ${esc(record.document_number||'')}</h3><div class="meta">${esc(record.document_date?displayDate(record.document_date):'No date')} · ${esc(customer)} · ${esc(money(record.total))}</div><div class="meta">Invoice2go history · ${esc(record.status)}${record.match_status!=='matched'?` · ${esc(record.match_status==='unmatched'?'Unmatched':'Needs review')}`:''}</div></div><span class="badge archived">Historical</span></div>`}
+function historicalWorkCard(record){const customer=record.customer_id?customerName(record.customer_id):'Unlinked customer',isQuote=record.document_type==='quote',isUnpaidInvoice=record.document_type==='invoice'&&record.status!=='paid';return `<div class="item"><div><h3>${esc(record.document_type==='invoice'?'Invoice':'Quote')} ${esc(record.document_number||'')}</h3><div class="meta">${esc(record.document_date?displayDate(record.document_date):'No date')} · ${esc(customer)} · ${esc(money(record.total))}</div><div class="meta">Invoice2go history · ${esc(record.status)}${record.match_status!=='matched'?` · ${esc(record.match_status==='unmatched'?'Unmatched':'Needs review')}`:''}</div></div><div class="item-actions"><span class="badge archived">Historical</span><button class="light" onclick="openHistoricalRecord('${esc(record.external_id)}')">Open</button>${isQuote&&record.customer_id?`<button class="gold" onclick="bringHistoricalQuoteLive('${esc(record.external_id)}')">Add to live quotes</button>`:''}${isUnpaidInvoice&&record.customer_id?`<button class="gold" onclick="bringHistoricalInvoiceLive('${esc(record.external_id)}')">Add to live invoices</button>`:''}</div></div>`}
 async function openHistoricalRecords(type=''){
   if(!isOnline())return alert('Connect to the internet to view historical work.');
-  const label=type==='quote'?'Historical quotes':'Historical work';
-  show(`<div class="head"><div><h2>${label}</h2><div class="meta">Imported Invoice2go ${type==='quote'?'quotes':'quotes and invoices'}. They are records for reference, not live ASP Manager documents.</div></div><button class="light" onclick="closeModal()">Close</button></div><div id="historicalRecordsList" class="meta">Loading ${type==='quote'?'quotes':'historical work'}…</div>`);
+  const documentLabel=type==='quote'?'quotes':type==='invoice'?'invoices':'quotes and invoices',label=type==='quote'?'Historical quotes':type==='invoice'?'Historical invoices':'Historical work';
+  show(`<div class="head"><div><h2>${label}</h2><div class="meta">Imported Invoice2go ${documentLabel}. They are records for reference until you choose to make an eligible item live.</div></div><button class="light" onclick="closeModal()">Close</button></div><div id="historicalRecordsList" class="meta">Loading ${documentLabel}…</div>`);
   let request=sb.from('historical_documents').select('*').order('document_date',{ascending:false}).limit(100);
   if(type)request=request.eq('document_type',type);
   const {data,error}=await request;
   const target=$('historicalRecordsList');if(!target)return;
   if(error){target.innerHTML=`<div class="notice error">${esc(friendlyError(error))}</div>`;return}
-  const records=data||[],matched=records.filter(record=>record.match_status==='matched').length;
+  const records=data||[],matched=records.filter(record=>record.match_status==='matched').length;historicalRecords=records;
   target.innerHTML=`<div class="grid"><div class="kpi"><b>${records.length}</b><span>Newest records shown</span></div><div class="kpi"><b>${matched}</b><span>Linked to customers</span></div></div><div class="list" style="margin-top:12px">${records.map(historicalWorkCard).join('')||'<div class="meta">No historical records imported yet.</div>'}</div>`;
+}
+async function getHistoricalRecord(externalId){let record=historicalRecords.find(item=>item.external_id===externalId);if(record)return record;const {data,error}=await sb.from('historical_documents').select('*').eq('external_id',externalId).maybeSingle();if(error)throw error;return data}
+async function openHistoricalRecord(externalId){
+  try{const record=await getHistoricalRecord(externalId);if(!record)return alert('That historical record could not be found.');const lines=Array.isArray(record.line_items)?record.line_items:[],customer=record.customer_id?customerName(record.customer_id):record.customer_name||'No customer linked',backType=record.document_type==='quote'?'quote':'invoice',canBringQuote=record.document_type==='quote',canBringInvoice=record.document_type==='invoice'&&record.status!=='paid';show(`<div class="head"><div><h2>${esc(record.document_type==='quote'?'Quote':'Invoice')} ${esc(record.document_number||'')}</h2><div class="meta">Invoice2go history · ${esc(displayDate(record.document_date))}</div></div><button class="light" onclick="openHistoricalRecords('${backType}')">Back</button></div><div class="detail-grid"><div class="detail"><b>Customer</b><span>${esc(customer)}</span></div><div class="detail"><b>Status</b><span>${esc(record.status||'Historical')}</span></div><div class="detail"><b>Total</b><span>${esc(money(record.total))}</span></div></div><div class="list" style="margin-top:12px">${lines.map(line=>`<div class="item"><span>${esc(line.description||'Item')}</span><b>${esc(money((Number(line.quantity)||1)*(Number(line.unit_price)||0)))}</b></div>`).join('')||'<div class="empty">No line-item detail was imported for this record.</div>'}</div>${record.notes?`<div class="muted-box" style="margin-top:12px"><h3>Original notes</h3><div class="meta" style="white-space:pre-wrap">${esc(record.notes)}</div></div>`:''}${canBringQuote?(record.customer_id?`<button class="gold" style="width:100%;margin-top:12px" onclick="bringHistoricalQuoteLive('${esc(record.external_id)}')">Add to live quotes</button>`:`<div class="notice" style="margin-top:12px">Link this record to a customer first before turning it into a live quote.</div>`):''}${canBringInvoice?(record.customer_id?`<button class="gold" style="width:100%;margin-top:12px" onclick="bringHistoricalInvoiceLive('${esc(record.external_id)}')">Add to live invoices</button>`:`<div class="notice" style="margin-top:12px">Link this record to a customer first before turning it into a live invoice.</div>`):''}`)}catch(error){alert(friendlyError(error))}
+}
+async function bringHistoricalQuoteLive(externalId){
+  try{const record=await getHistoricalRecord(externalId);if(!record||record.document_type!=='quote')return alert('Choose a historical quote.');if(!record.customer_id)return alert('This quote needs to be linked to a customer first.');const marker=`[Invoice2go source: ${record.external_id}]`,existing=documents.find(document=>document.type==='quote'&&String(document.notes||'').includes(marker));if(existing){alert('This historical quote is already available as a live ASP quote.');return openDocument(existing.id)}if(!confirm(`Add historical quote ${record.document_number||''} as a new editable live quote for ${customerName(record.customer_id)}? Review the price before sending because it retains the historical amount.`))return;const lines=Array.isArray(record.line_items)&&record.line_items.length?record.line_items:[{description:`Historical quote ${record.document_number||''}`.trim(),quantity:1,unit_price:Number(record.subtotal||record.total||0)}],title=lines[0]?.description||`Historical quote ${record.document_number||''}`,payload={owner_id:user.id,customer_id:record.customer_id,job_id:null,type:'quote',document_number:await nextDocumentNumberFromDatabase('quote'),status:'draft',title,issue_date:today(),due_date:addDays(today(),30),line_items:lines,subtotal:Number(record.subtotal||0),vat_rate:Number(record.vat_rate??20),vat_amount:Number(record.vat_amount||0),total:Number(record.total||0),notes:[marker,`Imported from Invoice2go quote ${record.document_number||''} dated ${displayDate(record.document_date)}. Review the price and wording before sending.`,record.notes||''].filter(Boolean).join('\n\n')};const calculated=calculateFigures(lines,payload.vat_rate);payload.subtotal=calculated.subtotal;payload.vat_amount=calculated.vat;payload.total=calculated.total;const {data,error}=await insertDocumentSafely(payload);if(error)throw error;await loadAll();openDocument(data.id)
+  }catch(error){alert(friendlyError(error))}
+}
+async function bringHistoricalInvoiceLive(externalId){
+  try{const record=await getHistoricalRecord(externalId);if(!record||record.document_type!=='invoice')return alert('Choose a historical invoice.');if(record.status==='paid')return alert('Paid historical invoices stay in history so they are not duplicated.');if(!record.customer_id)return alert('This invoice needs to be linked to a customer first.');const marker=`[Invoice2go source: ${record.external_id}]`,existing=documents.find(document=>document.type==='invoice'&&String(document.notes||'').includes(marker));if(existing){alert('This historical invoice is already available as a live ASP invoice.');return openDocument(existing.id)}if(!confirm(`Add historical invoice ${record.document_number||''} as a new editable live invoice for ${customerName(record.customer_id)}? Check it is still due and review the price before sending.`))return;const lines=Array.isArray(record.line_items)&&record.line_items.length?record.line_items:[{description:`Historical invoice ${record.document_number||''}`.trim(),quantity:1,unit_price:Number(record.subtotal||record.total||0)}],title=lines[0]?.description||`Historical invoice ${record.document_number||''}`,payload={owner_id:user.id,customer_id:record.customer_id,job_id:null,type:'invoice',document_number:await nextDocumentNumberFromDatabase('invoice'),status:'draft',title,issue_date:today(),due_date:today(),line_items:lines,subtotal:Number(record.subtotal||0),vat_rate:Number(record.vat_rate??20),vat_amount:Number(record.vat_amount||0),total:Number(record.total||0),notes:[marker,`Imported from Invoice2go invoice ${record.document_number||''} dated ${displayDate(record.document_date)}. Check it is still due, then review before sending.`,record.notes||''].filter(Boolean).join('\n\n')};const calculated=calculateFigures(lines,payload.vat_rate);payload.subtotal=calculated.subtotal;payload.vat_amount=calculated.vat;payload.total=calculated.total;const {data,error}=await insertDocumentSafely(payload);if(error)throw error;await loadAll();openDocument(data.id)
+  }catch(error){alert(friendlyError(error))}
 }
 async function loadCustomerHistoricalWork(customerId){
   const target=$(`customerHistoricalWork-${customerId}`);if(!target)return;
@@ -1074,11 +1079,13 @@ function renderJobs(){
   });
   $('jobResults').innerHTML=list.map(jobCard).join('')||'<div class="empty">No jobs match this filter.</div>';
 }
-function setDocumentFilter(value){documentFilter=value;document.querySelectorAll('#documentFilters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));renderDocuments()}
+function documentWorkspaceFilters(){return documentWorkspace==='quotes'?[['quotes','All quotes'],['quote_sent','To follow up'],['accepted','Accepted']]:[['invoices','All invoices'],['awaiting','Awaiting payment'],['paid','Paid']]}
+function renderDocumentWorkspace(){const title=$('documentWorkspaceTitle'),subtitle=$('documentWorkspaceSubtitle'),actions=$('documentWorkspaceActions'),filters=$('documentFilters');if(!title||!subtitle||!actions||!filters)return;const quotes=documentWorkspace==='quotes';title.textContent=quotes?'Quotes':'Invoices';subtitle.textContent=quotes?'Create, send and follow up quotations.':'Create invoices and record payments received.';actions.innerHTML=`<button class="light" onclick="openHistoricalRecords('${quotes?'quote':'invoice'}')">History</button><button class="${quotes?'gold':'gold'}" onclick="openNewDocument('${quotes?'quote':'invoice'}')">+ ${quotes?'Quote':'Invoice'}</button>`;filters.innerHTML=documentWorkspaceFilters().map(([value,label])=>`<button class="light ${documentFilter===value?'active':''}" data-filter="${value}" onclick="setDocumentFilter('${value}')">${label}</button>`).join('')}
+function setDocumentFilter(value){documentFilter=value;renderDocumentWorkspace();renderDocuments()}
 function setDocumentNav(activeId){['navDocuments','navQuotes'].forEach(id=>$(id)?.classList.toggle('active',id===activeId))}
-function openInvoices(){showPage('documents');setDocumentFilter('invoices');setDocumentNav('navDocuments')}
-function openQuotes(){showPage('documents');setDocumentFilter('quotes');setDocumentNav('navQuotes')}
-function openAwaitingPayments(){showPage('documents');setDocumentFilter('awaiting')}
+function openInvoices(){documentWorkspace='invoices';documentFilter='invoices';showPage('documents');renderDocumentWorkspace();renderDocuments();setDocumentNav('navDocuments')}
+function openQuotes(){documentWorkspace='quotes';documentFilter='quotes';showPage('documents');renderDocumentWorkspace();renderDocuments();setDocumentNav('navQuotes')}
+function openAwaitingPayments(){documentWorkspace='invoices';documentFilter='awaiting';showPage('documents');renderDocumentWorkspace();renderDocuments();setDocumentNav('navDocuments')}
 function renderDocuments(){
   if(!documentsReady){$('documentResults').innerHTML='<div class="empty">Run <b>supabase_setup_v0.3.sql</b> in Supabase to enable Quotes & invoices.</div>';return}
   const q=($('documentSearch')?.value||'').trim().toLowerCase();let list=[...documents];
@@ -1086,6 +1093,10 @@ function renderDocuments(){
   else if(documentFilter==='accepted')list=list.filter(d=>d.type==='quote'&&d.status==='accepted');
   else if(documentFilter==='quotes')list=list.filter(d=>d.type==='quote');
   else if(documentFilter==='invoices')list=list.filter(d=>d.type==='invoice');
+  else if(documentFilter==='quote_drafts')list=list.filter(d=>d.type==='quote'&&d.status==='draft');
+  else if(documentFilter==='quote_sent')list=list.filter(d=>d.type==='quote'&&d.status==='sent');
+  else if(documentFilter==='quote_declined')list=list.filter(d=>d.type==='quote'&&d.status==='declined');
+  else if(documentFilter==='invoice_drafts')list=list.filter(d=>d.type==='invoice'&&d.status==='draft');
   else if(documentFilter==='awaiting')list=list.filter(d=>d.type==='invoice'&&['sent','overdue'].includes(d.status)&&invoiceBalance(d)>0);
   else if(documentFilter==='paid')list=list.filter(d=>d.status==='paid');
   if(q)list=list.filter(d=>[d.document_number,d.title,d.notes,documentCustomer(d)?.name,documentJob(d)?.title].join(' ').toLowerCase().includes(q));
