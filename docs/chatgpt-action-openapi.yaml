@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: ASP Manager Quote Intake
+  version: 1.0.0
+  description: Creates or matches a customer, then creates a quoted job and draft quote in ASP Manager.
+servers:
+  - url: https://asp-manager-git-daily-driver-bugfix-2-adamstapley.vercel.app
+paths:
+  /api/chatgpt/ping:
+    get:
+      operationId: pingAspManager
+      summary: Check that the ASP Manager quote connection is available.
+      responses:
+        '200':
+          description: Connection is available.
+  /api/chatgpt/quote:
+    post:
+      operationId: sendQuoteToAspManager
+      summary: Send a completed customer quote to ASP Manager.
+      description: Use only after the user has confirmed that they want to send the quote. Do not invent missing details.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuotePackage'
+      responses:
+        '201':
+          description: Quote saved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSuccess'
+        '400':
+          description: Quote package is invalid.
+        '401':
+          description: Missing or invalid Bearer token.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+  schemas:
+    QuotePackage:
+      type: object
+      required: [customer, job, quote]
+      properties:
+        source_reference:
+          type: string
+          description: A stable unique reference from ChatGPT. Reusing it returns the already-created quote instead of creating a duplicate.
+        customer:
+          type: object
+          required: [name]
+          properties:
+            name: { type: string }
+            phone: { type: string }
+            email: { type: string, format: email }
+            address: { type: string }
+            postcode: { type: string }
+        lead:
+          type: object
+          properties:
+            source: { type: string, example: ChatGPT }
+        job:
+          type: object
+          required: [title]
+          properties:
+            title: { type: string }
+            job_type: { type: string, example: Boiler installation }
+            description: { type: string }
+            property_type: { type: string }
+            boiler_make: { type: string }
+            boiler_model: { type: string }
+            materials:
+              type: array
+              items: {}
+            confidence: { type: string }
+            assumptions: { type: string }
+            follow_up_reminders:
+              type: array
+              items: {}
+        quote:
+          type: object
+          required: [price_ex_vat]
+          properties:
+            issue_date: { type: string, format: date }
+            price_ex_vat: { type: number, minimum: 0 }
+            vat_rate: { type: number, minimum: 0, maximum: 100, default: 20 }
+            wording: { type: string }
+            line_items:
+              type: array
+              items:
+                type: object
+                required: [description, quantity, unit_price]
+                properties:
+                  description: { type: string }
+                  quantity: { type: number, minimum: 0.01 }
+                  unit_price: { type: number, minimum: 0 }
+        photos:
+          type: array
+          items:
+            type: object
+            required: [url]
+            properties:
+              url: { type: string, format: uri, pattern: '^https://' }
+              category: { type: string, example: Before }
+              description: { type: string }
+              file_name: { type: string }
+              mime_type: { type: string }
+              file_size: { type: integer, minimum: 0 }
+        notes: { type: string }
+    QuoteSuccess:
+      type: object
+      required: [success, customer_id, job_id, quote_id]
+      properties:
+        success: { type: boolean, const: true }
+        customer_id: { type: string, format: uuid }
+        job_id: { type: string, format: uuid }
+        quote_id: { type: string, format: uuid }
+        duplicate: { type: boolean }
