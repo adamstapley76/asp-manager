@@ -26,8 +26,21 @@ create table if not exists public.chatgpt_quote_imports (
 create index if not exists chatgpt_quote_imports_owner_status_created_idx
   on public.chatgpt_quote_imports (owner_id, status, created_at desc);
 
+create table if not exists public.chatgpt_action_keys (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  label text not null default 'ChatGPT quote connection',
+  token_hash text not null unique,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz
+);
+create index if not exists chatgpt_action_keys_active_idx on public.chatgpt_action_keys (owner_id) where revoked_at is null;
+
 alter table public.chatgpt_quote_imports enable row level security;
+alter table public.chatgpt_action_keys enable row level security;
 grant select, insert, update, delete on public.chatgpt_quote_imports to authenticated;
+grant select, insert, update, delete on public.chatgpt_action_keys to authenticated;
 
 drop policy if exists "Users can view their own ChatGPT quote imports" on public.chatgpt_quote_imports;
 create policy "Users can view their own ChatGPT quote imports"
@@ -46,5 +59,11 @@ drop policy if exists "Users can delete their own ChatGPT quote imports" on publ
 create policy "Users can delete their own ChatGPT quote imports"
   on public.chatgpt_quote_imports for delete to authenticated
   using ((select auth.uid()) = owner_id);
+
+drop policy if exists "Users can manage their own ChatGPT action keys" on public.chatgpt_action_keys;
+create policy "Users can manage their own ChatGPT action keys"
+  on public.chatgpt_action_keys for all to authenticated
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
 
 commit;
