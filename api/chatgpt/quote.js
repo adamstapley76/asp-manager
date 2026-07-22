@@ -119,11 +119,14 @@ function validatePackage(raw) {
 }
 
 async function callRpc(url, serviceRoleKey, payload) {
+  // Supabase's current server keys begin sb_secret_. They authenticate with the
+  // apikey header only; legacy service-role JWTs still require Bearer as well.
+  const usesModernSecretKey = serviceRoleKey.startsWith('sb_secret_');
   const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/create_chatgpt_quote`, {
     method: 'POST',
     headers: {
       apikey: serviceRoleKey,
-      authorization: `Bearer ${serviceRoleKey}`,
+      ...(usesModernSecretKey ? {} : { authorization: `Bearer ${serviceRoleKey}` }),
       'content-type': 'application/json',
       prefer: 'return=representation'
     },

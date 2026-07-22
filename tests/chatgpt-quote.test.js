@@ -62,6 +62,17 @@ async function endpointTests() {
     await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: valid }, response);
     assert.equal(response.statusCode, 201);
     assert.deepEqual(response.body, { success: true, customer_id: 'customer-1', job_id: 'job-1', quote_id: 'quote-1', duplicate: false });
+
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test-server-key';
+    global.fetch = async (_url, init) => {
+      assert.equal(init.headers.apikey, 'sb_secret_test-server-key');
+      assert.equal(init.headers.authorization, undefined);
+      return new Response(JSON.stringify([{ customer_id: 'customer-2', job_id: 'job-2', quote_id: 'quote-2', duplicate: false }]), { status: 200 });
+    };
+    response = responseStub();
+    await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: valid }, response);
+    assert.equal(response.statusCode, 201);
+    assert.equal(response.body.quote_id, 'quote-2');
   } finally {
     global.fetch = realFetch;
     Object.keys(process.env).forEach(key => { if (!(key in before)) delete process.env[key]; });
