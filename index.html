@@ -167,18 +167,13 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
       <div id="dashboardDiaryResults"></div>
     </div>
 
-    <div id="acceptedQuotesCard" class="card compact-section hidden">
-      <div class="section-title"><h2>Quotes accepted</h2><button class="light" onclick="openQuotes();setDocumentFilter('accepted')">View all</button></div>
-      <div id="acceptedQuotesList" class="list"></div>
-    </div>
-
     <div id="awaitingPaymentCard" class="card compact-section hidden">
       <div class="section-title"><h2>Awaiting payment</h2><button class="light" onclick="openAwaitingPayments()">View all</button></div>
       <div id="awaitingPaymentList" class="list"></div>
     </div>
 
     <button id="materialsList" class="dashboard-list-pill" onclick="openMaterialsList()">Materials to get</button>
-    <button id="pipelinePreview" class="dashboard-list-pill" onclick="openWorkNotInDiary()">Work not in diary</button>
+    <button id="pipelinePreview" class="dashboard-list-pill" onclick="openWorkNotInDiary()">Work to organise</button>
 
     <div class="card service-summary compact-section">
       <div class="section-title"><h2>Services due</h2><button class="light" onclick="showDue('30')">Open</button></div>
@@ -563,7 +558,7 @@ function renderAiReadinessSummary(){const target=$('aiReadinessSummary');if(!tar
 function openAiReadiness(){const d=aiReadinessData(),rows=[['Completed jobs',d.completed],['Completed quotes',d.completedQuotes],['Accepted quotes',d.accepted],['Rejected quotes',d.rejected],['Invoices',d.invoices],['Jobs with supplier costs',d.supplierCosts],['Jobs with materials',d.materials],['Jobs with labour hours',d.labour],['Jobs with profit',d.profit],['Jobs with photos',d.photos],['Completed certificates',d.certificates],['Completed boiler records',d.boilerRecords],['Jobs with categories assigned',d.categories],['Categories with 3+ completed jobs',d.repeatedCategories]];show(`<div class="head"><div><h2>AI readiness</h2><div class="meta">Data maturity only — no AI quote suggestions are active.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="notice ${d.stage==='AI Ready'?'success':''}"><strong>${esc(d.stage)}</strong><div class="meta">${esc(d.message)}</div></div><div class="list" style="margin-top:12px">${rows.map(([label,value])=>`<div class="item"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('')}</div><div class="muted-box" style="margin-top:12px"><h3>Suggested thresholds</h3><div class="meta"><b>Collecting Data:</b> under 10 completed jobs or 5 resolved quotes.<br><b>Learning Patterns:</b> 10 completed jobs, 5 resolved quotes, and 5 jobs each with supplier costs, labour and profit data.<br><b>AI Ready:</b> 30 completed jobs, 15 resolved quotes, 15 with supplier costs/labour/profit, 10 with photos, 25 categorised jobs and at least 3 repeat job categories.</div></div>`)}
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
 function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
-function isLiveQuote(document){const job=documentJob(document);return document?.type==='quote'&&!['completed','lost','cancelled'].includes(job?.status)}
+function isLiveQuote(document){const job=documentJob(document);return document?.type==='quote'&&!document.archived_at&&!['completed','lost','cancelled'].includes(job?.status)}
 function documentNumber(document){return document.document_number||`${document.type==='invoice'?'Invoice':'Quote'} (no number)`}
 function nextDocumentNumberFrom(records,type,year=new Date().getFullYear()){
   const prefix=type==='invoice'?'INV':'Q',pattern=new RegExp(`^${prefix}-${year}-(\\d+)$`),numbers=new Set();
@@ -822,7 +817,24 @@ function whatsappBusinessButton(value,text='',className='btn light',before=''){c
 function serviceReminderText(customer){const first=String(customer?.name||'').trim().split(/\s+/)[0]||'there';const due=customer?.next_due?displayDate(customer.next_due):'soon';return `Hi ${first}, it’s Adam from Adam Stapley Plumbing. Just a quick reminder that your boiler service is due around ${due}. Let me know if you’d like me to arrange a convenient appointment. Thanks, Adam`}
 function jobQuickActions(job){const c=customers.find(x=>x.id===job.customer_id),address=resolveJobAddress(job),active=!['completed','lost','cancelled'].includes(job.status);return `<div class="job-quick">${address?`<a class="btn navy" href="${appleMapsUrl(address)}" target="_blank" rel="noopener">Navigate</a>`:''}${c?.phone?`<a class="btn light" href="${telUrl(c.phone)}">Call</a>${whatsappBusinessButton(c.phone)}`:''}<button class="light" onclick="openJob('${job.id}')">Open job</button>${active?`<button class="gold" onclick="quickCompleteJob('${job.id}')">Complete</button>`:''}</div>`}
 function returnVisitNeeded(job){return Boolean(job?.is_return_visit)||(['waiting','to_book'].includes(job?.status)&&visitsForJob(job.id).some(visit=>visit.return_required))}
-function workQueueJobs(){return jobs.filter(job=>!['completed','lost','cancelled'].includes(job.status)&&!job.scheduled_date).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''))}
+function jobPriority(job){return ['urgent','high','normal','low'].includes(job?.priority)?job.priority:'normal'}
+function priorityRank(priority){return ({urgent:0,high:1,normal:2,low:3})[priority]??2}
+function workQueueJobs(){return jobs.filter(job=>!['completed','lost','cancelled'].includes(job.status)&&!job.scheduled_date&&['to_book','waiting'].includes(job.status)).sort((a,b)=>Number(returnVisitNeeded(b))-Number(returnVisitNeeded(a))||priorityRank(jobPriority(a))-priorityRank(jobPriority(b))||Number(b.status==='to_book')-Number(a.status==='to_book')||String(a.follow_up_date||'9999-12-31').localeCompare(String(b.follow_up_date||'9999-12-31'))||(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''))}
+function quoteForJob(jobId){return documents.filter(document=>document.type==='quote'&&document.job_id===jobId&&document.status!=='void'&&!document.archived_at).sort((a,b)=>String(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(String(a.accepted_at||a.updated_at||a.created_at||'')))[0]}
+function workItemPrice(job,quote){const jobAmount=Number(job?.agreed_price??job?.quoted_amount??0);if(jobAmount>0)return {value:money(jobAmount),suffix:' + VAT'};const quoteAmount=Number(quote?.total??0);return quoteAmount>0?{value:money(quoteAmount),suffix:' inc VAT'}:null}
+function workListEntries(){
+  const queued=workQueueJobs().map(job=>({kind:'job',job,quote:quoteForJob(job.id)}));
+  const standaloneQuotes=documents.filter(document=>isLiveQuote(document)&&document.status==='accepted'&&!document.job_id).map(quote=>({kind:'quote',quote,job:null}));
+  const rank=entry=>entry.kind==='job'?priorityRank(jobPriority(entry.job)):2;
+  return [...queued,...standaloneQuotes].sort((a,b)=>Number(workItemUrgent(b))-Number(workItemUrgent(a))||Number(workItemReady(b))-Number(workItemReady(a))||rank(a)-rank(b)||String(b.quote?.accepted_at||b.job?.updated_at||b.job?.created_at||'').localeCompare(String(a.quote?.accepted_at||a.job?.updated_at||a.job?.created_at||'')));
+}
+function workItemUrgent(entry){return entry.kind==='job'&&(returnVisitNeeded(entry.job)||jobPriority(entry.job)==='urgent')}
+function workItemReady(entry){return entry.kind==='quote'||entry.job?.status==='to_book'}
+function workListItemCard(entry){
+  const job=entry.job,quote=entry.quote,customer=job?customers.find(item=>item.id===job.customer_id):documentCustomer(quote),title=job?.title||job?.job_type||quote?.title||'Untitled work',address=job?resolveJobAddress(job):customerAddress(customer),price=workItemPrice(job,quote),priority=jobPriority(job),kind=job?(returnVisitNeeded(job)?'Return visit':job.status==='waiting'?'Waiting':'Ready to book'):'Accepted quote',onclick=job?`openJob('${job.id}')`:`openDocument('${quote.id}')`;
+  const actions=job?`<button class="gold" onclick="event.stopPropagation();openScheduleReturn('${job.id}','book')">Book</button><button class="light" onclick="event.stopPropagation();openJobPayment('${job.id}')">Deposit</button>`:`<button class="gold" onclick="event.stopPropagation();addQuoteToWorkNotInDiary('${quote.id}')">Add to work</button>`;
+  return `<div class="item job-compact queue-card clickable" role="button" tabindex="0" onclick="${onclick}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${onclick}}"><div><h3>${esc(title)}</h3><div class="meta"><b>${esc(customer?.name||'No customer linked')}</b> · ${esc(kind)}${price?` · <span class="price">${esc(price.value)}${esc(price.suffix)}</span>`:''}</div><div class="meta">${esc(address||'No address')}</div></div><div class="item-actions">${job?`<button class="light" onclick="event.stopPropagation();openWorkPriority('${job.id}')">${esc(priority[0].toUpperCase()+priority.slice(1))}</button>`:''}${actions}</div></div>`;
+}
 function queueJobCard(job){
   const returnNeeded=returnVisitNeeded(job),when=returnNeeded?'Return visit needed':job.status==='to_book'?'Ready to book':(job.follow_up_date?`Follow up ${displayDate(job.follow_up_date)}`:'Not booked yet');
   return `<div class="item job-compact queue-card" style="${returnNeeded?'border-left:4px solid var(--gold)':''}" role="button" tabindex="0" onclick="openScheduleReturn('${job.id}','book')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScheduleReturn('${job.id}','book')}"><div><h3>${esc(job.title||job.job_type||'Untitled job')}</h3><div class="meta"><b>${esc(customerName(job.customer_id))}</b> · ${esc(when)}</div><div class="meta">${esc(resolveJobAddress(job)||'No address')}</div></div><div class="item-actions">${returnNeeded?'<span class="badge due">Return visit</span>':''}</div></div>`;
@@ -887,8 +899,7 @@ function renderDashboard(){
   const tomorrowList=openJobs.filter(j=>j.scheduled_date===upcomingDate).sort(byTime);
   const unfinished=jobs.filter(job=>job.scheduled_date&&job.scheduled_date<today()&&!['completed','lost','cancelled'].includes(job.status)).sort((a,b)=>String(b.scheduled_date).localeCompare(String(a.scheduled_date))||(a.scheduled_time||'99:99').localeCompare(b.scheduled_time||'99:99'));
   renderDashboardDiary(todayList,openJobs);
-  const workQueue=workQueueJobs();
-  const acceptedQuotes=documents.filter(document=>isLiveQuote(document)&&document.status==='accepted').sort((a,b)=>(b.accepted_at||b.updated_at||b.created_at||'').localeCompare(a.accepted_at||a.updated_at||a.created_at||''));
+  const workQueue=workListEntries();
   const awaitingPayments=documents.filter(document=>document.type==='invoice'&&['sent','overdue'].includes(document.status)&&invoiceBalance(document)>0).sort((a,b)=>(a.due_date||'9999-12-31').localeCompare(b.due_date||'9999-12-31'));
   renderAiReadinessSummary();
   const serviceEligible=customers.filter(c=>c.status!=='archived'&&(c.service_reminder_tier||'ready')==='ready');
@@ -898,10 +909,8 @@ function renderDashboard(){
   if($('serviceOverdueK'))$('serviceOverdueK').textContent=overdue.length;
   if($('service30K'))$('service30K').textContent=due30.length;
   if($('serviceNoDateK'))$('serviceNoDateK').textContent=noDate+customers.filter(c=>c.service_reminder_tier==='review').length;
-  if($('workQueueMeta'))$('workQueueMeta').textContent=workQueue.length?`${workQueue.length} job${workQueue.length===1?'':'s'} not yet in the diary.`:'Every open job is in the diary.';
-  if($('pipelinePreview'))$('pipelinePreview').textContent=workQueue.length?`Open work not in diary · ${workQueue.length} job${workQueue.length===1?'':'s'}`:'Open work not in diary · Nothing waiting';
-  if($('acceptedQuotesCard'))$('acceptedQuotesCard').classList.toggle('hidden',!acceptedQuotes.length);
-  if($('acceptedQuotesList'))$('acceptedQuotesList').innerHTML=acceptedQuotes.slice(0,3).map(acceptedQuoteCard).join('');
+  if($('workQueueMeta'))$('workQueueMeta').textContent=workQueue.length?`${workQueue.length} item${workQueue.length===1?'':'s'} to organise.`:'No work waiting to be organised.';
+  if($('pipelinePreview'))$('pipelinePreview').textContent=workQueue.length?`Work to organise · ${workQueue.length} item${workQueue.length===1?'':'s'}`:'Work to organise · Nothing waiting';
   if($('awaitingPaymentCard'))$('awaitingPaymentCard').classList.toggle('hidden',!awaitingPayments.length);
   if($('awaitingPaymentList'))$('awaitingPaymentList').innerHTML=awaitingPayments.slice(0,3).map(invoice=>{const customer=documentCustomer(invoice);return `<div class="item"><div><h3>${esc(documentNumber(invoice))}</h3><div class="meta">${esc(customer?.name||'No customer linked')} · ${esc(money(invoiceBalance(invoice)))} remaining${invoice.due_date?` · due ${esc(displayDate(invoice.due_date))}`:''}</div></div><div class="item-actions"><button class="light" onclick="openDocument('${invoice.id}')">Open</button><button class="gold" onclick="openInvoicePayment('${invoice.id}')">Payment</button></div></div>`}).join('');
   if($('unfinishedJobsCard'))$('unfinishedJobsCard').classList.toggle('hidden',!unfinished.length);
@@ -946,7 +955,13 @@ function renderDiary(){
 }
 function setDiaryDay(date){diarySelectedDate=date;renderDiary()}
 function calendarJobCard(job){const customer=customers.find(item=>item.id===job.customer_id),when=job.scheduled_time?displayTime(job.scheduled_time):'Time to confirm',address=resolveJobAddress(job),duration=Number(job.estimated_duration_minutes||0),durationLabel=duration===480?' · 8am–4pm':duration===60?' · 1 hour':'';return `<div class="calendar-appointment"><div class="calendar-time">${esc(when)}</div><div><button class="calendar-job" onclick="openJob('${job.diaryJobId||job.id}')"><strong>${esc(job.title||job.job_type||'Untitled job')}${job.continued?' · continues':''}</strong><span>${esc(customer?.name||'No customer linked')}${durationLabel}</span>${address?`<span>${esc(address)}</span>`:''}</button></div></div>`}
-function openWorkNotInDiary(){const list=workQueueJobs();show(`<div class="head"><div><h2>Work not in diary</h2><div class="meta">Tap a job to book it into the diary.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="list">${list.map(dashboardQueueJobCard).join('')||'<div class="empty">Every open job is in the diary.</div>'}</div>`) }
+function openWorkNotInDiary(){
+  const list=workListEntries(),urgent=list.filter(workItemUrgent),ready=list.filter(entry=>!workItemUrgent(entry)&&workItemReady(entry)),waiting=list.filter(entry=>!workItemUrgent(entry)&&!workItemReady(entry));
+  const section=(title,items,empty='')=>items.length?`<div class="section-title" style="margin-top:18px"><h3>${title}</h3></div><div class="list">${items.map(workListItemCard).join('')}</div>`:empty?`<div class="meta" style="margin-top:12px">${empty}</div>`:'';
+  show(`<div class="head"><div><h2>Work to organise</h2><div class="meta">Open an item for the full job or quote. Use the small buttons only when you want to book it, take a deposit or change priority.</div></div><button class="light" onclick="closeModal()">Close</button></div>${section('Urgent',urgent,'Nothing urgent right now.')}${section('Ready to book',ready,'Nothing ready to book right now.')}${section('Waiting / follow up',waiting)}${!list.length?'<div class="empty">No work waiting to be organised.</div>':''}`)
+}
+function openWorkPriority(jobId){const job=jobs.find(item=>item.id===jobId);if(!job)return;show(`<div class="head"><div><h2>Priority</h2><div class="meta">${esc(job.title||'Job')}</div></div><button class="light" onclick="openWorkNotInDiary()">Back</button></div><div class="field"><label>How soon does this need attention?</label><select id="workPriority"><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></div><button class="gold" style="width:100%" onclick="saveWorkPriority('${jobId}')">Save priority</button>`);$('workPriority').value=jobPriority(job)}
+async function saveWorkPriority(jobId){if(!requireOnline())return;const priority=$('workPriority')?.value||'normal',{error}=await sb.from('jobs').update({priority,updated_at:new Date().toISOString()}).eq('id',jobId);if(error)return alert(error.message);await loadAll();openWorkNotInDiary()}
 function shiftDiary(direction){const input=$('diaryFrom');if(!input)return;const from=startOfDiaryWeek(input.value||today());input.value=addDays(from,direction*7);diarySelectedDate=addDays(diarySelectedDate&&diarySelectedDate>=from&&diarySelectedDate<=addDays(from,6)?diarySelectedDate:from,direction*7);renderDiary()}
 function goToTodayInDiary(){const input=$('diaryFrom');if(!input)return;input.value=startOfDiaryWeek(today());diarySelectedDate=today();renderDiary()}
 function openMoveJob(jobId){const job=jobs.find(item=>item.id===jobId);if(!job)return;show(`<div class="head"><div><h2>Move job</h2><div class="meta">${esc(job.title||'Job')}</div></div><button class="light" onclick="openJob('${jobId}')">Back</button></div><div class="field"><label>New date</label><input id="moveJobDate" type="date" value="${esc(job.scheduled_date||today())}"></div><div class="field"><label>Time</label><input id="moveJobTime" type="time" step="900" value="${esc(displayTime(job.scheduled_time)||'')}"></div><button id="saveMoveJobBtn" class="gold" style="width:100%" onclick="saveMovedJob('${jobId}')">Move booking</button>`)}
@@ -1659,7 +1674,7 @@ function openJob(id){
     ${customer?.phone?`<a class="btn light" href="${telUrl(customer.phone)}">Call</a>`:''}
     ${wa?whatsappBusinessButton(customer.phone):''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:hasPayableInvoice?`<button class="gold" onclick="openJobPayment('${id}')">Payment</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">${hasInvoice?'Open invoice':'Create invoice'}</button>`}
-    ${j.status!=='completed'?`<button class="light" onclick="openJobDepositRequest('${id}')">Request 50% deposit</button><button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work not in diary</button>`:''}`:''}
+    ${j.status!=='completed'?`<button class="light" onclick="openJobDepositRequest('${id}')">Request 50% deposit</button><button class="light" onclick="openJobPayment('${id}')">Record deposit</button><button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>${j.scheduled_date?`<button class="light" onclick="moveJobToBook('${id}')">Move to work to organise</button>`:''}`:''}
     <button class="light" onclick="openFollowOnWork('${id}')">Return visit</button>
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
