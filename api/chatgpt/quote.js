@@ -172,7 +172,17 @@ async function handler(request, response) {
   if (Number(request.headers?.['content-length'] || 0) > MAX_BODY_BYTES) return json(response, 413, { success: false, error: 'Quote package is too large.' });
 
   const expectedToken = text(process.env.CHATGPT_QUOTE_API_TOKEN, 500);
-  if (!expectedToken || !constantTimeTokenMatch(bearerToken(request), expectedToken)) return json(response, 401, { success: false, error: 'Unauthorised.' });
+  const suppliedToken = bearerToken(request);
+  if (!expectedToken || !constantTimeTokenMatch(suppliedToken, expectedToken)) {
+    // Keep credentials secret while making Action setup failures diagnosable in
+    // Vercel logs. Never log either token or any part of it.
+    console.info('chatgpt-quote-auth-rejected', {
+      expectedTokenConfigured: Boolean(expectedToken),
+      authorizationHeaderPresent: Boolean(request.headers?.authorization),
+      bearerTokenPresent: Boolean(suppliedToken)
+    });
+    return json(response, 401, { success: false, error: 'Unauthorised.' });
+  }
 
   const checked = validatePackage(request.body);
   if (checked.errors) return json(response, 400, { success: false, error: checked.errors.join(' ') });
