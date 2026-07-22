@@ -46,6 +46,27 @@ function bearerToken(request) {
   return match ? match[1].trim() : '';
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  return JSON.stringify(value);
+}
+
+function requestFingerprint(value) {
+  return crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+function requestHeader(request, name) {
+  const headers = request.headers || {};
+  return text(headers[name] || headers[name.toLowerCase()] || headers[name.toUpperCase()], 240);
+}
+
+function reviewUrl(request, quoteId) {
+  const host = requestHeader(request, 'x-forwarded-host') || requestHeader(request, 'host');
+  if (!/^[a-z0-9.-]+$/i.test(host)) return null;
+  return `https://${host}/?review_quote=${encodeURIComponent(quoteId)}`;
+}
+
 function normaliseLines(lines, title, price) {
   if (!Array.isArray(lines) || !lines.length) return [{ description: title, quantity: 1, unit_price: price }];
   return lines.map((line, index) => ({
@@ -165,10 +186,20 @@ async function handler(request, response) {
   }
 
   try {
-    const sourceReference = checked.value.source_reference || `chatgpt-${crypto.createHash('sha256').update(JSON.stringify(checked.value)).digest('hex')}`;
+    const idempotencyKey = requestHeader(request, 'idempotency-key');
+    const sourceReference = checked.value.source_reference || idempotencyKey || `chatgpt-${requestFingerprint(checked.value)}`;
     const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...checked.value, source_reference: sourceReference } });
-    if (!saved?.customer_id || !saved?.job_id || !saved?.quote_id) throw new Error('ASP Manager returned an incomplete quote result.');
-    return json(response, 201, { success: true, customer_id: saved.customer_id, job_id: saved.job_id, quote_id: saved.quote_id, duplicate: Boolean(saved.duplicate) });
+    if (!saved?.customer_id || !saved?.customer_status || !saved?.job_id || !saved?.quote_id || !saved?.quote_number) throw new Error('ASP Manager returned an incomplete quote result.');
+    return json(response, 201, {
+      success: true,
+      customer_id: saved.customer_id,
+      customer_status: saved.customer_status,
+      job_id: saved.job_id,
+      quote_id: saved.quote_id,
+      quote_number: saved.quote_number,
+      duplicate: Boolean(saved.duplicate),
+      review_url: reviewUrl(request, saved.quote_id)
+    });
   } catch (error) {
     console.error('ChatGPT quote intake failed', { status: error?.status, message: error?.message });
     return json(response, error?.status >= 400 && error?.status < 500 ? 400 : 500, { success: false, error: 'ASP Manager could not save this quote. Please try again.' });
@@ -176,4 +207,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, normaliseLines, VERSION };
+module.exports._private = { validatePackage, constantTimeTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, VERSION };

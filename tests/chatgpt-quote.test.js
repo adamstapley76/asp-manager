@@ -22,6 +22,7 @@ assert.match(_private.validatePackage({ ...valid, photos: [{ url: 'http://not-se
 assert.match(_private.validatePackage({ ...valid, quote: { ...valid.quote, price_ex_vat: -1 } }).errors.join(' '), /cannot be negative/);
 assert.equal(_private.constantTimeTokenMatch('same-secret', 'same-secret'), true);
 assert.equal(_private.constantTimeTokenMatch('wrong-secret', 'same-secret'), false);
+assert.equal(_private.requestFingerprint({ b: 1, a: { z: 2, y: 3 } }), _private.requestFingerprint({ a: { y: 3, z: 2 }, b: 1 }));
 
 function responseStub() {
   return {
@@ -56,23 +57,24 @@ async function endpointTests() {
       const payload = JSON.parse(init.body);
       assert.equal(payload.p_owner_id, process.env.ASP_MANAGER_OWNER_ID);
       assert.match(payload.p_package.source_reference, /^chatgpt-/);
-      return new Response(JSON.stringify([{ customer_id: 'customer-1', job_id: 'job-1', quote_id: 'quote-1', duplicate: false }]), { status: 200 });
+      return new Response(JSON.stringify([{ customer_id: 'customer-1', customer_status: 'created', job_id: 'job-1', quote_id: 'quote-1', quote_number: 'Q-2026-100', duplicate: false }]), { status: 200 });
     };
     response = responseStub();
-    await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: valid }, response);
+    await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token', host: 'preview.example.test' }, body: valid }, response);
     assert.equal(response.statusCode, 201);
-    assert.deepEqual(response.body, { success: true, customer_id: 'customer-1', job_id: 'job-1', quote_id: 'quote-1', duplicate: false });
+    assert.deepEqual(response.body, { success: true, customer_id: 'customer-1', customer_status: 'created', job_id: 'job-1', quote_id: 'quote-1', quote_number: 'Q-2026-100', duplicate: false, review_url: 'https://preview.example.test/?review_quote=quote-1' });
 
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test-server-key';
     global.fetch = async (_url, init) => {
       assert.equal(init.headers.apikey, 'sb_secret_test-server-key');
       assert.equal(init.headers.authorization, undefined);
-      return new Response(JSON.stringify([{ customer_id: 'customer-2', job_id: 'job-2', quote_id: 'quote-2', duplicate: false }]), { status: 200 });
+      return new Response(JSON.stringify([{ customer_id: 'customer-2', customer_status: 'matched', job_id: 'job-2', quote_id: 'quote-2', quote_number: 'Q-2026-101', duplicate: false }]), { status: 200 });
     };
     response = responseStub();
     await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: valid }, response);
     assert.equal(response.statusCode, 201);
     assert.equal(response.body.quote_id, 'quote-2');
+    assert.equal(response.body.customer_status, 'matched');
   } finally {
     global.fetch = realFetch;
     Object.keys(process.env).forEach(key => { if (!(key in before)) delete process.env[key]; });

@@ -519,6 +519,11 @@ async function performLoadAll(){
     const notice=$('setupNotice');
     if(notice){if(missing.length){notice.innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;notice.classList.remove('hidden')}else notice.classList.add('hidden')}
     renderAll();cacheSnapshot();updateSyncPill();
+    const reviewQuoteId=new URLSearchParams(window.location.search).get('review_quote');
+    if(reviewQuoteId&&documents.some(document=>document.id===reviewQuoteId)){
+      window.history.replaceState({},'',window.location.pathname);
+      requestAnimationFrame(()=>openDocument(reviewQuoteId));
+    }
     if(hasCachedSnapshot)requestAnimationFrame(()=>window.scrollTo(0,preservedScroll));
   }catch(error){
     console.error('ASP Manager load failed',error);

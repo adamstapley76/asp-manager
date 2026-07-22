@@ -1,25 +1,42 @@
 openapi: 3.1.0
 info:
   title: ASP Manager Quote Intake
-  version: 1.0.0
-  description: Creates or matches a customer, then creates a quoted job and draft quote in ASP Manager.
+  version: 1.1.0
+  description: >-
+    Private ASP Manager Action for saving a quote that the user has explicitly
+    asked to send. Build the package from the actual details in the conversation.
+    Do not invent contact details, addresses, postcodes, prices, or placeholder data.
+  license:
+    name: Private and proprietary
+    url: https://asp-manager-git-daily-driver-bugfix-2-adamstapley.vercel.app/privacy.html
 servers:
   - url: https://asp-manager-git-daily-driver-bugfix-2-adamstapley.vercel.app
 paths:
   /api/chatgpt/ping:
     get:
       operationId: pingAspManager
-      summary: Check that the ASP Manager quote connection is available.
+      summary: Check that ASP Manager quote intake is available.
+      security: []
       responses:
         '200':
           description: Connection is available.
+        '500':
+          description: The service is temporarily unavailable.
   /api/chatgpt/quote:
     post:
       operationId: sendQuoteToAspManager
-      summary: Send a completed customer quote to ASP Manager.
-      description: Use only after the user has confirmed that they want to send the quote. Do not invent missing details.
+      summary: Send a confirmed quote to ASP Manager.
+      description: >-
+        Use only after the user asks to send the quote. Translate the real
+        conversation into the request. Omit optional fields that were not supplied.
       security:
         - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Reuse the same key only when retrying the same quote submission.
+          schema: { type: string, maxLength: 240 }
       requestBody:
         required: true
         content:
@@ -28,15 +45,13 @@ paths:
               $ref: '#/components/schemas/QuotePackage'
       responses:
         '201':
-          description: Quote saved successfully.
+          description: Quote was created or an existing identical submission was returned.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/QuoteSuccess'
-        '400':
-          description: Quote package is invalid.
-        '401':
-          description: Missing or invalid Bearer token.
+        '400': { description: Invalid quote package. }
+        '401': { description: Missing or invalid Bearer token. }
 components:
   securitySchemes:
     bearerAuth:
@@ -46,54 +61,57 @@ components:
   schemas:
     QuotePackage:
       type: object
+      additionalProperties: false
       required: [customer, job, quote]
       properties:
         source_reference:
           type: string
-          description: A stable unique reference from ChatGPT. Reusing it returns the already-created quote instead of creating a duplicate.
+          maxLength: 240
+          description: Stable reference for the same quote. Omit when unavailable; the endpoint creates a deterministic fingerprint.
         customer:
           type: object
+          additionalProperties: false
           required: [name]
           properties:
-            name: { type: string }
-            phone: { type: string }
-            email: { type: string, format: email }
-            address: { type: string }
-            postcode: { type: string }
+            name: { type: string, description: Actual customer name. }
+            phone: { type: [string, 'null'], description: Omit if not supplied. }
+            email: { type: [string, 'null'], format: email, description: Omit if not supplied. }
+            address: { type: [string, 'null'], description: Omit if not supplied. }
+            postcode: { type: [string, 'null'], description: Omit if not supplied. }
         lead:
           type: object
+          additionalProperties: true
           properties:
-            source: { type: string, example: ChatGPT }
+            source: { type: [string, 'null'], description: Lead source if stated. }
         job:
           type: object
+          additionalProperties: false
           required: [title]
           properties:
             title: { type: string }
-            job_type: { type: string, example: Boiler installation }
-            description: { type: string }
-            property_type: { type: string }
-            boiler_make: { type: string }
-            boiler_model: { type: string }
-            materials:
-              type: array
-              items: {}
-            confidence: { type: string }
-            assumptions: { type: string }
-            follow_up_reminders:
-              type: array
-              items: {}
+            job_type: { type: [string, 'null'] }
+            description: { type: [string, 'null'] }
+            property_type: { type: [string, 'null'] }
+            boiler_make: { type: [string, 'null'] }
+            boiler_model: { type: [string, 'null'] }
+            materials: { type: array, items: {} }
+            confidence: { type: [string, 'null'] }
+            assumptions: { type: [string, 'null'] }
+            follow_up_reminders: { type: array, items: {} }
         quote:
           type: object
+          additionalProperties: false
           required: [price_ex_vat]
           properties:
-            issue_date: { type: string, format: date }
+            issue_date: { type: [string, 'null'], format: date }
             price_ex_vat: { type: number, minimum: 0 }
             vat_rate: { type: number, minimum: 0, maximum: 100, default: 20 }
-            wording: { type: string }
+            wording: { type: [string, 'null'], description: Customer-facing wording from the conversation. }
             line_items:
               type: array
               items:
                 type: object
+                additionalProperties: false
                 required: [description, quantity, unit_price]
                 properties:
                   description: { type: string }
@@ -101,23 +119,28 @@ components:
                   unit_price: { type: number, minimum: 0 }
         photos:
           type: array
+          description: Optional permanent https photo references only. Do not send temporary ChatGPT attachment URLs.
           items:
             type: object
+            additionalProperties: false
             required: [url]
             properties:
               url: { type: string, format: uri, pattern: '^https://' }
-              category: { type: string, example: Before }
-              description: { type: string }
-              file_name: { type: string }
-              mime_type: { type: string }
-              file_size: { type: integer, minimum: 0 }
-        notes: { type: string }
+              category: { type: [string, 'null'] }
+              description: { type: [string, 'null'] }
+              file_name: { type: [string, 'null'] }
+              mime_type: { type: [string, 'null'] }
+              file_size: { type: [integer, 'null'], minimum: 0 }
+        notes: { type: [string, 'null'] }
     QuoteSuccess:
       type: object
-      required: [success, customer_id, job_id, quote_id]
+      required: [success, customer_id, customer_status, job_id, quote_id, quote_number, duplicate, review_url]
       properties:
         success: { type: boolean, const: true }
         customer_id: { type: string, format: uuid }
+        customer_status: { type: string, enum: [matched, created] }
         job_id: { type: string, format: uuid }
         quote_id: { type: string, format: uuid }
+        quote_number: { type: string }
         duplicate: { type: boolean }
+        review_url: { type: [string, 'null'], format: uri }
