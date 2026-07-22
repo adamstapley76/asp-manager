@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const quoteHandler = require('../api/chatgpt/quote');
+const mcpHandler = require('../api/mcp');
 const { _private } = quoteHandler;
 
 const valid = {
@@ -29,7 +30,8 @@ function responseStub() {
     headers: {}, statusCode: null, body: null,
     setHeader(name, value) { this.headers[name] = value; },
     status(code) { this.statusCode = code; return this; },
-    json(body) { this.body = body; return this; }
+    json(body) { this.body = body; return this; },
+    end() { this.ended = true; return this; }
   };
 }
 
@@ -75,6 +77,31 @@ async function endpointTests() {
     assert.equal(response.statusCode, 201);
     assert.equal(response.body.quote_id, 'quote-2');
     assert.equal(response.body.customer_status, 'matched');
+
+    response = responseStub();
+    await mcpHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-03-26' } } }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.result.serverInfo.name, 'ASP Manager');
+
+    response = responseStub();
+    await mcpHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token' }, body: { jsonrpc: '2.0', id: 2, method: 'tools/list' } }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.result.tools[0].name, 'create_quote_in_asp_manager');
+
+    global.fetch = async (_url, init) => {
+      const payload = JSON.parse(init.body);
+      assert.match(payload.p_package.source_reference, /^chatgpt-mcp-/);
+      return new Response(JSON.stringify([{ customer_id: 'customer-3', customer_status: 'created', job_id: 'job-3', quote_id: 'quote-3', quote_number: 'Q-2026-102', duplicate: false }]), { status: 200 });
+    };
+    response = responseStub();
+    await mcpHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token', host: 'preview.example.test' }, body: { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'create_quote_in_asp_manager', arguments: { ...valid, source_reference: undefined } } } }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.result.structuredContent.quote_number, 'Q-2026-102');
+    assert.equal(response.body.result.structuredContent.review_url, 'https://preview.example.test/?review_quote=quote-3');
+
+    response = responseStub();
+    await mcpHandler({ method: 'POST', headers: {}, body: { jsonrpc: '2.0', id: 4, method: 'tools/list' } }, response);
+    assert.equal(response.statusCode, 401);
   } finally {
     global.fetch = realFetch;
     Object.keys(process.env).forEach(key => { if (!(key in before)) delete process.env[key]; });

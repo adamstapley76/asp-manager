@@ -207,4 +207,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, VERSION };
+module.exports._private = { validatePackage, constantTimeTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION };
