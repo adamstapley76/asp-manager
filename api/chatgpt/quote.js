@@ -29,6 +29,11 @@ function date(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(candidate) && !Number.isNaN(Date.parse(`${candidate}T00:00:00Z`)) ? candidate : null;
 }
 
+function time(value) {
+  const candidate = text(value, 5);
+  return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(candidate) ? candidate : null;
+}
+
 function validUrl(value) {
   try {
     const url = new URL(value);
@@ -36,6 +41,15 @@ function validUrl(value) {
   } catch {
     return false;
   }
+}
+
+function serviceHeaders(serviceRoleKey, extra = {}) {
+  const usesModernSecretKey = serviceRoleKey.startsWith('sb_secret_');
+  return {
+    apikey: serviceRoleKey,
+    ...(usesModernSecretKey ? {} : { authorization: `Bearer ${serviceRoleKey}` }),
+    ...extra
+  };
 }
 
 function constantTimeTokenMatch(provided, expected) {
@@ -152,6 +166,9 @@ function validatePackage(raw) {
     file_size: Math.max(0, Math.floor(number(photo?.file_size, 0))),
     sort_order: index + 1
   })) : [];
+  const scheduledDate = date(rawJob.scheduled_date);
+  const scheduledTime = time(rawJob.scheduled_time);
+  const bookingConfirmed = rawJob.booking_confirmed === true;
 
   if (!text(rawCustomer.name, 160)) errors.push('customer.name is required.');
   if (!title) errors.push('job.title is required.');
@@ -179,7 +196,12 @@ function validatePackage(raw) {
       title, job_type: text(rawJob.job_type, 120), description: text(rawJob.description, 12000),
       property_type: text(rawJob.property_type, 120), boiler_make: text(rawJob.boiler_make, 120), boiler_model: text(rawJob.boiler_model, 120),
       materials: Array.isArray(rawJob.materials) ? rawJob.materials : [], confidence: text(rawJob.confidence, 80),
-      assumptions: text(rawJob.assumptions, 6000), follow_up_reminders: Array.isArray(rawJob.follow_up_reminders) ? rawJob.follow_up_reminders : []
+      assumptions: text(rawJob.assumptions, 6000), follow_up_reminders: Array.isArray(rawJob.follow_up_reminders) ? rawJob.follow_up_reminders : [],
+      // A date alone can be a customer's preference. Only book it when Adam
+      // explicitly asks to book it in, which the GPT represents with this flag.
+      booking_confirmed: bookingConfirmed,
+      scheduled_date: bookingConfirmed ? scheduledDate : null,
+      scheduled_time: bookingConfirmed ? scheduledTime : null
     },
     quote: {
       issue_date: issueDate, price_ex_vat: hasSuppliedPrice ? price : null, chatgpt_supplied_price: hasSuppliedPrice ? price : null, vat_rate: vatRate, wording: text(rawQuote.wording || rawQuote.notes, 12000),
@@ -194,15 +216,9 @@ function validatePackage(raw) {
 async function callRpc(url, serviceRoleKey, payload) {
   // Supabase's current server keys begin sb_secret_. They authenticate with the
   // apikey header only; legacy service-role JWTs still require Bearer as well.
-  const usesModernSecretKey = serviceRoleKey.startsWith('sb_secret_');
   const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/create_chatgpt_quote`, {
     method: 'POST',
-    headers: {
-      apikey: serviceRoleKey,
-      ...(usesModernSecretKey ? {} : { authorization: `Bearer ${serviceRoleKey}` }),
-      'content-type': 'application/json',
-      prefer: 'return=representation'
-    },
+    headers: serviceHeaders(serviceRoleKey, { 'content-type': 'application/json', prefer: 'return=representation' }),
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(12000)
   });
@@ -216,11 +232,28 @@ async function callRpc(url, serviceRoleKey, payload) {
   return Array.isArray(body) ? body[0] : body;
 }
 
+async function scheduleConfirmedJob(url, serviceRoleKey, jobId, job) {
+  if (!job?.booking_confirmed || !job?.scheduled_date) return false;
+  const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/jobs?id=eq.${encodeURIComponent(jobId)}`, {
+    method: 'PATCH',
+    headers: serviceHeaders(serviceRoleKey, { 'content-type': 'application/json', prefer: 'return=minimal' }),
+    body: JSON.stringify({
+      status: 'booked',
+      scheduled_date: job.scheduled_date,
+      scheduled_time: job.scheduled_time || null,
+      waiting_reason: null,
+      updated_at: new Date().toISOString()
+    }),
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error('ASP Manager could not add the job to the diary.');
+  return true;
+}
+
 async function loadEstimatorConfiguration(url, serviceRoleKey, ownerId) {
-  const usesModernSecretKey = serviceRoleKey.startsWith('sb_secret_');
   const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/get_estimator_configuration`, {
     method: 'POST',
-    headers: { apikey: serviceRoleKey, ...(usesModernSecretKey ? {} : { authorization: `Bearer ${serviceRoleKey}` }), 'content-type': 'application/json' },
+    headers: serviceHeaders(serviceRoleKey, { 'content-type': 'application/json' }),
     body: JSON.stringify({ p_owner_id: ownerId }), signal: AbortSignal.timeout(12000)
   });
   const body = await response.json().catch(() => []);
@@ -260,6 +293,7 @@ async function handler(request, response) {
     const sourceReference = prepared.source_reference || idempotencyKey || `chatgpt-${requestFingerprint(checked.value)}`;
     const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...prepared, source_reference: sourceReference } });
     if (!saved?.customer_id || !saved?.customer_status || !saved?.job_id || !saved?.quote_id || !saved?.quote_number) throw new Error('ASP Manager returned an incomplete quote result.');
+    const booked_in_diary = await scheduleConfirmedJob(supabaseUrl, serviceRoleKey, saved.job_id, prepared.job);
     return json(response, 201, {
       success: true,
       customer_id: saved.customer_id,
@@ -268,6 +302,7 @@ async function handler(request, response) {
       quote_id: saved.quote_id,
       quote_number: saved.quote_number,
       duplicate: Boolean(saved.duplicate),
+      booked_in_diary,
       estimator_config_version: prepared._estimator_config_version,
       estimator_recommendation: prepared._estimator_recommendation,
       review_url: reviewUrl(request, saved.quote_id)
@@ -279,4 +314,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION, estimatorConfiguration, applyEstimator, loadEstimatorConfiguration };
+module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, scheduleConfirmedJob, text, time, VERSION, estimatorConfiguration, applyEstimator, loadEstimatorConfiguration };

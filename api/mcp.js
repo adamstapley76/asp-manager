@@ -1,6 +1,6 @@
 const quoteHandler = require('./chatgpt/quote');
 
-const { validatePackage, constantTimeTokenMatch, requestFingerprint, reviewUrl, callRpc, text, loadEstimatorConfiguration, applyEstimator } = quoteHandler._private;
+const { validatePackage, constantTimeTokenMatch, requestFingerprint, reviewUrl, callRpc, scheduleConfirmedJob, text, loadEstimatorConfiguration, applyEstimator } = quoteHandler._private;
 const SERVER_NAME = 'ASP Manager';
 const SERVER_VERSION = '1.0.0';
 const PROTOCOL_VERSION = '2025-03-26';
@@ -26,7 +26,10 @@ const quoteInputSchema = {
         title: { type: 'string' }, job_type: { type: ['string', 'null'] }, description: { type: ['string', 'null'] },
         property_type: { type: ['string', 'null'] }, boiler_make: { type: ['string', 'null'] }, boiler_model: { type: ['string', 'null'] },
         materials: { type: 'array', items: {} }, confidence: { type: ['string', 'null'] }, assumptions: { type: ['string', 'null'] },
-        follow_up_reminders: { type: 'array', items: {} }
+        follow_up_reminders: { type: 'array', items: {} },
+        booking_confirmed: { type: 'boolean', description: 'True only when Adam explicitly asks to add this job to the diary.' },
+        scheduled_date: { type: ['string', 'null'], description: 'Confirmed diary date in YYYY-MM-DD format.' },
+        scheduled_time: { type: ['string', 'null'], description: 'Optional confirmed diary time in 24-hour HH:MM format.' }
       }
     },
     quote: {
@@ -95,6 +98,7 @@ async function createQuote(argumentsValue, request) {
     const sourceReference = prepared.source_reference || `chatgpt-mcp-${requestFingerprint(checked.value)}`;
     const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...prepared, source_reference: sourceReference } });
     if (!saved?.customer_id || !saved?.customer_status || !saved?.job_id || !saved?.quote_id || !saved?.quote_number) throw new Error('ASP Manager returned an incomplete quote result.');
+    const booked_in_diary = await scheduleConfirmedJob(supabaseUrl, serviceRoleKey, saved.job_id, prepared.job);
     const result = {
       success: true,
       customer_id: saved.customer_id,
@@ -103,6 +107,7 @@ async function createQuote(argumentsValue, request) {
       quote_id: saved.quote_id,
       quote_number: saved.quote_number,
       duplicate: Boolean(saved.duplicate),
+      booked_in_diary,
       estimator_config_version: prepared._estimator_config_version,
       estimator_recommendation: prepared._estimator_recommendation,
       review_url: reviewUrl(request, saved.quote_id)

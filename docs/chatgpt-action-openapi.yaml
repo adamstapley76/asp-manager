@@ -5,6 +5,9 @@ info:
   description: >-
     Private ASP Manager Action. Read the current estimator before drafting or
     pricing a quote. Only save a quote when Adam explicitly asks to send it.
+    When Adam explicitly asks to book the work in as well, include
+    job.booking_confirmed=true and its confirmed scheduled_date (and time if
+    known). A date mentioned only as a customer request is not a booking.
     Use real conversation details only; never invent customer information or
     placeholder data. ASP Manager keeps the final estimator recommendation
     private and creates a draft for Adam to review.
@@ -113,6 +116,17 @@ components:
             confidence: { type: [string, 'null'] }
             assumptions: { type: [string, 'null'] }
             follow_up_reminders: { type: array, items: {} }
+            booking_confirmed:
+              type: boolean
+              description: Set true only when Adam explicitly asks to book this work into the diary.
+            scheduled_date:
+              type: [string, 'null']
+              format: date
+              description: Confirmed diary date. Omit when the date is only requested or uncertain.
+            scheduled_time:
+              type: [string, 'null']
+              pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+              description: Optional confirmed 24-hour diary time, in 15-minute increments where known.
         quote:
           type: object
           additionalProperties: false
@@ -166,6 +180,7 @@ components:
         quote_id: { type: string, format: uuid }
         quote_number: { type: string }
         duplicate: { type: boolean }
+        booked_in_diary: { type: boolean, description: True when the linked job was also added to the diary. }
         estimator_config_version: { type: integer }
         estimator_recommendation: { type: object, description: Internal review information. }
         review_url: { type: [string, 'null'], format: uri }
