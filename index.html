@@ -1701,7 +1701,7 @@ function openJob(id){
     ${j.status!=='completed'&&!hasQuote?`<button class="gold" onclick="openNewDocument('quote','${id}','${j.customer_id||''}')">Create quote</button>`:''}
     ${j.status!=='completed'?`<button class="gold" onclick="completeJob('${id}')">${isServiceJob(j)?'Complete service':isBoilerInstallationJob(j)?'Complete installation':'Complete job'}</button>`:hasPayableInvoice?`<button class="gold" onclick="openJobPayment('${id}')">Payment</button>`:`<button class="gold" onclick="openJobCheckout('${id}')">${hasInvoice?'Open invoice':'Create invoice'}</button>`}
     ${j.status!=='completed'?`${hasDepositCollected({jobId:id})?'':`<button class="light" onclick="openJobDepositRequest('${id}')">${activeJobDepositRequest(id)?'Deposit request sent':'Request 50% deposit'}</button>`}<button class="light" onclick="openJobPayment('${id}')">Record deposit</button>${j.scheduled_date?`<button class="light" onclick="openMoveJob('${id}')">Move in diary</button><button class="light" onclick="openExtendJob('${id}')">Extend job</button>`:''}`:''}
-    <button class="light" onclick="openFollowOnWork('${id}')">Return visit</button>
+    <button class="light" onclick="openFollowOnWork('${id}')">Add follow-on work</button>
     <button class="light" onclick="editJob('${id}')">Edit</button>
   </div>
   <details class="secondary-panel"><summary>More job details</summary>
@@ -1761,7 +1761,7 @@ function openJobCheckout(jobId,message=''){
 }
 function openFollowOnWork(jobId){
   const job=jobs.find(item=>item.id===jobId),customer=customers.find(item=>item.id===job?.customer_id);if(!job)return;
-  showWorkflow(`<div class="head"><div><h2>Return visit</h2><div class="meta">The original diary job remains as your record.</div></div><button class="light" onclick="closeWorkflow();openJob('${jobId}')">Back</button></div><div class="notice"><strong>Add to Work not in diary</strong><div class="meta">This creates one separate, prioritised follow-on item for ${esc(customer?.name||'this customer')}.</div></div><div class="field"><label>What needs doing?</label><input id="followOnTitle" value="${esc(job.title||job.job_type||'Return visit')}" autocapitalize="sentences"></div><div class="field"><label>Notes (optional)</label><textarea id="followOnNotes" placeholder="Anything to remember for the return visit"></textarea></div><button class="gold" style="width:100%;margin-top:14px" onclick="createFollowOnWork('${jobId}')">Add return visit</button>`);
+  showWorkflow(`<div class="head"><div><h2>Add follow-on work</h2><div class="meta">The original diary job remains as your record.</div></div><button class="light" onclick="closeWorkflow();openJob('${jobId}')">Back</button></div><div class="notice"><strong>Add to Work not in diary</strong><div class="meta">This creates one separate, prioritised follow-on item for ${esc(customer?.name||'this customer')}.</div></div><div class="field"><label>What needs doing?</label><input id="followOnTitle" value="${esc(job.title||job.job_type||'Return visit')}" autocapitalize="sentences"></div><div class="field"><label>Notes (optional)</label><textarea id="followOnNotes" placeholder="Anything to remember for this work"></textarea></div><button class="gold" style="width:100%;margin-top:14px" onclick="createFollowOnWork('${jobId}')">Add to Work not in diary</button>`);
 }
 async function createFollowOnWork(jobId){
   if(!requireOnline())return;
