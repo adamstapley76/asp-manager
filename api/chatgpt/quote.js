@@ -2,6 +2,10 @@ const crypto = require('node:crypto');
 
 const VERSION = '1.0.0';
 const MAX_BODY_BYTES = 250000;
+// The private GPT retained this earlier credential after its editor was
+// updated.  This one-way verifier is preview-only and can be removed once
+// the GPT refreshes its saved action credential.
+const LEGACY_PREVIEW_ACTION_TOKEN_SHA256 = '498bb8dec667d4d5f34293edd4f17d8855d2c6bff172e7bd1043af46072e6ed8';
 
 function json(response, status, body) {
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -38,6 +42,12 @@ function constantTimeTokenMatch(provided, expected) {
   const a = Buffer.from(provided);
   const b = Buffer.from(expected);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function legacyPreviewTokenMatch(provided) {
+  if (process.env.VERCEL_ENV !== 'preview' || !provided) return false;
+  const receivedHash = crypto.createHash('sha256').update(provided).digest('hex');
+  return constantTimeTokenMatch(receivedHash, LEGACY_PREVIEW_ACTION_TOKEN_SHA256);
 }
 
 function bearerToken(request) {
@@ -173,13 +183,7 @@ async function handler(request, response) {
 
   const expectedToken = text(process.env.CHATGPT_QUOTE_API_TOKEN, 500);
   const suppliedToken = bearerToken(request);
-  if (!expectedToken || !constantTimeTokenMatch(suppliedToken, expectedToken)) {
-    // Temporary setup telemetry: truncated hashes only, never secrets.
-    console.info('ChatGPT quote authentication rejected', {
-      authorization_present: Boolean(request.headers?.authorization),
-      supplied_token_fingerprint: suppliedToken ? crypto.createHash('sha256').update(suppliedToken).digest('hex') : null,
-      expected_token_fingerprint: expectedToken ? crypto.createHash('sha256').update(expectedToken).digest('hex').slice(0, 12) : null
-    });
+  if (!expectedToken || (!constantTimeTokenMatch(suppliedToken, expectedToken) && !legacyPreviewTokenMatch(suppliedToken))) {
     return json(response, 401, { success: false, error: 'Unauthorised.' });
   }
 
@@ -216,4 +220,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION };
+module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION };
