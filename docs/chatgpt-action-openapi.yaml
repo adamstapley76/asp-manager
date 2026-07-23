@@ -1,14 +1,13 @@
 openapi: 3.1.0
 info:
   title: ASP Manager Quote Intake
-  version: 1.1.0
+  version: 1.2.0
   description: >-
-    Private ASP Manager Action for saving a quote that the user has explicitly
-    asked to send. Build the package from the actual details in the conversation.
-    Do not invent contact details, addresses, postcodes, prices, or placeholder data.
-  license:
-    name: Private and proprietary
-    url: https://asp-manager-git-daily-driver-bugfix-2-adamstapley.vercel.app/privacy.html
+    Private ASP Manager Action. Read the current estimator before drafting or
+    pricing a quote. Only save a quote when Adam explicitly asks to send it.
+    Use real conversation details only; never invent customer information or
+    placeholder data. ASP Manager keeps the final estimator recommendation
+    private and creates a draft for Adam to review.
 servers:
   - url: https://asp-manager-git-daily-driver-bugfix-2-adamstapley.vercel.app
 paths:
@@ -18,24 +17,40 @@ paths:
       summary: Check that ASP Manager quote intake is available.
       security: []
       responses:
+        '200': { description: Connection is available. }
+  /api/chatgpt/estimator:
+    get:
+      operationId: getEstimatorConfig
+      summary: Read the current private ASP Manager estimator configuration.
+      description: >-
+        Use this before suggesting a price or drafting customer-facing wording.
+        Treat it as internal guidance. Do not reveal internal minimum charge,
+        pricing rationale or profit guidance to customers.
+      security:
+        - bearerAuth: []
+      responses:
         '200':
-          description: Connection is available.
-        '500':
-          description: The service is temporarily unavailable.
+          description: Current editable estimator configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimatorConfigResponse'
+        '401': { description: Missing or invalid Bearer token. }
   /api/chatgpt/quote:
     post:
       operationId: sendQuoteToAspManager
-      summary: Send a confirmed quote to ASP Manager.
+      summary: Create a reviewable ASP Manager quote.
       description: >-
-        Use only after the user asks to send the quote. Translate the real
-        conversation into the request. Omit optional fields that were not supplied.
+        Call only after Adam explicitly asks to send the quote. Omit any optional
+        details that were not supplied. Price is optional: when omitted, ASP
+        Manager applies the current estimator as a review starting point.
       security:
         - bearerAuth: []
       parameters:
         - name: Idempotency-Key
           in: header
           required: false
-          description: Reuse the same key only when retrying the same quote submission.
+          description: Reuse only when retrying exactly the same quote submission.
           schema: { type: string, maxLength: 240 }
       requestBody:
         required: true
@@ -45,7 +60,7 @@ paths:
               $ref: '#/components/schemas/QuotePackage'
       responses:
         '201':
-          description: Quote was created or an existing identical submission was returned.
+          description: A draft quote was created or an existing identical submission returned.
           content:
             application/json:
               schema:
@@ -67,17 +82,17 @@ components:
         source_reference:
           type: string
           maxLength: 240
-          description: Stable reference for the same quote. Omit when unavailable; the endpoint creates a deterministic fingerprint.
+          description: Stable reference for this exact quote. Omit if unavailable.
         customer:
           type: object
           additionalProperties: false
           required: [name]
           properties:
             name: { type: string, description: Actual customer name. }
-            phone: { type: [string, 'null'], description: Omit if not supplied. }
-            email: { type: [string, 'null'], format: email, description: Omit if not supplied. }
-            address: { type: [string, 'null'], description: Omit if not supplied. }
-            postcode: { type: [string, 'null'], description: Omit if not supplied. }
+            phone: { type: [string, 'null'], description: Omit when not supplied. }
+            email: { type: [string, 'null'], format: email, description: Omit when not supplied. }
+            address: { type: [string, 'null'], description: Omit when not supplied. }
+            postcode: { type: [string, 'null'], description: Omit when not supplied. }
         lead:
           type: object
           additionalProperties: true
@@ -101,12 +116,11 @@ components:
         quote:
           type: object
           additionalProperties: false
-          required: [price_ex_vat]
           properties:
             issue_date: { type: [string, 'null'], format: date }
-            price_ex_vat: { type: number, minimum: 0 }
-            vat_rate: { type: number, minimum: 0, maximum: 100, default: 20 }
-            wording: { type: [string, 'null'], description: Customer-facing wording from the conversation. }
+            price_ex_vat: { type: [number, 'null'], minimum: 0, description: Actual supplied price only; omit if no figure is agreed. }
+            vat_rate: { type: number, minimum: 0, maximum: 100 }
+            wording: { type: [string, 'null'], description: Customer-facing wording based on the conversation and estimator. }
             line_items:
               type: array
               items:
@@ -119,7 +133,7 @@ components:
                   unit_price: { type: number, minimum: 0 }
         photos:
           type: array
-          description: Optional permanent https photo references only. Do not send temporary ChatGPT attachment URLs.
+          description: Permanent HTTPS photo references only. Do not send temporary ChatGPT attachment URLs.
           items:
             type: object
             additionalProperties: false
@@ -132,6 +146,15 @@ components:
               mime_type: { type: [string, 'null'] }
               file_size: { type: [integer, 'null'], minimum: 0 }
         notes: { type: [string, 'null'] }
+    EstimatorConfigResponse:
+      type: object
+      required: [success, version, configuration]
+      properties:
+        success: { type: boolean, const: true }
+        api_version: { type: string }
+        version: { type: integer }
+        updated_at: { type: [string, 'null'], format: date-time }
+        configuration: { type: object, description: Internal editable estimator guidance. }
     QuoteSuccess:
       type: object
       required: [success, customer_id, customer_status, job_id, quote_id, quote_number, duplicate, review_url]
@@ -143,4 +166,6 @@ components:
         quote_id: { type: string, format: uuid }
         quote_number: { type: string }
         duplicate: { type: boolean }
+        estimator_config_version: { type: integer }
+        estimator_recommendation: { type: object, description: Internal review information. }
         review_url: { type: [string, 'null'], format: uri }

@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#10263F">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="estimator-defaults.js"></script>
 <style>
 :root{
   --navy:#10263F;--navy2:#183a5e;--gold:#C89B3C;--gold2:#e4bd68;--bg:#f3f5f7;
@@ -210,6 +211,7 @@ input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:10px;pad
         <button class="light" onclick="showDue('30')">Service Planner</button>
         <button class="light" onclick="openIdeas()">Work ideas</button>
         <button class="light" onclick="openQuickBooks()">QuickBooks</button>
+        <button class="light" onclick="openEstimatorSettings()">Estimator settings</button>
         <button class="light" onclick="openAiReadiness()">AI readiness</button>
         <button class="light" onclick="openHistoricalRecords()">Historical work</button>
         <button class="light" onclick="openArchivedRecords()">Archived records</button>
@@ -275,7 +277,7 @@ const cfg=window.ASP_CONFIG;
 const $=id=>document.getElementById(id);
 const authView=$('authView'),appView=$('appView'),authMsg=$('authMsg');
 const signInBtn=$('signInBtn'),signUpBtn=$('signUpBtn');
-let sb=null,user=null,customers=[],jobs=[],leadEvents=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],jobDepositRequests=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],chatgptQuoteImports=[],historicalCustomerCache={},historicalRecords=[],pendingHistoricalImport=null,jobsReady=true,leadEventsReady=true,documentsReady=true,depositsReady=true,depositRequestsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,chatgptImportsReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='invoices',documentWorkspace='invoices',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
+let sb=null,user=null,customers=[],jobs=[],leadEvents=[],jobDiaryBlocks=[],documents=[],documentPayments=[],jobDepositPayments=[],jobDepositRequests=[],tasks=[],stockItems=[],jobVisits=[],jobCosts=[],developmentItems=[],chatgptQuoteImports=[],historicalCustomerCache={},historicalRecords=[],pendingHistoricalImport=null,estimatorConfiguration=null,estimatorReady=true,jobsReady=true,leadEventsReady=true,documentsReady=true,depositsReady=true,depositRequestsReady=true,extrasReady=true,workLogsReady=true,developmentReady=true,diaryBlocksReady=true,chatgptImportsReady=true,developmentView='open',customerFilter='all',jobFilter='open',documentFilter='invoices',documentWorkspace='invoices',currentPage='dashboard',lineCounter=0,pendingImportRows=[];
 
 function syncFixedChromeHeights(){
   const header=document.querySelector('header'),nav=$('mobileNavShell');
@@ -510,6 +512,8 @@ async function performLoadAll(){
     if(developmentResult.error){developmentItems=[];developmentReady=false}else{developmentItems=developmentResult.data||[];developmentReady=true}
     const chatgptImportResult=await sb.from('chatgpt_quote_imports').select('*').order('created_at',{ascending:false});
     if(chatgptImportResult.error){chatgptQuoteImports=[];chatgptImportsReady=false}else{chatgptQuoteImports=chatgptImportResult.data||[];chatgptImportsReady=true}
+    const estimatorResult=await sb.from('estimator_configurations').select('*').eq('owner_id',user.id).maybeSingle();
+    if(estimatorResult.error){estimatorConfiguration=null;estimatorReady=false}else{estimatorConfiguration=estimatorResult.data||null;estimatorReady=true}
     const missing=[];
     if(!jobsReady)missing.push('<b>supabase_setup_v0.2.sql</b> for Jobs');
     if(!documentsReady)missing.push('<b>supabase_setup_v0.3.sql</b> for Quotes & invoices');
@@ -517,6 +521,7 @@ async function performLoadAll(){
     if(!depositRequestsReady)missing.push('<b>supabase_setup_v1.10.sql</b> for deposit request tracking');
     if(!extrasReady)missing.push('<b>supabase_setup_v0.4.sql</b> for reminders and Van Ready');
     if(!workLogsReady)missing.push('<b>the visits/materials SQL</b>');
+    if(!estimatorReady)missing.push('<b>supabase_setup_v1.11_estimator_configuration.sql</b> for Estimator settings');
     const notice=$('setupNotice');
     if(notice){if(missing.length){notice.innerHTML=`<strong>Database update needed.</strong>Run ${missing.join(' and ')} in Supabase SQL Editor. Existing working sections remain available.`;notice.classList.remove('hidden')}else notice.classList.add('hidden')}
     renderAll();cacheSnapshot();updateSyncPill();
@@ -563,6 +568,42 @@ function leadOutcomeOptions(selected=''){const values=[['','Still in progress'],
 function aiReadinessData(){const completed=jobs.filter(job=>job.status==='completed'),quotes=documents.filter(document=>document.type==='quote'),accepted=quotes.filter(document=>document.status==='accepted'),rejected=quotes.filter(document=>document.status==='declined'),invoices=documents.filter(document=>document.type==='invoice'),photos=typeof jobPhotos==='undefined'?[]:jobPhotos,certificates=typeof gasSafetyCertificates==='undefined'?[]:gasSafetyCertificates,withSupplierCosts=completed.filter(job=>jobCosts.some(cost=>cost.job_id===job.id)),withMaterials=completed.filter(job=>jobCosts.some(cost=>cost.job_id===job.id&&cost.category==='materials')),withLabour=completed.filter(job=>Number(jobFigures(job).hours||0)>0),withProfit=completed.filter(job=>{const figures=jobFigures(job);return Number(figures.sale||0)>0&&jobCosts.some(cost=>cost.job_id===job.id)}),withPhotos=completed.filter(job=>photos.some(photo=>photo.job_id===job.id)),withCategory=completed.filter(job=>String(job.job_type||'').trim()),boilerRecords=completed.filter(job=>String(job.boiler_make||'').trim()||String(job.boiler_model||'').trim()),completedCertificates=certificates.filter(c=>c.status==='completed').length,categoryCounts={};completed.forEach(job=>{const category=String(job.job_type||'').trim();if(category)categoryCounts[category]=(categoryCounts[category]||0)+1});const repeatedCategories=Object.values(categoryCounts).filter(count=>count>=3).length;const resolved=accepted.length+rejected.length;let stage='Collecting Data',message='Keep recording normal work — there is not enough history to identify patterns yet.';if(completed.length>=10&&resolved>=5&&withSupplierCosts.length>=5&&withLabour.length>=5&&withProfit.length>=5){stage='Learning Patterns';message='Enough structured history is being collected to identify patterns later.'}if(completed.length>=30&&resolved>=15&&withSupplierCosts.length>=15&&withLabour.length>=15&&withProfit.length>=15&&withPhotos.length>=10&&withCategory.length>=25&&repeatedCategories>=3){stage='AI Ready';message='Enough similar, priced work is recorded for future quote suggestions.'}return {stage,message,completed:completed.length,completedQuotes:resolved,accepted:accepted.length,rejected:rejected.length,invoices:invoices.length,supplierCosts:withSupplierCosts.length,materials:withMaterials.length,labour:withLabour.length,profit:withProfit.length,photos:withPhotos.length,certificates:completedCertificates,boilerRecords:boilerRecords.length,categories:withCategory.length,repeatedCategories}}
 function renderAiReadinessSummary(){const target=$('aiReadinessSummary');if(!target)return;const data=aiReadinessData();target.innerHTML=`<b>${esc(data.stage)}</b> · ${esc(data.completed)} completed job${data.completed===1?'':'s'} recorded`}
 function openAiReadiness(){const d=aiReadinessData(),rows=[['Completed jobs',d.completed],['Completed quotes',d.completedQuotes],['Accepted quotes',d.accepted],['Rejected quotes',d.rejected],['Invoices',d.invoices],['Jobs with supplier costs',d.supplierCosts],['Jobs with materials',d.materials],['Jobs with labour hours',d.labour],['Jobs with profit',d.profit],['Jobs with photos',d.photos],['Completed certificates',d.certificates],['Completed boiler records',d.boilerRecords],['Jobs with categories assigned',d.categories],['Categories with 3+ completed jobs',d.repeatedCategories]];show(`<div class="head"><div><h2>AI readiness</h2><div class="meta">Data maturity only — no AI quote suggestions are active.</div></div><button class="light" onclick="closeModal()">Close</button></div><div class="notice ${d.stage==='AI Ready'?'success':''}"><strong>${esc(d.stage)}</strong><div class="meta">${esc(d.message)}</div></div><div class="list" style="margin-top:12px">${rows.map(([label,value])=>`<div class="item"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('')}</div><div class="muted-box" style="margin-top:12px"><h3>Suggested thresholds</h3><div class="meta"><b>Collecting Data:</b> under 10 completed jobs or 5 resolved quotes.<br><b>Learning Patterns:</b> 10 completed jobs, 5 resolved quotes, and 5 jobs each with supplier costs, labour and profit data.<br><b>AI Ready:</b> 30 completed jobs, 15 resolved quotes, 15 with supplier costs/labour/profit, 10 with photos, 25 categorised jobs and at least 3 repeat job categories.</div></div>`)}
+function estimatorDefaults(){return JSON.parse(JSON.stringify(window.ASP_ESTIMATOR_DEFAULTS||{}))}
+function estimatorConfig(){const defaults=estimatorDefaults(),stored=estimatorConfiguration?.configuration||{};return {...defaults,...stored,standard_templates:{...(defaults.standard_templates||{}),...(stored.standard_templates||{})}}}
+function estimatorVersion(){return Number(estimatorConfiguration?.version||estimatorDefaults().version||1)}
+function estimatorUpdatedAt(){return estimatorConfiguration?.updated_at||null}
+function estimatorField(label,id,value,help=''){return `<div class="field"><label for="${id}">${esc(label)}</label><textarea id="${id}">${esc(value||'')}</textarea>${help?`<div class="hint">${esc(help)}</div>`:''}</div>`}
+function openEstimatorSettings(){
+  const c=estimatorConfig(),updated=estimatorUpdatedAt()?new Date(estimatorUpdatedAt()).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}):'Repository defaults (not saved yet)';
+  show(`<div class="head"><div><h2>Estimator settings</h2><div class="meta">Your central quotation guidance. Customer documents never show the internal reasoning.</div></div><button class="light" onclick="closeModal()">Cancel</button></div>
+  <div class="notice"><strong>Version ${esc(estimatorVersion())}</strong><div class="meta">Last updated: ${esc(updated)}. Settings apply to future ChatGPT quote intake and future estimator workflows after saving.</div></div>
+  <div class="row"><div class="field"><label for="estMinimum">Minimum charge ex VAT</label><input id="estMinimum" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(c.minimum_charge_ex_vat)}"><div class="hint">A normal floor, not an automatic price for every job.</div></div><div class="field"><label for="estVat">VAT rate</label><input id="estVat" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${esc(c.vat_rate)}"></div></div>
+  ${estimatorField('Business positioning','estPositioning',c.business_positioning)}
+  ${estimatorField('Pricing philosophy','estPricing',c.pricing_philosophy)}
+  ${estimatorField('Quoting rules','estRules',c.quoting_rules)}
+  ${estimatorField('Wording style','estWordingStyle',c.wording_style)}
+  ${estimatorField('Target-pricing guidance','estTarget',c.target_pricing_guidance)}
+  ${estimatorField('Boiler pricing guidance','estBoiler',c.boiler_pricing_guidance)}
+  ${estimatorField('Plumbing pricing guidance','estPlumbing',c.plumbing_pricing_guidance)}
+  ${estimatorField('Recurring-service behaviour','estService',c.recurring_service_behaviour)}
+  ${estimatorField('Default inclusions','estInclusions',c.default_inclusions)}
+  ${estimatorField('Default exclusions','estExclusions',c.default_exclusions)}
+  ${estimatorField('VAT behaviour','estVatBehaviour',c.vat_behaviour)}
+  ${estimatorField('Manual override rules','estOverrides',c.manual_override_rules)}
+  ${estimatorField('Standard fixed-price template','estFixedTemplate',c.standard_templates?.fixed_price_quote)}
+  ${estimatorField('Standard service template','estServiceTemplate',c.standard_templates?.service_quote)}
+  <div class="actions"><button class="gold" onclick="saveEstimatorSettings()">Save settings</button><button class="light" onclick="openEstimatorSettings()">Cancel changes</button><button class="danger" onclick="restoreEstimatorDefaults()">Restore defaults</button></div>`);
+}
+function estimatorText(id){return String($(id)?.value||'').trim()}
+function estimatorDraftFromForm(){const base=estimatorDefaults(),minimum=Number($('estMinimum')?.value),vat=Number($('estVat')?.value);return {...base,minimum_charge_ex_vat:minimum,vat_rate:vat,business_positioning:estimatorText('estPositioning'),pricing_philosophy:estimatorText('estPricing'),quoting_rules:estimatorText('estRules'),wording_style:estimatorText('estWordingStyle'),target_pricing_guidance:estimatorText('estTarget'),boiler_pricing_guidance:estimatorText('estBoiler'),plumbing_pricing_guidance:estimatorText('estPlumbing'),recurring_service_behaviour:estimatorText('estService'),default_inclusions:estimatorText('estInclusions'),default_exclusions:estimatorText('estExclusions'),vat_behaviour:estimatorText('estVatBehaviour'),manual_override_rules:estimatorText('estOverrides'),standard_templates:{fixed_price_quote:estimatorText('estFixedTemplate'),service_quote:estimatorText('estServiceTemplate')}}}
+function validateEstimatorConfig(c){const errors=[];if(!Number.isFinite(c.minimum_charge_ex_vat)||c.minimum_charge_ex_vat<0)errors.push('Enter a minimum charge of zero or more.');if(!Number.isFinite(c.vat_rate)||c.vat_rate<0||c.vat_rate>100)errors.push('VAT must be between 0 and 100.');for(const key of ['business_positioning','pricing_philosophy','quoting_rules','wording_style','default_inclusions','default_exclusions'])if(!String(c[key]||'').trim())errors.push('Complete all core estimator guidance fields.');return errors}
+async function saveEstimatorSettings(){if(!requireOnline())return;const configuration=estimatorDraftFromForm(),errors=validateEstimatorConfig(configuration);if(errors.length)return alert(errors.join('\n'));const nextVersion=estimatorConfiguration?estimatorVersion()+1:1,now=new Date().toISOString(),payload={owner_id:user.id,version:nextVersion,configuration,updated_at:now};const {error}=await sb.from('estimator_configurations').upsert(payload,{onConflict:'owner_id'});if(error)return alert(error.message);await writeAudit('estimator',user.id,'updated',`Estimator configuration updated to version ${nextVersion}`);await loadAll();closeModal();showSyncNotice('Estimator settings saved')}
+function restoreEstimatorDefaults(){
+  if(!confirm('Restore the original estimator guidance? You can still change it before saving.'))return;
+  const c=estimatorDefaults();
+  const values={estMinimum:c.minimum_charge_ex_vat,estVat:c.vat_rate,estPositioning:c.business_positioning,estPricing:c.pricing_philosophy,estRules:c.quoting_rules,estWordingStyle:c.wording_style,estTarget:c.target_pricing_guidance,estBoiler:c.boiler_pricing_guidance,estPlumbing:c.plumbing_pricing_guidance,estService:c.recurring_service_behaviour,estInclusions:c.default_inclusions,estExclusions:c.default_exclusions,estVatBehaviour:c.vat_behaviour,estOverrides:c.manual_override_rules,estFixedTemplate:c.standard_templates?.fixed_price_quote,estServiceTemplate:c.standard_templates?.service_quote};
+  Object.entries(values).forEach(([id,value])=>{if($(id))$(id).value=value||''});
+}
 function documentCustomer(document){return customers.find(c=>c.id===document.customer_id)}
 function documentJob(document){return jobs.find(j=>j.id===document.job_id)}
 function isLiveQuote(document){const job=documentJob(document);return document?.type==='quote'&&!document.archived_at&&!['completed','lost','cancelled'].includes(job?.status)}
@@ -1899,9 +1940,9 @@ function openNewDocument(type='quote',jobId='',customerId=''){
   <div class="field"><label>Title / summary</label><input id="dTitle" value="${esc(defaultTitle)}" placeholder="e.g. Replace boiler"></div>
   <div class="row"><div class="field"><label>Issue date</label><input id="dIssue" type="date" value="${today()}"></div><div class="field"><label>${type==='invoice'?'Due date':'Valid until'}</label><input id="dDue" type="date" value="${due}"></div></div>
   <div class="section-title"><h3>Line items</h3><button class="light" onclick="addDocumentLine()">+ Add line</button></div><div id="dLines"></div>
-  <div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" type="number" inputmode="decimal" step="any" value="20" oninput="updateDocumentTotals()"></div><div></div></div>
+  <div class="row"><div class="field"><label>VAT rate %</label><input id="dVat" type="number" inputmode="decimal" step="any" value="${esc(estimatorConfig().vat_rate??20)}" oninput="updateDocumentTotals()"></div><div></div></div>
   <div id="dTotals" class="totals"></div>
-  <div class="field"><label>Customer-facing notes</label><textarea id="dNotes" placeholder="Optional terms, exclusions or payment note"></textarea></div>
+  <div class="field"><label>Customer-facing notes</label><textarea id="dNotes" placeholder="Optional terms, exclusions or payment note">${type==='quote'?esc(estimatorConfig().standard_templates?.fixed_price_quote||''):''}</textarea></div>
   <button id="saveDocumentBtn" class="gold" style="width:100%" onclick="saveDocument('${type}')">Save ${documentTypeLabel(type).toLowerCase()}</button>`);
   addDocumentLine(defaultTitle,1,defaultAmount);if(customer)selectDocumentCustomer(customer.id,false);updateDocumentTotals()
 }
@@ -1974,6 +2015,7 @@ async function insertDocumentSafely(payload){
 async function saveDocument(type,id=''){
   const lines=collectDocumentLines();if(!lines.length)return alert('Add at least one line item.');const number=$('dNumber').value.trim(),title=$('dTitle').value.trim();if(!number||!title)return alert('Enter the document number and title.');
   const existing=id?documents.find(document=>document.id===id):null,vatRate=Number($('dVat').value||0),fig=calculateFigures(lines,vatRate),payload={owner_id:user.id,customer_id:$('dCustomer').value||null,job_id:$('dJob').value||null,type,document_number:number,status:$('dStatus').value,title,issue_date:$('dIssue').value||today(),due_date:$('dDue').value||null,line_items:lines,subtotal:fig.subtotal,vat_rate:vatRate,vat_amount:fig.vat,total:fig.total,notes:documentNotesForSave(existing?.notes,$('dNotes').value),updated_at:new Date().toISOString()};
+  if(type==='quote'&&existing?.estimator_recommendation){const recommended=Number(existing.estimator_recommendation.recommended_price_ex_vat);Object.assign(payload,{final_approved_price:fig.subtotal,price_manually_overridden:Number.isFinite(recommended)&&Math.abs(fig.subtotal-recommended)>0.009,customer_facing_wording:$('dNotes').value.trim()||null});}
   const button=$('saveDocumentBtn');button.disabled=true;button.textContent='Saving…';let result;
   if(id)result=await sb.from('documents').update(payload).eq('id',id).select().single();else result=await insertDocumentSafely(payload);
   button.disabled=false;button.textContent=`Save ${documentTypeLabel(type).toLowerCase()}`;if(result.error)return alert(result.error.message);
@@ -2081,6 +2123,7 @@ function openDocument(id){
   <div class="detail-grid"><div class="detail"><b>Customer</b><span>${esc(customer?.name||'Not linked')}</span></div><div class="detail"><b>Status</b><span>${esc(documentStatusLabel(d.status))}</span></div><div class="detail"><b>Issue date</b><span>${esc(displayDate(d.issue_date))}</span></div><div class="detail"><b>${d.type==='invoice'?'Due date':'Valid until'}</b><span>${esc(d.due_date?displayDate(d.due_date):'Not set')}</span></div><div class="detail"><b>Linked job</b><span>${esc(job?.title||'Not linked')}</span></div><div class="detail"><b>Total</b><span>${esc(money(d.total))}</span></div></div>
   <div class="doc-lines"><table class="doc-table"><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>${scope}
   <div class="totals" style="margin-top:12px"><div class="total-line"><span>Subtotal</span><b>${money(d.subtotal)}</b></div><div class="total-line"><span>VAT (${Number(d.vat_rate)||0}%)</span><b>${money(d.vat_amount)}</b></div><div class="total-line grand"><span>Total</span><span>${money(d.total)}</span></div></div>
+  ${d.type==='quote'&&d.estimator_recommendation?`<details class="secondary-panel" style="margin-top:12px"><summary>Estimator review (internal)</summary><div class="meta" style="margin-top:10px">Configuration version ${esc(d.estimator_config_version||'—')} · Recommendation ${esc(money(d.estimator_recommendation.recommended_price_ex_vat))}${d.chatgpt_supplied_price!=null?` · ChatGPT-supplied ${esc(money(d.chatgpt_supplied_price))}`:''}${d.price_manually_overridden?' · Manually overridden':''}</div>${d.estimator_reasoning?`<div class="meta" style="margin-top:8px">${esc(d.estimator_reasoning)}</div>`:''}</details>`:''}
   ${d.type==='invoice'?`<div class="muted-box" style="margin-top:12px"><h3>Payment progress</h3><div class="meta"><b>${esc(invoicePaymentLabel(d))}</b> · Received ${esc(money(paidAmount))} · Remaining ${esc(money(balance))}</div>${d.status==='sent'&&balance>0?'<div class="notice" style="margin:10px 0 0">Keep an eye on your bank for this payment. When it arrives, open <b>Payment</b> to mark it fully paid or record a part payment.</div>':''}${payments.length?`<div class="meta" style="margin-top:9px">${payments.map(payment=>`${esc(displayDate(payment.paid_on))} · ${esc(money(payment.amount))}${payment.quickbooks_payment_id?' · synced to QuickBooks':''}${payment.quickbooks_sync_error?` · QuickBooks needs attention: ${esc(payment.quickbooks_sync_error)}`:''}`).join('<br>')}</div>`:''}</div>`:''}
   ${d.email_sent_at?`<div class="notice success" style="margin-top:12px"><strong>Email sent</strong><div class="meta">Sent to ${esc(d.email_sent_to||customer?.email||'the customer')} on ${esc(new Date(d.email_sent_at).toLocaleString('en-GB',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}))}.${d.email_viewed_at?' Customer has opened it.':' We will show when the customer first opens it.'}</div></div>`:''}
   ${customerFacingDocumentNotes(d.notes)?`<div class="muted-box" style="margin-top:12px"><h3>Notes</h3><div class="meta">${esc(customerFacingDocumentNotes(d.notes))}</div></div>`:''}

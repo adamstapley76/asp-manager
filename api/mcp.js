@@ -1,6 +1,6 @@
 const quoteHandler = require('./chatgpt/quote');
 
-const { validatePackage, constantTimeTokenMatch, requestFingerprint, reviewUrl, callRpc, text } = quoteHandler._private;
+const { validatePackage, constantTimeTokenMatch, requestFingerprint, reviewUrl, callRpc, text, loadEstimatorConfiguration, applyEstimator } = quoteHandler._private;
 const SERVER_NAME = 'ASP Manager';
 const SERVER_VERSION = '1.0.0';
 const PROTOCOL_VERSION = '2025-03-26';
@@ -90,8 +90,10 @@ async function createQuote(argumentsValue, request) {
   if (!supabaseUrl || !serviceRoleKey || !ownerId) return { isError: true, content: [{ type: 'text', text: 'ASP Manager quote connection is not configured.' }] };
 
   try {
-    const sourceReference = checked.value.source_reference || `chatgpt-mcp-${requestFingerprint(checked.value)}`;
-    const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...checked.value, source_reference: sourceReference } });
+    const estimator = await loadEstimatorConfiguration(supabaseUrl, serviceRoleKey, ownerId);
+    const prepared = applyEstimator(checked.value, estimator.configuration, estimator.version);
+    const sourceReference = prepared.source_reference || `chatgpt-mcp-${requestFingerprint(checked.value)}`;
+    const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...prepared, source_reference: sourceReference } });
     if (!saved?.customer_id || !saved?.customer_status || !saved?.job_id || !saved?.quote_id || !saved?.quote_number) throw new Error('ASP Manager returned an incomplete quote result.');
     const result = {
       success: true,
@@ -101,6 +103,8 @@ async function createQuote(argumentsValue, request) {
       quote_id: saved.quote_id,
       quote_number: saved.quote_number,
       duplicate: Boolean(saved.duplicate),
+      estimator_config_version: prepared._estimator_config_version,
+      estimator_recommendation: prepared._estimator_recommendation,
       review_url: reviewUrl(request, saved.quote_id)
     };
     return { content: [{ type: 'text', text: JSON.stringify(result) }], structuredContent: result };

@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
+const ESTIMATOR_DEFAULTS = require('../../estimator-defaults');
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const MAX_BODY_BYTES = 250000;
 // The private GPT retained this earlier credential after its editor was
 // updated.  This one-way verifier is preview-only and can be removed once
@@ -87,6 +88,47 @@ function normaliseLines(lines, title, price) {
   }));
 }
 
+function copy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function estimatorConfiguration(raw) {
+  const defaults = copy(ESTIMATOR_DEFAULTS);
+  const supplied = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const config = { ...defaults, ...supplied, standard_templates: { ...defaults.standard_templates, ...(supplied.standard_templates || {}) } };
+  config.minimum_charge_ex_vat = Math.max(0, number(config.minimum_charge_ex_vat, defaults.minimum_charge_ex_vat));
+  config.vat_rate = Math.max(0, Math.min(100, number(config.vat_rate, defaults.vat_rate)));
+  return config;
+}
+
+function applyEstimator(packageData, rawConfiguration, configVersion) {
+  const configuration = estimatorConfiguration(rawConfiguration);
+  const suppliedPrice = packageData.quote.chatgpt_supplied_price;
+  const submittedSubtotal = packageData.quote.line_items.reduce((total, line) => total + (line.quantity * line.unit_price), 0);
+  const recommendedPrice = Math.max(suppliedPrice === null ? 0 : suppliedPrice, submittedSubtotal, configuration.minimum_charge_ex_vat);
+  const usingMinimum = recommendedPrice === configuration.minimum_charge_ex_vat && (!suppliedPrice || suppliedPrice < configuration.minimum_charge_ex_vat);
+  const lineItems = packageData.quote.line_items.length ? packageData.quote.line_items.map(line => ({ ...line })) : normaliseLines([], packageData.job.title, recommendedPrice);
+  // Preserve a supplied scope and adjust only its first priced line when the
+  // estimator changes the total, rather than duplicating or rewording work.
+  if (packageData.quote.line_items.length) {
+    const firstQuantity = Math.max(Number(lineItems[0]?.quantity) || 1, 0.01);
+    lineItems[0].unit_price = Number(((Number(lineItems[0]?.unit_price) || 0) + ((recommendedPrice - submittedSubtotal) / firstQuantity)).toFixed(2));
+  }
+  const finalSubtotal = lineItems.reduce((total, line) => total + (line.quantity * line.unit_price), 0);
+  const rationale = !suppliedPrice
+    ? 'No selling price was supplied, so the configured minimum charge was used as a review starting point.'
+    : usingMinimum
+      ? 'The supplied figure was below the configured normal minimum charge, so the review price was raised to that minimum.'
+      : 'The supplied figure was retained as the review price, subject to Adam’s approval.';
+  return {
+    ...packageData,
+    quote: { ...packageData.quote, price_ex_vat: Number(finalSubtotal.toFixed(2)), line_items: lineItems, subtotal: Number(finalSubtotal.toFixed(2)) },
+    _estimator_configuration: configuration,
+    _estimator_config_version: Number.isInteger(configVersion) && configVersion > 0 ? configVersion : ESTIMATOR_DEFAULTS.version,
+    _estimator_recommendation: { recommended_price_ex_vat: Number(finalSubtotal.toFixed(2)), minimum_charge_ex_vat: configuration.minimum_charge_ex_vat, chatgpt_supplied_price: suppliedPrice, requires_manual_review: true, internal_reasoning: rationale }
+  };
+}
+
 function validatePackage(raw) {
   const errors = [];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { errors: ['A JSON quote package is required.'] };
@@ -96,7 +138,8 @@ function validatePackage(raw) {
   const rawQuote = raw.quote && typeof raw.quote === 'object' ? raw.quote : {};
   const title = text(rawJob.title || rawQuote.title, 240);
   const suppliedPrice = rawQuote.price_ex_vat;
-  const price = number(suppliedPrice, 0);
+  const hasSuppliedPrice = suppliedPrice !== undefined && suppliedPrice !== null && String(suppliedPrice).trim() !== '';
+  const price = hasSuppliedPrice ? number(suppliedPrice, 0) : 0;
   const vatRate = number(rawQuote.vat_rate, 20);
   const issueDate = date(rawQuote.issue_date) || new Date().toISOString().slice(0, 10);
   const lines = normaliseLines(rawQuote.line_items, title, price);
@@ -112,7 +155,6 @@ function validatePackage(raw) {
 
   if (!text(rawCustomer.name, 160)) errors.push('customer.name is required.');
   if (!title) errors.push('job.title is required.');
-  if (suppliedPrice === undefined || suppliedPrice === null || String(suppliedPrice).trim() === '') errors.push('quote.price_ex_vat is required.');
   if (price < 0) errors.push('quote.price_ex_vat cannot be negative.');
   if (vatRate < 0 || vatRate > 100) errors.push('quote.vat_rate must be between 0 and 100.');
   lines.forEach((line, index) => {
@@ -140,7 +182,7 @@ function validatePackage(raw) {
       assumptions: text(rawJob.assumptions, 6000), follow_up_reminders: Array.isArray(rawJob.follow_up_reminders) ? rawJob.follow_up_reminders : []
     },
     quote: {
-      issue_date: issueDate, price_ex_vat: price, vat_rate: vatRate, wording: text(rawQuote.wording || rawQuote.notes, 12000),
+      issue_date: issueDate, price_ex_vat: hasSuppliedPrice ? price : null, chatgpt_supplied_price: hasSuppliedPrice ? price : null, vat_rate: vatRate, wording: text(rawQuote.wording || rawQuote.notes, 12000),
       line_items: lines, subtotal
     },
     photos,
@@ -174,6 +216,19 @@ async function callRpc(url, serviceRoleKey, payload) {
   return Array.isArray(body) ? body[0] : body;
 }
 
+async function loadEstimatorConfiguration(url, serviceRoleKey, ownerId) {
+  const usesModernSecretKey = serviceRoleKey.startsWith('sb_secret_');
+  const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/get_estimator_configuration`, {
+    method: 'POST',
+    headers: { apikey: serviceRoleKey, ...(usesModernSecretKey ? {} : { authorization: `Bearer ${serviceRoleKey}` }), 'content-type': 'application/json' },
+    body: JSON.stringify({ p_owner_id: ownerId }), signal: AbortSignal.timeout(12000)
+  });
+  const body = await response.json().catch(() => []);
+  if (!response.ok) throw new Error('ASP Manager could not load estimator settings.');
+  const record = Array.isArray(body) ? body[0] : body;
+  return { configuration: estimatorConfiguration(record?.configuration), version: Number.isInteger(record?.version) ? record.version : ESTIMATOR_DEFAULTS.version, updated_at: record?.updated_at || null };
+}
+
 async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -199,9 +254,11 @@ async function handler(request, response) {
   }
 
   try {
+    const estimator = await loadEstimatorConfiguration(supabaseUrl, serviceRoleKey, ownerId);
+    const prepared = applyEstimator(checked.value, estimator.configuration, estimator.version);
     const idempotencyKey = requestHeader(request, 'idempotency-key');
-    const sourceReference = checked.value.source_reference || idempotencyKey || `chatgpt-${requestFingerprint(checked.value)}`;
-    const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...checked.value, source_reference: sourceReference } });
+    const sourceReference = prepared.source_reference || idempotencyKey || `chatgpt-${requestFingerprint(checked.value)}`;
+    const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...prepared, source_reference: sourceReference } });
     if (!saved?.customer_id || !saved?.customer_status || !saved?.job_id || !saved?.quote_id || !saved?.quote_number) throw new Error('ASP Manager returned an incomplete quote result.');
     return json(response, 201, {
       success: true,
@@ -211,6 +268,8 @@ async function handler(request, response) {
       quote_id: saved.quote_id,
       quote_number: saved.quote_number,
       duplicate: Boolean(saved.duplicate),
+      estimator_config_version: prepared._estimator_config_version,
+      estimator_recommendation: prepared._estimator_recommendation,
       review_url: reviewUrl(request, saved.quote_id)
     });
   } catch (error) {
@@ -220,4 +279,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION };
+module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, text, VERSION, estimatorConfiguration, applyEstimator, loadEstimatorConfiguration };

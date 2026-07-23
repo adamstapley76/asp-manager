@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const quoteHandler = require('../api/chatgpt/quote');
+const estimatorHandler = require('../api/chatgpt/estimator');
 const mcpHandler = require('../api/mcp');
 const { _private } = quoteHandler;
 
@@ -18,7 +19,12 @@ assert.equal(checked.value.customer.email, 'test@example.com');
 assert.equal(checked.value.photos.length, 1);
 assert.equal(_private.validatePackage({ ...valid, photos: [{ URL: 'https://example.com/legacy-photo.jpg' }] }).errors, undefined);
 assert.match(_private.validatePackage({}).errors.join(' '), /customer\.name is required\. job\.title is required\./);
-assert.match(_private.validatePackage({ ...valid, quote: { ...valid.quote, price_ex_vat: undefined } }).errors.join(' '), /price_ex_vat is required/);
+const noPrice = _private.validatePackage({ ...valid, quote: { issue_date: '2026-07-22' } });
+assert.equal(noPrice.errors, undefined);
+assert.equal(noPrice.value.quote.chatgpt_supplied_price, null);
+const estimated = _private.applyEstimator(noPrice.value, { minimum_charge_ex_vat: 95, vat_rate: 20 }, 4);
+assert.equal(estimated.quote.subtotal, 95);
+assert.equal(estimated._estimator_config_version, 4);
 assert.match(_private.validatePackage({ ...valid, photos: [{ url: 'http://not-secure.example/photo.jpg' }] }).errors.join(' '), /https URL/);
 assert.match(_private.validatePackage({ ...valid, quote: { ...valid.quote, price_ex_vat: -1 } }).errors.join(' '), /cannot be negative/);
 assert.equal(_private.constantTimeTokenMatch('same-secret', 'same-secret'), true);
@@ -53,7 +59,24 @@ async function endpointTests() {
     assert.equal(response.statusCode, 400);
     assert.match(response.body.error, /customer\.name is required/);
 
+    response = responseStub();
+    await estimatorHandler({ method: 'GET', headers: {} }, response);
+    assert.equal(response.statusCode, 401);
+
+    global.fetch = async (url) => {
+      assert.match(url, /\/rest\/v1\/rpc\/get_estimator_configuration$/);
+      return new Response(JSON.stringify([{ version: 7, configuration: { minimum_charge_ex_vat: 110, vat_rate: 20 } }]), { status: 200 });
+    };
+    response = responseStub();
+    await estimatorHandler({ method: 'GET', headers: { authorization: 'Bearer test-bearer-token' } }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.version, 7);
+    assert.equal(response.body.configuration.minimum_charge_ex_vat, 110);
+
     global.fetch = async (url, init) => {
+      if (url.endsWith('/rpc/get_estimator_configuration')) {
+        return new Response(JSON.stringify([{ version: 3, configuration: { minimum_charge_ex_vat: 95, vat_rate: 20 } }]), { status: 200 });
+      }
       assert.match(url, /\/rest\/v1\/rpc\/create_chatgpt_quote$/);
       assert.equal(init.headers.authorization, 'Bearer test-service-role');
       const payload = JSON.parse(init.body);
@@ -64,10 +87,14 @@ async function endpointTests() {
     response = responseStub();
     await quoteHandler({ method: 'POST', headers: { authorization: 'Bearer test-bearer-token', host: 'preview.example.test' }, body: valid }, response);
     assert.equal(response.statusCode, 201);
-    assert.deepEqual(response.body, { success: true, customer_id: 'customer-1', customer_status: 'created', job_id: 'job-1', quote_id: 'quote-1', quote_number: 'Q-2026-100', duplicate: false, review_url: 'https://preview.example.test/?review_quote=quote-1' });
+    assert.equal(response.body.success, true);
+    assert.equal(response.body.quote_id, 'quote-1');
+    assert.equal(response.body.estimator_config_version, 3);
+    assert.equal(response.body.review_url, 'https://preview.example.test/?review_quote=quote-1');
 
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test-server-key';
-    global.fetch = async (_url, init) => {
+    global.fetch = async (url, init) => {
+      if (url.endsWith('/rpc/get_estimator_configuration')) return new Response(JSON.stringify([]), { status: 200 });
       assert.equal(init.headers.apikey, 'sb_secret_test-server-key');
       assert.equal(init.headers.authorization, undefined);
       return new Response(JSON.stringify([{ customer_id: 'customer-2', customer_status: 'matched', job_id: 'job-2', quote_id: 'quote-2', quote_number: 'Q-2026-101', duplicate: false }]), { status: 200 });
@@ -88,7 +115,8 @@ async function endpointTests() {
     assert.equal(response.statusCode, 200);
     assert.equal(response.body.result.tools[0].name, 'create_quote_in_asp_manager');
 
-    global.fetch = async (_url, init) => {
+    global.fetch = async (url, init) => {
+      if (url.endsWith('/rpc/get_estimator_configuration')) return new Response(JSON.stringify([]), { status: 200 });
       const payload = JSON.parse(init.body);
       assert.match(payload.p_package.source_reference, /^chatgpt-mcp-/);
       return new Response(JSON.stringify([{ customer_id: 'customer-3', customer_status: 'created', job_id: 'job-3', quote_id: 'quote-3', quote_number: 'Q-2026-102', duplicate: false }]), { status: 200 });
