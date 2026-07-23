@@ -1,9 +1,12 @@
 openapi: 3.1.0
 info:
   title: ASP Manager Quote Intake
-  version: 1.2.0
+  version: 1.4.0
   description: >-
-    Private ASP Manager Action. Read the current estimator before drafting or
+    Private ASP Manager Action. Before saving anything, establish whether Adam
+    wants a quote, a diary booking, or both. If he wants a booking, confirm the
+    actual date (and time where known) with him before calling a write action.
+    Read the current estimator and prepare an estimate before drafting or
     pricing a quote. Only save a quote when Adam explicitly asks to send it.
     When Adam explicitly asks to book the work in as well, include
     job.booking_confirmed=true and its confirmed scheduled_date (and time if
@@ -38,6 +41,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EstimatorConfigResponse'
+        '401': { description: Missing or invalid Bearer token. }
+  /api/chatgpt/estimate:
+    post:
+      operationId: prepareQuoteEstimate
+      summary: Prepare an internal estimate from current guidance and comparable work.
+      description: >-
+        Use before suggesting a price for an actual quote. Supply only the
+        known job scope. Treat the result as internal guidance; do not reveal
+        comparable records, minimum charges or reasoning to the customer.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateRequest'
+      responses:
+        '200':
+          description: Private recommendation for Adam to review.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateSuccess'
+        '400': { description: Invalid estimate request. }
         '401': { description: Missing or invalid Bearer token. }
   /api/chatgpt/quote:
     post:
@@ -169,6 +197,28 @@ components:
         version: { type: integer }
         updated_at: { type: [string, 'null'], format: date-time }
         configuration: { type: object, description: Internal editable estimator guidance. }
+    EstimateRequest:
+      type: object
+      additionalProperties: false
+      required: [job]
+      properties:
+        job:
+          type: object
+          additionalProperties: false
+          required: [title]
+          properties:
+            title: { type: string, description: Actual job title or summary. }
+            job_type: { type: [string, 'null'], description: Omit when not known. }
+            description: { type: [string, 'null'], description: Known scope only. }
+    EstimateSuccess:
+      type: object
+      required: [success, category, estimator_config_version, estimator_recommendation]
+      properties:
+        success: { type: boolean, const: true }
+        api_version: { type: string }
+        category: { type: string }
+        estimator_config_version: { type: integer }
+        estimator_recommendation: { type: object, description: Internal guidance for Adam only. }
     QuoteSuccess:
       type: object
       required: [success, customer_id, customer_status, job_id, quote_id, quote_number, duplicate, review_url]

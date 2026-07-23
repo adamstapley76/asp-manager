@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
 const ESTIMATOR_DEFAULTS = require('../../estimator-defaults');
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const MAX_BODY_BYTES = 250000;
 // The private GPT retained this earlier credential after its editor was
 // updated.  This one-way verifier is preview-only and can be removed once
@@ -109,18 +109,59 @@ function copy(value) {
 function estimatorConfiguration(raw) {
   const defaults = copy(ESTIMATOR_DEFAULTS);
   const supplied = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-  const config = { ...defaults, ...supplied, standard_templates: { ...defaults.standard_templates, ...(supplied.standard_templates || {}) } };
+  const config = { ...defaults, ...supplied, standard_templates: { ...defaults.standard_templates, ...(supplied.standard_templates || {}) }, category_pricing_guidance: { ...defaults.category_pricing_guidance, ...(supplied.category_pricing_guidance || {}) } };
   config.minimum_charge_ex_vat = Math.max(0, number(config.minimum_charge_ex_vat, defaults.minimum_charge_ex_vat));
   config.vat_rate = Math.max(0, Math.min(100, number(config.vat_rate, defaults.vat_rate)));
   return config;
 }
 
-function applyEstimator(packageData, rawConfiguration, configVersion) {
+function estimatorCategory(job = {}) {
+  const source = `${job.title || ''} ${job.job_type || ''} ${job.description || ''}`.toLowerCase();
+  if (/boiler.*(?:conversion|convert)|(?:conversion|convert).*(?:boiler|combi|heating)|conventional.*combi/.test(source)) return 'boiler_conversion';
+  if (/boiler.*(?:install|replace|replacement|new)|(?:install|replace).*(?:boiler|combi)/.test(source)) return 'boiler_installation';
+  if (/boiler.*service|annual.*service|gas.*service/.test(source)) return 'boiler_service';
+  if (/bathroom|wet ?room|major alteration|refurb/.test(source)) return 'bathroom_and_major_work';
+  if (/breakdown|fault|repair|leak|no hot water|no heating/.test(source)) return 'repairs_and_breakdowns';
+  if (/plumb|tap|toilet|waste pipe|radiator|cylinder/.test(source)) return 'plumbing';
+  return 'general';
+}
+
+function comparableSummary(comparables) {
+  const prices = (Array.isArray(comparables) ? comparables : []).map(item => number(item?.price_ex_vat, 0)).filter(price => price > 0).sort((a, b) => a - b);
+  if (!prices.length) return { count: 0, lowest: null, highest: null, median: null };
+  const middle = Math.floor(prices.length / 2);
+  return { count: prices.length, lowest: prices[0], highest: prices[prices.length - 1], median: prices.length % 2 ? prices[middle] : (prices[middle - 1] + prices[middle]) / 2 };
+}
+
+function roundedProfessionalPrice(value) { return Math.max(0, Math.round(number(value, 0) / 25) * 25); }
+
+function applyEstimator(packageData, rawConfiguration, configVersion, comparables = []) {
   const configuration = estimatorConfiguration(rawConfiguration);
   const suppliedPrice = packageData.quote.chatgpt_supplied_price;
   const submittedSubtotal = packageData.quote.line_items.reduce((total, line) => total + (line.quantity * line.unit_price), 0);
-  const recommendedPrice = Math.max(suppliedPrice === null ? 0 : suppliedPrice, submittedSubtotal, configuration.minimum_charge_ex_vat);
-  const usingMinimum = recommendedPrice === configuration.minimum_charge_ex_vat && (!suppliedPrice || suppliedPrice < configuration.minimum_charge_ex_vat);
+  const category = estimatorCategory(packageData.job);
+  const comparison = comparableSummary(comparables);
+  const majorWork = ['boiler_conversion', 'boiler_installation', 'bathroom_and_major_work'].includes(category);
+  let recommendedPrice = Math.max(suppliedPrice === null ? 0 : suppliedPrice, submittedSubtotal);
+  let rationale = '';
+  if (suppliedPrice === null) {
+    if (comparison.count >= 2) {
+      recommendedPrice = roundedProfessionalPrice(comparison.median);
+      rationale = `${comparison.count} comparable ${category.replaceAll('_', ' ')} records were found. Their internal range is £${comparison.lowest.toFixed(2)}–£${comparison.highest.toFixed(2)} ex VAT; the median was rounded to a review starting point.`;
+    } else if (majorWork) {
+      rationale = `No sufficient comparable ${category.replaceAll('_', ' ')} work was found. A substantial job must be priced by Adam after reviewing the scope; the normal minimum charge was not applied.`;
+    } else if (category === 'boiler_service' || category === 'repairs_and_breakdowns' || category === 'plumbing') {
+      recommendedPrice = configuration.minimum_charge_ex_vat;
+      rationale = 'No selling price was supplied, so the configured normal minimum charge was used as a review starting point for this smaller job.';
+    } else {
+      rationale = 'No selling price or suitable comparable work was supplied. Price review is required before this quote is sent.';
+    }
+  } else if (recommendedPrice < configuration.minimum_charge_ex_vat) {
+    recommendedPrice = configuration.minimum_charge_ex_vat;
+    rationale = 'The supplied figure was below the configured normal minimum charge, so the review price was raised to that minimum.';
+  } else {
+    rationale = 'The supplied figure was retained as the review price, subject to Adam’s approval.';
+  }
   const lineItems = packageData.quote.line_items.length ? packageData.quote.line_items.map(line => ({ ...line })) : normaliseLines([], packageData.job.title, recommendedPrice);
   // Preserve a supplied scope and adjust only its first priced line when the
   // estimator changes the total, rather than duplicating or rewording work.
@@ -129,9 +170,9 @@ function applyEstimator(packageData, rawConfiguration, configVersion) {
     lineItems[0].unit_price = Number(((Number(lineItems[0]?.unit_price) || 0) + ((recommendedPrice - submittedSubtotal) / firstQuantity)).toFixed(2));
   }
   const finalSubtotal = lineItems.reduce((total, line) => total + (line.quantity * line.unit_price), 0);
-  const rationale = !suppliedPrice
+  const legacyRationale = !suppliedPrice
     ? 'No selling price was supplied, so the configured minimum charge was used as a review starting point.'
-    : usingMinimum
+    : false
       ? 'The supplied figure was below the configured normal minimum charge, so the review price was raised to that minimum.'
       : 'The supplied figure was retained as the review price, subject to Adam’s approval.';
   return {
@@ -139,7 +180,7 @@ function applyEstimator(packageData, rawConfiguration, configVersion) {
     quote: { ...packageData.quote, price_ex_vat: Number(finalSubtotal.toFixed(2)), line_items: lineItems, subtotal: Number(finalSubtotal.toFixed(2)) },
     _estimator_configuration: configuration,
     _estimator_config_version: Number.isInteger(configVersion) && configVersion > 0 ? configVersion : ESTIMATOR_DEFAULTS.version,
-    _estimator_recommendation: { recommended_price_ex_vat: Number(finalSubtotal.toFixed(2)), minimum_charge_ex_vat: configuration.minimum_charge_ex_vat, chatgpt_supplied_price: suppliedPrice, requires_manual_review: true, internal_reasoning: rationale }
+    _estimator_recommendation: { recommended_price_ex_vat: Number(finalSubtotal.toFixed(2)), minimum_charge_ex_vat: configuration.minimum_charge_ex_vat, chatgpt_supplied_price: suppliedPrice, category, comparable_work: comparison, requires_manual_review: true, internal_reasoning: rationale }
   };
 }
 
@@ -262,6 +303,18 @@ async function loadEstimatorConfiguration(url, serviceRoleKey, ownerId) {
   return { configuration: estimatorConfiguration(record?.configuration), version: Number.isInteger(record?.version) ? record.version : ESTIMATOR_DEFAULTS.version, updated_at: record?.updated_at || null };
 }
 
+async function loadComparableWork(url, serviceRoleKey, ownerId, job) {
+  const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/get_estimator_comparables`, {
+    method: 'POST',
+    headers: serviceHeaders(serviceRoleKey, { 'content-type': 'application/json' }),
+    body: JSON.stringify({ p_owner_id: ownerId, p_category: estimatorCategory(job), p_limit: 8 }),
+    signal: AbortSignal.timeout(12000)
+  });
+  const body = await response.json().catch(() => []);
+  if (!response.ok) throw new Error('ASP Manager could not load comparable work.');
+  return Array.isArray(body) ? body : [];
+}
+
 async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -288,7 +341,8 @@ async function handler(request, response) {
 
   try {
     const estimator = await loadEstimatorConfiguration(supabaseUrl, serviceRoleKey, ownerId);
-    const prepared = applyEstimator(checked.value, estimator.configuration, estimator.version);
+    const comparables = await loadComparableWork(supabaseUrl, serviceRoleKey, ownerId, checked.value.job);
+    const prepared = applyEstimator(checked.value, estimator.configuration, estimator.version, comparables);
     const idempotencyKey = requestHeader(request, 'idempotency-key');
     const sourceReference = prepared.source_reference || idempotencyKey || `chatgpt-${requestFingerprint(checked.value)}`;
     const saved = await callRpc(supabaseUrl, serviceRoleKey, { p_owner_id: ownerId, p_package: { ...prepared, source_reference: sourceReference } });
@@ -314,4 +368,4 @@ async function handler(request, response) {
 }
 
 module.exports = handler;
-module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, scheduleConfirmedJob, text, time, VERSION, estimatorConfiguration, applyEstimator, loadEstimatorConfiguration };
+module.exports._private = { validatePackage, constantTimeTokenMatch, legacyPreviewTokenMatch, normaliseLines, canonicalJson, requestFingerprint, reviewUrl, callRpc, scheduleConfirmedJob, text, time, VERSION, estimatorConfiguration, estimatorCategory, comparableSummary, roundedProfessionalPrice, applyEstimator, loadEstimatorConfiguration, loadComparableWork };
