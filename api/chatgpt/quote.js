@@ -174,16 +174,7 @@ async function handler(request, response) {
   const expectedToken = text(process.env.CHATGPT_QUOTE_API_TOKEN, 500);
   const suppliedToken = bearerToken(request);
   if (!expectedToken || !constantTimeTokenMatch(suppliedToken, expectedToken)) {
-    // Preview-only, short-lived setup aid. It exposes only a truncated hash so
-    // the action credential can be compared without ever revealing a secret.
-    const diagnostic = process.env.VERCEL_ENV === 'preview' && request.headers?.['x-asp-token-check'] === '1'
-      ? {
-          token_configured: Boolean(expectedToken),
-          expected_token_fingerprint: expectedToken ? crypto.createHash('sha256').update(expectedToken).digest('hex').slice(0, 12) : null,
-          supplied_token_fingerprint: suppliedToken ? crypto.createHash('sha256').update(suppliedToken).digest('hex').slice(0, 12) : null
-        }
-      : {};
-    return json(response, 401, { success: false, error: 'Unauthorised.', ...diagnostic });
+    return json(response, 401, { success: false, error: 'Unauthorised.' });
   }
 
   const checked = validatePackage(request.body);
