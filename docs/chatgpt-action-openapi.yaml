@@ -78,11 +78,10 @@ paths:
       operationId: bookWorkInAspManager
       summary: Book work directly into the ASP Manager diary without a quote.
       description: >-
-        Use only when Adam explicitly chooses diary booking rather than a quote.
-        Before calling this action, restate the date and time understood from the
-        conversation and get Adam's confirmation. scheduled_date and
-        booking_confirmed=true are required. Do not call this to record a
-        tentative customer request.
+        Use only when Adam chooses diary booking rather than a quote. Restate
+        the understood date and time and get his confirmation first.
+        scheduled_date and booking_confirmed=true are required; do not record
+        a tentative customer request.
       security:
         - bearerAuth: []
       parameters:
