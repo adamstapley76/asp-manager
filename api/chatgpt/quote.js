@@ -177,7 +177,7 @@ async function handler(request, response) {
     // Temporary setup telemetry: truncated hashes only, never secrets.
     console.info('ChatGPT quote authentication rejected', {
       authorization_present: Boolean(request.headers?.authorization),
-      supplied_token_fingerprint: suppliedToken ? crypto.createHash('sha256').update(suppliedToken).digest('hex').slice(0, 12) : null,
+      supplied_token_fingerprint: suppliedToken ? crypto.createHash('sha256').update(suppliedToken).digest('hex') : null,
       expected_token_fingerprint: expectedToken ? crypto.createHash('sha256').update(expectedToken).digest('hex').slice(0, 12) : null
     });
     return json(response, 401, { success: false, error: 'Unauthorised.' });
