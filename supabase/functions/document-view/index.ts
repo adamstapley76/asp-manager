@@ -26,6 +26,22 @@ Deno.serve(async (request) => {
   if (!document || document.status === 'void') return json({ error: 'This document is unavailable. Please contact Adam Stapley Plumbing if you need a copy.' }, 404)
 
   const customer = Array.isArray(document.customers) ? document.customers[0] : document.customers
+  const { data: payments, error: paymentsError } = await admin
+    .from('document_payments')
+    .select('amount, paid_on, method, note, origin_deposit_id')
+    .eq('document_id', document.id)
+    .order('paid_on', { ascending: true })
+
+  if (paymentsError) return json({ error: 'This document could not load its payment history.' }, 500)
+  const paymentHistory = (payments || []).map((payment) => ({
+    amount: Number(payment.amount || 0),
+    paid_on: payment.paid_on,
+    method: text(payment.method),
+    note: text(payment.note),
+    is_deposit: Boolean(payment.origin_deposit_id),
+  }))
+  const paidAmount = paymentHistory.reduce((total, payment) => total + payment.amount, 0)
+  const balanceDue = Math.max(0, Number(document.total || 0) - paidAmount)
   if (!document.email_viewed_at) {
     const apiKey = Deno.env.get('RESEND_API_KEY')
     if (apiKey) {
@@ -60,6 +76,9 @@ Deno.serve(async (request) => {
     vat_rate: document.vat_rate,
     vat_amount: document.vat_amount,
     total: document.total,
+    payments: paymentHistory,
+    paid_amount: paidAmount,
+    balance_due: balanceDue,
     notes: document.notes,
     status: document.status,
     customer: { name: customer?.name || '', address: customer?.address || '', postcode: customer?.postcode || '' },
