@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const quoteHandler = require('../api/chatgpt/quote');
+const jobHandler = require('../api/chatgpt/job');
 const estimatorHandler = require('../api/chatgpt/estimator');
 const mcpHandler = require('../api/mcp');
 const { _private } = quoteHandler;
@@ -26,6 +27,13 @@ assert.equal(booked.value.job.scheduled_time, '12:00');
 const requestedOnly = _private.validatePackage({ ...valid, job: { ...valid.job, scheduled_date: '2026-07-24', scheduled_time: '12:00' } });
 assert.equal(requestedOnly.value.job.booking_confirmed, false);
 assert.equal(requestedOnly.value.job.scheduled_date, null);
+const directBooking = jobHandler._private.validatePackage({
+  customer: { name: 'Diary Customer', phone: '07700 900123' },
+  job: { title: 'Leak repair', description: 'Inspect and repair leak.', booking_confirmed: true, scheduled_date: '2026-07-24', scheduled_time: '10:15' }
+});
+assert.equal(directBooking.errors, undefined);
+assert.equal(directBooking.value.job.scheduled_date, '2026-07-24');
+assert.match(jobHandler._private.validatePackage({ customer: { name: 'Diary Customer' }, job: { title: 'Leak repair' } }).errors.join(' '), /scheduled_date is required/);
 assert.match(_private.validatePackage({}).errors.join(' '), /customer\.name is required\. job\.title is required\./);
 const noPrice = _private.validatePackage({ ...valid, quote: { issue_date: '2026-07-22' } });
 assert.equal(noPrice.errors, undefined);
@@ -99,6 +107,22 @@ async function endpointTests() {
     assert.equal(response.body.quote_id, 'quote-1');
     assert.equal(response.body.estimator_config_version, 3);
     assert.equal(response.body.review_url, 'https://preview.example.test/?review_quote=quote-1');
+
+    global.fetch = async (url, init) => {
+      assert.match(url, /\/rest\/v1\/rpc\/create_chatgpt_job$/);
+      assert.equal(init.headers.authorization, 'Bearer test-service-role');
+      const payload = JSON.parse(init.body);
+      assert.match(payload.p_package.source_reference, /^chatgpt-job-/);
+      return new Response(JSON.stringify([{ customer_id: 'customer-job-1', customer_status: 'created', job_id: 'job-booked-1', duplicate: false }]), { status: 200 });
+    };
+    response = responseStub();
+    await jobHandler({
+      method: 'POST', headers: { authorization: 'Bearer test-bearer-token' },
+      body: { customer: { name: 'Diary Customer' }, job: { title: 'Leak repair', booking_confirmed: true, scheduled_date: '2026-07-24', scheduled_time: '10:15' } }
+    }, response);
+    assert.equal(response.statusCode, 201);
+    assert.equal(response.body.job_id, 'job-booked-1');
+    assert.equal(response.body.booked_in_diary, true);
 
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test-server-key';
     global.fetch = async (url, init) => {
