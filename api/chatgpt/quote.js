@@ -174,6 +174,12 @@ async function handler(request, response) {
   const expectedToken = text(process.env.CHATGPT_QUOTE_API_TOKEN, 500);
   const suppliedToken = bearerToken(request);
   if (!expectedToken || !constantTimeTokenMatch(suppliedToken, expectedToken)) {
+    // Temporary setup telemetry: truncated hashes only, never secrets.
+    console.info('ChatGPT quote authentication rejected', {
+      authorization_present: Boolean(request.headers?.authorization),
+      supplied_token_fingerprint: suppliedToken ? crypto.createHash('sha256').update(suppliedToken).digest('hex').slice(0, 12) : null,
+      expected_token_fingerprint: expectedToken ? crypto.createHash('sha256').update(expectedToken).digest('hex').slice(0, 12) : null
+    });
     return json(response, 401, { success: false, error: 'Unauthorised.' });
   }
 
