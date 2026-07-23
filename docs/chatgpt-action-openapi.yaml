@@ -98,6 +98,39 @@ paths:
                 $ref: '#/components/schemas/QuoteSuccess'
         '400': { description: Invalid quote package. }
         '401': { description: Missing or invalid Bearer token. }
+  /api/chatgpt/job:
+    post:
+      operationId: bookWorkInAspManager
+      summary: Book work directly into the ASP Manager diary without a quote.
+      description: >-
+        Use only when Adam explicitly chooses diary booking rather than a quote.
+        Before calling this action, restate the date and time understood from the
+        conversation and get Adam's confirmation. scheduled_date and
+        booking_confirmed=true are required. Do not call this to record a
+        tentative customer request.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Reuse only when retrying exactly the same work booking.
+          schema: { type: string, maxLength: 240 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPackage'
+      responses:
+        '201':
+          description: Work was booked or an existing identical booking returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSuccess'
+        '400': { description: Invalid work booking package. }
+        '401': { description: Missing or invalid Bearer token. }
 components:
   securitySchemes:
     bearerAuth:
@@ -188,6 +221,71 @@ components:
               mime_type: { type: [string, 'null'] }
               file_size: { type: [integer, 'null'], minimum: 0 }
         notes: { type: [string, 'null'] }
+    JobPackage:
+      type: object
+      additionalProperties: false
+      required: [customer, job]
+      properties:
+        source_reference:
+          type: string
+          maxLength: 240
+          description: Stable reference for this exact work booking. Omit if unavailable.
+        customer:
+          type: object
+          additionalProperties: false
+          required: [name]
+          properties:
+            name: { type: string, description: Actual customer name. }
+            phone: { type: [string, 'null'], description: Omit when not supplied. }
+            email: { type: [string, 'null'], format: email, description: Omit when not supplied. }
+            address: { type: [string, 'null'], description: Omit when not supplied. }
+            postcode: { type: [string, 'null'], description: Omit when not supplied. }
+        lead:
+          type: object
+          additionalProperties: true
+          properties:
+            source: { type: [string, 'null'], description: Lead source if stated. }
+        job:
+          type: object
+          additionalProperties: false
+          required: [title, booking_confirmed, scheduled_date]
+          properties:
+            title: { type: string }
+            job_type: { type: [string, 'null'] }
+            description: { type: [string, 'null'] }
+            property_type: { type: [string, 'null'] }
+            boiler_make: { type: [string, 'null'] }
+            boiler_model: { type: [string, 'null'] }
+            materials: { type: array, items: {} }
+            confidence: { type: [string, 'null'] }
+            assumptions: { type: [string, 'null'] }
+            booking_confirmed:
+              type: boolean
+              const: true
+              description: Must be true after Adam confirms the date.
+            scheduled_date:
+              type: string
+              format: date
+              description: Confirmed diary date.
+            scheduled_time:
+              type: [string, 'null']
+              pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+              description: Optional confirmed 24-hour diary time, in 15-minute increments where known.
+        photos:
+          type: array
+          description: Permanent HTTPS photo references only. Do not send temporary ChatGPT attachment URLs.
+          items:
+            type: object
+            additionalProperties: false
+            required: [url]
+            properties:
+              url: { type: string, format: uri, pattern: '^https://' }
+              category: { type: [string, 'null'] }
+              description: { type: [string, 'null'] }
+              file_name: { type: [string, 'null'] }
+              mime_type: { type: [string, 'null'] }
+              file_size: { type: [integer, 'null'], minimum: 0 }
+        notes: { type: [string, 'null'] }
     EstimatorConfigResponse:
       type: object
       required: [success, version, configuration]
@@ -234,3 +332,15 @@ components:
         estimator_config_version: { type: integer }
         estimator_recommendation: { type: object, description: Internal review information. }
         review_url: { type: [string, 'null'], format: uri }
+    JobSuccess:
+      type: object
+      required: [success, customer_id, customer_status, job_id, duplicate, booked_in_diary, scheduled_date]
+      properties:
+        success: { type: boolean, const: true }
+        customer_id: { type: string, format: uuid }
+        customer_status: { type: string, enum: [matched, created] }
+        job_id: { type: string, format: uuid }
+        duplicate: { type: boolean }
+        booked_in_diary: { type: boolean, const: true }
+        scheduled_date: { type: string, format: date }
+        scheduled_time: { type: [string, 'null'], pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' }
