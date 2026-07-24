@@ -11,8 +11,9 @@ function customerViewUrl(value: unknown, token: string) {
   try {
     const url = new URL(text(value))
     const allowed = url.protocol === 'https:' && (url.hostname === 'app.adamstapley.co.uk' || url.hostname === 'asp-manager.vercel.app' || url.hostname.endsWith('.vercel.app'))
-    if (!allowed || !url.pathname.endsWith('/document.html')) return ''
-    url.search = new URLSearchParams({ token }).toString()
+    const shortLink = url.pathname.endsWith('/q.html')
+    if (!allowed || (!shortLink && !url.pathname.endsWith('/document.html'))) return ''
+    url.search = new URLSearchParams(shortLink ? { t: token } : { token }).toString()
     return url.toString()
   } catch { return '' }
 }
