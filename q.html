@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your document | Adam Stapley Plumbing</title>
+  <meta name="description" content="Open your secure quote or invoice from Adam Stapley Plumbing.">
+  <meta property="og:title" content="Your document from Adam Stapley Plumbing">
+  <meta property="og:description" content="Open your secure quote or invoice.">
+  <meta property="og:type" content="website">
+  <style>body{margin:0;display:grid;min-height:100vh;place-items:center;background:#f4f6f8;color:#172334;font:16px Arial,sans-serif}.card{max-width:420px;margin:24px;padding:28px;background:#fff;border-radius:14px;box-shadow:0 12px 35px #17233420}.bar{height:5px;margin:-28px -28px 22px;background:#cda136;border-radius:14px 14px 0 0}h1{margin:0 0 10px;font-size:22px}p{margin:0;color:#526173;line-height:1.55}</style>
+</head>
+<body>
+  <main class="card"><div class="bar"></div><h1>Opening your document</h1><p>Please wait a moment.</p></main>
+  <script>
+    const token=new URLSearchParams(location.search).get('t')||'';
+    if(token)location.replace(`/document.html?token=${encodeURIComponent(token)}`);
+    else document.querySelector('main').innerHTML='<div class="bar"></div><h1>Link incomplete</h1><p>Please ask Adam Stapley Plumbing to resend your quote or invoice.</p>';
+  </script>
+</body>
+</html>
